@@ -1,0 +1,2978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Novidea MGA Discovery Playbook</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.26.0/dist/umd/supabase.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0f1117;--ink-mid:#3a3f4d;--ink-soft:#7a8094;--ink-faint:#b8bccb;
+  --surface:#ffffff;--surface-2:#f5f6f9;--surface-3:#edeef3;
+  --accent:#1a4fff;--accent-dim:#e8edff;--accent-text:#0c3acc;
+  --red:#c93535;--red-bg:#fdf1f1;--red-border:#f0b8b8;--red-text:#7a1a1a;
+  --amber:#b85c00;--amber-bg:#fef6ec;--amber-border:#f5cf99;--amber-text:#6b3500;
+  --green:#1e6e3c;--green-bg:#eef7f2;--green-border:#9fd4b6;--green-text:#0d3d20;
+  --gray-bg:#f5f6f9;--gray-border:#d0d4df;
+  --teal:#0b6e6e;--teal-bg:#edf7f7;--teal-border:#8dd4d4;--teal-text:#053d3d;
+  --purple:#5a35b8;--purple-bg:#f0ecff;--purple-border:#c4b3f5;--purple-text:#2e1870;
+  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* HEADER */
+.site-header{border-bottom:1px solid var(--surface-3);padding:0 2rem;position:sticky;top:0;background:rgba(255,255,255,0.96);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+.logo{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink);letter-spacing:-0.3px;white-space:nowrap}
+.logo span{color:var(--accent)}
+.header-nav{display:flex;gap:4px}
+.hnav-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:var(--r-md);border:1px solid transparent;background:transparent;cursor:pointer;color:var(--ink-soft);font-family:'DM Sans',sans-serif;transition:all .15s}
+.hnav-btn:hover{background:var(--surface-2);color:var(--ink)}
+.hnav-btn.active{background:var(--accent-dim);color:var(--accent-text);border-color:rgba(26,79,255,0.2)}
+.header-actions{display:flex;gap:8px;align-items:center}
+.btn-primary{font-size:12px;font-weight:500;padding:7px 16px;border-radius:var(--r-md);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.btn-primary:hover{background:#1340dd}
+.btn-outline{font-size:12px;font-weight:500;padding:7px 14px;border-radius:var(--r-md);border:1px solid var(--surface-3);background:var(--surface);color:var(--ink-mid);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.btn-outline:hover{border-color:var(--ink-faint);color:var(--ink)}
+
+/* PAGE VIEWS */
+.page{display:none}
+.page.active{display:block}
+
+/* ── HOME / SESSIONS ── */
+.sessions-wrap{max-width:900px;margin:0 auto;padding:48px 2rem 80px}
+.sessions-hero{margin-bottom:40px}
+.sessions-hero h2{font-family:'DM Serif Display',serif;font-size:32px;letter-spacing:-0.8px;margin-bottom:8px}
+.sessions-hero p{font-size:14px;color:var(--ink-mid);line-height:1.6;max-width:520px}
+.sessions-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.session-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--r-xl);padding:18px 20px;cursor:pointer;transition:all .2s;position:relative}
+.session-card:hover{border-color:var(--ink-faint);box-shadow:0 4px 16px rgba(0,0,0,0.06);transform:translateY(-1px)}
+.sc-type{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:100px}
+.sc-type.existing{background:var(--teal-bg);color:var(--teal-text);border:1px solid var(--teal-border)}
+.sc-type.prospect{background:var(--purple-bg);color:var(--purple-text);border:1px solid var(--purple-border)}
+.sc-type.mixed{background:var(--accent-dim);color:var(--accent-text);border:1px solid rgba(26,79,255,0.2)}
+.sc-name{font-size:15px;font-weight:500;color:var(--ink);margin-bottom:4px}
+.sc-company{font-size:12px;color:var(--ink-soft);margin-bottom:12px}
+.sc-meta{display:flex;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--surface-3)}
+.sc-score{display:flex;align-items:center;gap:5px}
+.sc-score-dot{width:8px;height:8px;border-radius:50%}
+.sc-score-label{font-size:12px;color:var(--ink-mid)}
+.sc-date{font-size:11px;color:var(--ink-faint);margin-left:auto}
+.sc-answered{font-size:11px;color:var(--ink-soft)}
+.sc-actions{position:absolute;top:14px;right:14px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.session-card:hover .sc-actions{opacity:1}
+.sc-action-btn{width:26px;height:26px;border-radius:var(--r-sm);border:1px solid var(--surface-3);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sc-action-btn:hover{border-color:var(--ink-faint);background:var(--surface-2)}
+.sc-action-btn svg{width:12px;height:12px;color:var(--ink-soft)}
+.sc-action-btn.del:hover{border-color:var(--red-border);background:var(--red-bg)}
+.sc-action-btn.del:hover svg{color:var(--red)}
+.new-session-card{background:var(--surface-2);border:1.5px dashed var(--gray-border);border-radius:var(--r-xl);padding:18px 20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.new-session-card:hover{border-color:var(--accent);background:var(--accent-dim)}
+.new-session-card:hover .nsc-text{color:var(--accent)}
+.nsc-icon{width:36px;height:36px;border-radius:50%;background:var(--surface);border:1px solid var(--gray-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.new-session-card:hover .nsc-icon{border-color:var(--accent);background:var(--accent-dim)}
+.nsc-icon svg{width:16px;height:16px;color:var(--ink-soft)}
+.new-session-card:hover .nsc-icon svg{color:var(--accent)}
+.nsc-text{font-size:14px;font-weight:500;color:var(--ink-mid);transition:color .15s}
+.nsc-sub{font-size:12px;color:var(--ink-faint)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink-soft)}
+.empty-state h3{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink-mid);margin-bottom:8px}
+
+/* ── SESSION MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,17,23,0.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--surface);border-radius:var(--r-xl);padding:28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal h3{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:-0.4px;margin-bottom:6px}
+.modal p{font-size:13px;color:var(--ink-mid);margin-bottom:20px;line-height:1.5}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;display:block}
+.modal-input{width:100%;font-size:14px;padding:10px 12px;border:1px solid var(--surface-3);border-radius:var(--r-md);font-family:'DM Sans',sans-serif;color:var(--ink);outline:none;transition:border .15s;background:var(--surface)}
+.modal-input:focus{border-color:var(--accent)}
+.modal-select{width:100%;font-size:14px;padding:10px 12px;border:1px solid var(--surface-3);border-radius:var(--r-md);font-family:'DM Sans',sans-serif;color:var(--ink);outline:none;background:var(--surface);cursor:pointer}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.modal-actions .btn-primary{flex:1}
+.modal-actions .btn-outline{flex:1}
+
+/* ── PLAYBOOK VIEW ── */
+.playbook-header{background:var(--ink);color:#fff;padding:14px 2rem;display:flex;align-items:center;gap:16px}
+.ph-back{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.5);cursor:pointer;transition:color .15s;background:none;border:none;font-family:'DM Sans',sans-serif}
+.ph-back:hover{color:#fff}
+.ph-back svg{width:14px;height:14px}
+.ph-divider{width:1px;height:20px;background:rgba(255,255,255,0.15)}
+.ph-name{font-size:14px;font-weight:500;color:#fff}
+.ph-company{font-size:12px;color:rgba(255,255,255,0.45)}
+.ph-type{font-size:10px;font-weight:500;padding:3px 8px;border-radius:100px;margin-left:auto}
+.ph-type.existing{background:rgba(11,110,110,0.3);color:#5edfdf;border:1px solid rgba(11,110,110,0.4)}
+.ph-type.prospect{background:rgba(90,53,184,0.3);color:#c4b3f5;border:1px solid rgba(90,53,184,0.4)}
+.ph-type.mixed{background:rgba(26,79,255,0.2);color:#88aaff;border:1px solid rgba(26,79,255,0.3)}
+.ph-save-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:var(--r-md);border:none;background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;margin-left:8px}
+.ph-save-btn:hover{background:rgba(255,255,255,0.2)}
+.ph-save-btn.saved{background:rgba(30,110,60,0.4);color:#5ce89a}
+
+/* Score bar */
+.score-section{background:var(--ink);padding:16px 2rem;position:sticky;top:112px;z-index:90;border-top:1px solid rgba(255,255,255,0.08)}
+.score-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 2fr;gap:10px;align-items:center}
+.scard{background:rgba(255,255,255,0.07);border-radius:var(--r-md);padding:10px 14px}
+.scard-label{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.scard-val{font-family:'DM Serif Display',serif;font-size:24px;color:#fff;letter-spacing:-0.5px}
+.scard-val.red{color:#ff7070}
+.scard-val.amber{color:#ffb347}
+.verdict-card{background:rgba(255,255,255,0.07);border-radius:var(--r-md);padding:11px 14px;display:flex;align-items:center;gap:10px}
+.verdict-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.1)}
+.verdict-icon svg{width:13px;height:13px}
+.verdict-text-title{font-size:12px;font-weight:500;color:#fff;margin-bottom:2px}
+.verdict-text-sub{font-size:11px;color:rgba(255,255,255,0.45);line-height:1.4}
+.verdict-badge{font-size:11px;font-weight:500;padding:4px 10px;border-radius:100px;white-space:nowrap;margin-left:auto;flex-shrink:0}
+.vb-pending{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.45)}
+.vb-red{background:#3d0808;color:#ff9999}
+.vb-amber{background:#3d2000;color:#ffcc77}
+.vb-blue{background:#0a1a4d;color:#88aaff}
+.prog-bar{height:3px;background:rgba(255,255,255,0.1);border-radius:2px;grid-column:1/-1;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+
+/* MAIN LAYOUT */
+.main{max-width:900px;margin:40px auto 0;padding:0 2rem 80px;display:grid;grid-template-columns:210px 1fr;gap:32px;align-items:start}
+.sidebar{position:sticky;top:220px}
+.sidebar-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px;padding-left:10px}
+.pni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-md);cursor:pointer;transition:all .15s;margin-bottom:2px;border:1px solid transparent}
+.pni:hover{background:var(--surface-2)}
+.pni.active{background:var(--accent-dim);border-color:rgba(26,79,255,0.15)}
+.pni-dot{width:8px;height:8px;border-radius:50%;background:var(--surface-3);border:1.5px solid var(--ink-faint);flex-shrink:0}
+.pni.active .pni-dot{background:var(--accent);border-color:var(--accent)}
+.pni-text{font-size:12px;color:var(--ink-mid);line-height:1.3}
+.pni.active .pni-text{color:var(--accent);font-weight:500}
+.pni-count{margin-left:auto;font-size:10px;color:var(--ink-faint)}
+.pni.active .pni-count{color:rgba(26,79,255,0.6)}
+.sidebar-divider{height:1px;background:var(--surface-3);margin:12px 0}
+.reset-btn{width:100%;font-size:12px;color:var(--ink-soft);background:none;border:1px solid var(--surface-3);border-radius:var(--r-md);padding:7px 10px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.reset-btn:hover{border-color:var(--ink-faint);color:var(--ink-mid)}
+
+/* PHASE + CARDS */
+.phase-header{margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--surface-3)}
+.phase-number{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+.phase-title{font-family:'DM Serif Display',serif;font-size:26px;letter-spacing:-0.5px;color:var(--ink);margin-bottom:7px}
+.phase-desc{font-size:13px;color:var(--ink-mid);line-height:1.65}
+.qcard{background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--r-xl);margin-bottom:12px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.qcard:hover{border-color:var(--ink-faint);box-shadow:0 2px 12px rgba(0,0,0,0.04)}
+.qcard.scored-3{border-left:3px solid var(--red);border-radius:0 var(--r-xl) var(--r-xl) 0}
+.qcard.scored-2{border-left:3px solid #d48c00;border-radius:0 var(--r-xl) var(--r-xl) 0}
+.qcard.scored-1{border-left:3px solid var(--green);border-radius:0 var(--r-xl) var(--r-xl) 0}
+.qcard.scored-0{border-left:3px solid var(--ink-faint);border-radius:0 var(--r-xl) var(--r-xl) 0}
+.qcard-head{display:flex;align-items:center;gap:11px;padding:15px 18px;cursor:pointer;user-select:none}
+.qn-badge{width:27px;height:27px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--ink-soft);flex-shrink:0}
+.qtitle-text{font-size:14px;font-weight:500;color:var(--ink);flex:1}
+.qscore-tag{font-size:11px;font-weight:500;padding:3px 9px;border-radius:100px;flex-shrink:0}
+.qt-none{background:var(--surface-2);color:var(--ink-soft)}
+.qt-0{background:var(--gray-bg);color:#444;border:1px solid var(--gray-border)}
+.qt-1{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.qt-2{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.qt-3{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.chevron-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);flex-shrink:0;transition:transform .2s}
+.chevron-btn svg{width:13px;height:13px}
+.qcard.collapsed .chevron-btn{transform:rotate(-90deg)}
+.qcard.collapsed .qcard-body{display:none}
+.qcard-body{padding:0 18px 18px}
+.tone-toggle{display:flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px;gap:3px;margin-bottom:14px;width:fit-content}
+.tone-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:8px;border:1px solid transparent;background:transparent;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;color:var(--ink-soft)}
+.tone-btn:hover:not(.active-existing):not(.active-prospect){background:var(--surface-3)}
+.tone-btn.active-existing{background:var(--teal-bg);color:var(--teal-text);border-color:var(--teal-border)}
+.tone-btn.active-prospect{background:var(--purple-bg);color:var(--purple-text);border-color:var(--purple-border)}
+.tone-panel{display:none}
+.tone-panel.visible{display:block}
+.ask-wrapper{margin-bottom:14px}
+.ask-voice-label{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;padding:3px 9px;border-radius:100px}
+.ask-voice-label.existing{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-border)}
+.ask-voice-label.prospect{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.ask-dot{width:5px;height:5px;border-radius:50%}
+.ask-voice-label.existing .ask-dot{background:var(--teal)}
+.ask-voice-label.prospect .ask-dot{background:var(--purple)}
+.ask-block{border-radius:0 var(--r-md) var(--r-md) 0;padding:12px 14px;font-size:14px;font-style:italic;color:var(--ink-mid);line-height:1.65}
+.ask-block.existing{background:var(--teal-bg);border-left:3px solid var(--teal)}
+.ask-block.prospect{background:var(--purple-bg);border-left:3px solid var(--purple)}
+.section-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+.signals-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.sig-box{border-radius:var(--r-lg);padding:12px 14px}
+.sig-box.pain{background:var(--red-bg);border:1px solid var(--red-border)}
+.sig-box.nopain{background:var(--green-bg);border:1px solid var(--green-border)}
+.sig-head{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.sig-box.pain .sig-head{color:var(--red)}
+.sig-box.nopain .sig-head{color:var(--green)}
+.sig-dot-icon{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sig-box.pain .sig-dot-icon{background:var(--red)}
+.sig-box.nopain .sig-dot-icon{background:var(--green)}
+.sig-list{list-style:none}
+.sig-list li{font-size:12px;line-height:1.5;padding:3px 0;display:flex;gap:6px;align-items:flex-start}
+.sig-box.pain .sig-list li{color:var(--red-text)}
+.sig-box.nopain .sig-list li{color:var(--green-text)}
+.sig-bullet{width:4px;height:4px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.sig-box.pain .sig-bullet{background:var(--red-border)}
+.sig-box.nopain .sig-bullet{background:var(--green-border)}
+.probe-block{background:var(--surface-2);border-radius:var(--r-lg);padding:11px 14px;margin-bottom:15px}
+.probe-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px}
+.probe-text{font-size:13px;color:var(--ink-mid);line-height:1.6}
+.notes-field{width:100%;border:1px solid var(--surface-3);border-radius:var(--r-md);padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);outline:none;resize:vertical;min-height:60px;transition:border .15s;background:var(--surface);margin-bottom:12px}
+.notes-field:focus{border-color:var(--accent)}
+.notes-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+.score-block{border-top:1px solid var(--surface-3);padding-top:14px}
+.score-instruct{font-size:13px;color:var(--ink-mid);margin-bottom:10px}
+.score-instruct strong{color:var(--ink);font-weight:500}
+.score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sbtn{border-radius:var(--r-md);border:1.5px solid var(--surface-3);background:var(--surface);padding:10px 6px;cursor:pointer;transition:all .15s;text-align:center;font-family:'DM Sans',sans-serif}
+.sbtn:hover{border-color:var(--ink-faint);background:var(--surface-2)}
+.sbtn-num{font-family:'DM Serif Display',serif;font-size:20px;display:block;line-height:1;margin-bottom:4px}
+.sbtn-title{font-size:11px;font-weight:500;display:block;margin-bottom:1px}
+.sbtn-sub{font-size:10px;display:block;line-height:1.3}
+.sbtn.s0{border-color:var(--gray-border);background:var(--gray-bg)}.sbtn.s0 .sbtn-num{color:#555}.sbtn.s0 .sbtn-title{color:#444}.sbtn.s0 .sbtn-sub{color:#888}
+.sbtn.s1{border-color:var(--green-border);background:var(--green-bg)}.sbtn.s1 .sbtn-num{color:var(--green)}.sbtn.s1 .sbtn-title{color:#1e6e3c}.sbtn.s1 .sbtn-sub{color:#3a8057}
+.sbtn.s2{border-color:var(--amber-border);background:var(--amber-bg)}.sbtn.s2 .sbtn-num{color:var(--amber)}.sbtn.s2 .sbtn-title{color:#a05200}.sbtn.s2 .sbtn-sub{color:#c06800}
+.sbtn.s3{border-color:var(--red-border);background:var(--red-bg)}.sbtn.s3 .sbtn-num{color:var(--red)}.sbtn.s3 .sbtn-title{color:#a02020}.sbtn.s3 .sbtn-sub{color:#c03030}
+.sbtn.inactive{opacity:.4}
+.sbtn.active{opacity:1!important}
+.sbtn.s0.active{box-shadow:0 0 0 2px #888}
+.sbtn.s1.active{box-shadow:0 0 0 2px var(--green)}
+.sbtn.s2.active{box-shadow:0 0 0 2px var(--amber)}
+.sbtn.s3.active{box-shadow:0 0 0 2px var(--red)}
+
+/* ── SUMMARY PAGE ── */
+.summary-wrap{max-width:1000px;margin:0 auto;padding:40px 2rem 80px}
+.summary-section{margin-bottom:48px}
+.summary-section-title{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:-0.4px;margin-bottom:4px}
+.summary-section-sub{font-size:13px;color:var(--ink-mid);margin-bottom:20px}
+.matrix-table{width:100%;border-collapse:collapse;font-size:12px}
+.matrix-table th{text-align:left;padding:8px 12px;font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--surface-3);white-space:nowrap}
+.matrix-table td{padding:10px 12px;border-bottom:1px solid var(--surface-3);vertical-align:middle}
+.matrix-table tr:last-child td{border-bottom:none}
+.matrix-table tr:hover td{background:var(--surface-2)}
+.mt-name{font-weight:500;color:var(--ink)}
+.mt-company{color:var(--ink-soft);font-size:11px}
+.mt-score-cell{text-align:center}
+.mt-score-pill{display:inline-block;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:500;line-height:28px;text-align:center}
+.mt-score-0{background:var(--gray-bg);color:#555;border:1px solid var(--gray-border)}
+.mt-score-1{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.mt-score-2{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.mt-score-3{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.mt-score-na{background:var(--surface-2);color:var(--ink-faint)}
+.mt-total{font-weight:500;color:var(--ink)}
+.mt-qual{font-size:11px;font-weight:500;padding:3px 8px;border-radius:100px}
+.qual-hot{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.qual-warm{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.qual-cold{background:var(--accent-dim);color:var(--accent-text);border:1px solid rgba(26,79,255,0.2)}
+.qual-none{background:var(--surface-2);color:var(--ink-faint)}
+.mt-action-btns{display:flex;gap:4px}
+.mt-action-btn{font-size:11px;padding:4px 9px;border-radius:var(--r-sm);border:1px solid var(--surface-3);background:var(--surface);color:var(--ink-mid);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.mt-action-btn:hover{border-color:var(--ink-faint);color:var(--ink)}
+.mt-action-btn.del:hover{border-color:var(--red-border);background:var(--red-bg);color:var(--red)}
+.heat-grid{display:grid;gap:6px}
+.hg-row{display:flex;align-items:center;gap:8px}
+.hg-label{font-size:12px;color:var(--ink-mid);width:180px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hg-bars{display:flex;gap:4px;flex:1}
+.hg-bar-wrap{flex:1;height:28px;background:var(--surface-2);border-radius:var(--r-sm);overflow:hidden;position:relative}
+.hg-bar{height:100%;border-radius:var(--r-sm);transition:width .4s}
+.hg-bar-val{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:500}
+.hg-avg{font-size:12px;font-weight:500;width:36px;text-align:right}
+.hg-legend{display:flex;gap:16px;margin-bottom:12px}
+.hg-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-soft)}
+.hg-legend-dot{width:8px;height:8px;border-radius:2px}
+
+/* AI INSIGHTS */
+.ai-panel{background:var(--ink);border-radius:var(--r-xl);padding:24px 28px;margin-bottom:20px}
+.ai-panel-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.ai-icon{width:32px;height:32px;border-radius:var(--r-md);background:rgba(26,79,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-icon svg{width:16px;height:16px;color:#88aaff}
+.ai-panel-title{font-size:15px;font-weight:500;color:#fff}
+.ai-panel-sub{font-size:12px;color:rgba(255,255,255,0.4)}
+.ai-run-btn{margin-left:auto;font-size:12px;font-weight:500;padding:7px 16px;border-radius:var(--r-md);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.ai-run-btn:hover{background:#1340dd}
+.ai-run-btn:disabled{opacity:.5;cursor:not-allowed}
+.ai-output{font-size:13px;color:rgba(255,255,255,0.75);line-height:1.75;white-space:pre-wrap}
+.ai-output.empty{color:rgba(255,255,255,0.3);font-style:italic}
+.ai-loading{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.5);font-size:13px}
+.ai-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.15);border-top-color:rgba(255,255,255,0.6);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;font-size:13px;padding:12px 18px;border-radius:var(--r-lg);z-index:999;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* EXPORT / IMPORT */
+.data-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn-icon{font-size:12px;font-weight:500;padding:7px 14px;border-radius:var(--r-md);border:1px solid var(--surface-3);background:var(--surface);color:var(--ink-mid);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-icon:hover{border-color:var(--ink-faint);color:var(--ink);background:var(--surface-2)}
+.btn-icon svg{width:13px;height:13px;flex-shrink:0}
+.btn-icon.export{border-color:var(--green-border);color:var(--green);background:var(--green-bg)}
+.btn-icon.export:hover{background:#d8f0e4}
+.btn-icon.import{border-color:var(--accent);color:var(--accent-text);background:var(--accent-dim)}
+.btn-icon.import:hover{background:#d8e4ff}
+.import-modal-body{background:var(--surface-2);border-radius:var(--r-lg);padding:16px;margin-bottom:16px}
+.import-drop-zone{border:2px dashed var(--gray-border);border-radius:var(--r-lg);padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface)}
+.import-drop-zone:hover,.import-drop-zone.drag-over{border-color:var(--accent);background:var(--accent-dim)}
+.import-drop-zone svg{width:28px;height:28px;color:var(--ink-faint);margin-bottom:10px}
+.import-drop-zone p{font-size:13px;color:var(--ink-soft);line-height:1.5}
+.import-drop-zone strong{color:var(--ink-mid)}
+.import-file-name{font-size:12px;color:var(--green);margin-top:8px;font-weight:500}
+.import-option{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--r-md);border:1px solid var(--surface-3);cursor:pointer;margin-bottom:8px;transition:border .15s}
+.import-option:hover{border-color:var(--ink-faint)}
+.import-option input[type=radio]{margin-top:3px;flex-shrink:0;accent-color:var(--accent)}
+.import-option-text strong{font-size:13px;font-weight:500;color:var(--ink);display:block;margin-bottom:2px}
+.import-option-text span{font-size:12px;color:var(--ink-soft);line-height:1.4}
+.import-preview{margin-top:12px;padding:10px 12px;background:var(--surface);border-radius:var(--r-md);border:1px solid var(--surface-3);font-size:12px;color:var(--ink-mid)}
+.import-preview strong{color:var(--ink)}
+.export-section{background:var(--surface-2);border-radius:var(--r-lg);padding:16px;margin-bottom:12px}
+.export-section-label{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+.export-option-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ADMIN */
+.admin-badge{font-size:10px;font-weight:500;padding:3px 8px;border-radius:100px;background:#1a0a3d;color:#c4b3f5;border:1px solid #5a35b8;letter-spacing:.04em}
+.hnav-btn.admin-nav{color:var(--purple-text)}
+.hnav-btn.admin-nav.active{background:var(--purple-bg);color:var(--purple-text);border-color:var(--purple-border)}
+.admin-wrap{max-width:860px;margin:0 auto;padding:40px 2rem 80px}
+.admin-hero{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--surface-3);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.admin-hero-text h2{font-family:'DM Serif Display',serif;font-size:28px;letter-spacing:-0.6px;margin-bottom:6px}
+.admin-hero-text p{font-size:13px;color:var(--ink-mid);line-height:1.6;max-width:500px}
+.admin-logout-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:var(--r-md);border:1px solid var(--purple-border);background:var(--purple-bg);color:var(--purple-text);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.admin-logout-btn:hover{background:#e0d8ff}
+.admin-section{margin-bottom:36px}
+.admin-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.admin-section-title{font-size:14px;font-weight:500;color:var(--ink)}
+.admin-section-sub{font-size:12px;color:var(--ink-soft);margin-top:2px}
+.custom-questions-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.cq-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--r-lg);padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.cq-card.pending{border-color:var(--amber-border);background:var(--amber-bg)}
+.cq-card.approved{border-color:var(--green-border);background:var(--green-bg)}
+.cq-num{font-size:11px;font-weight:500;background:var(--surface-2);color:var(--ink-soft);padding:2px 7px;border-radius:var(--r-sm);flex-shrink:0;margin-top:1px}
+.cq-body{flex:1;min-width:0}
+.cq-phase-tag{font-size:10px;font-weight:500;color:var(--ink-soft);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.cq-title{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:4px}
+.cq-text{font-size:12px;color:var(--ink-mid);line-height:1.55;margin-bottom:6px}
+.cq-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cq-status{font-size:10px;font-weight:500;padding:2px 8px;border-radius:100px}
+.cq-status.pending{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.cq-status.approved{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.cq-status.draft{background:var(--surface-2);color:var(--ink-soft);border:1px solid var(--gray-border)}
+.cq-date{font-size:11px;color:var(--ink-faint)}
+.cq-actions{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.cq-action-btn{font-size:11px;padding:4px 10px;border-radius:var(--r-sm);border:1px solid var(--surface-3);background:var(--surface);color:var(--ink-mid);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.cq-action-btn:hover{border-color:var(--ink-faint);color:var(--ink)}
+.cq-action-btn.approve{border-color:var(--green-border);color:var(--green)}
+.cq-action-btn.approve:hover{background:var(--green-bg)}
+.cq-action-btn.del{border-color:var(--red-border);color:var(--red)}
+.cq-action-btn.del:hover{background:var(--red-bg)}
+.admin-prompt-area{background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--r-xl);overflow:hidden}
+.prompt-header{background:var(--ink);padding:14px 18px;display:flex;align-items:center;gap:10px}
+.prompt-header-icon{width:28px;height:28px;background:rgba(26,79,255,0.3);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prompt-header-icon svg{width:14px;height:14px;color:#88aaff}
+.prompt-header-text{font-size:13px;font-weight:500;color:#fff}
+.prompt-header-sub{font-size:11px;color:rgba(255,255,255,0.4)}
+.prompt-body{padding:16px}
+.prompt-hint{font-size:12px;color:var(--ink-soft);line-height:1.6;margin-bottom:12px;padding:10px 12px;background:var(--surface-2);border-radius:var(--r-md)}
+.prompt-hint strong{color:var(--ink-mid)}
+.admin-textarea{width:100%;min-height:120px;border:1px solid var(--surface-3);border-radius:var(--r-lg);padding:12px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);outline:none;resize:vertical;transition:border .15s;background:var(--surface);line-height:1.6}
+.admin-textarea:focus{border-color:var(--accent)}
+.prompt-actions{display:flex;gap:8px;margin-top:10px;align-items:center}
+.prompt-generate-btn{font-size:12px;font-weight:500;padding:8px 18px;border-radius:var(--r-md);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.prompt-generate-btn:hover{background:#1340dd}
+.prompt-generate-btn:disabled{opacity:.5;cursor:not-allowed}
+.prompt-clear-btn{font-size:12px;color:var(--ink-soft);background:none;border:1px solid var(--surface-3);border-radius:var(--r-md);padding:8px 14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.prompt-clear-btn:hover{border-color:var(--ink-faint);color:var(--ink)}
+.ai-gen-status{font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:6px}
+.ai-gen-spinner{width:12px;height:12px;border:1.5px solid var(--ink-faint);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.gen-preview{margin-top:14px;border:1px solid var(--accent);border-radius:var(--r-lg);overflow:hidden}
+.gen-preview-header{background:var(--accent-dim);padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+.gen-preview-title{font-size:12px;font-weight:500;color:var(--accent-text)}
+.gen-preview-body{padding:14px;font-size:13px;color:var(--ink);line-height:1.6}
+.gen-preview-actions{display:flex;gap:8px;padding:0 14px 14px}
+.empty-admin{text-align:center;padding:32px 20px;color:var(--ink-soft);font-size:13px}
+/* Question editor */
+.eq-list{display:flex;flex-direction:column;gap:0}
+.eq-phase-group{margin-bottom:20px}
+.eq-phase-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);padding:6px 0 8px;border-bottom:1px solid var(--surface-3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.eq-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-lg);border:1px solid var(--surface-3);margin-bottom:6px;background:var(--surface);transition:border .15s}
+.eq-row:hover{border-color:var(--ink-faint)}
+.eq-row.disabled-q{opacity:.45;background:var(--surface-2)}
+.eq-num{font-size:11px;font-weight:500;background:var(--surface-2);color:var(--ink-soft);padding:2px 7px;border-radius:var(--r-sm);flex-shrink:0;min-width:28px;text-align:center}
+.eq-title{font-size:13px;font-weight:500;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eq-subtitle{font-size:11px;color:var(--ink-soft);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eq-row-actions{display:flex;gap:5px;flex-shrink:0}
+.eq-btn{font-size:11px;padding:4px 9px;border-radius:var(--r-sm);border:1px solid var(--surface-3);background:var(--surface);color:var(--ink-mid);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.eq-btn:hover{border-color:var(--ink-faint);color:var(--ink);background:var(--surface-2)}
+.eq-btn.edit{border-color:var(--accent);color:var(--accent-text)}
+.eq-btn.edit:hover{background:var(--accent-dim)}
+.eq-btn.disable{border-color:var(--amber-border);color:var(--amber)}
+.eq-btn.disable:hover{background:var(--amber-bg)}
+.eq-btn.enable{border-color:var(--green-border);color:var(--green)}
+.eq-btn.enable:hover{background:var(--green-bg)}
+.eq-btn.del-q{border-color:var(--red-border);color:var(--red)}
+.eq-btn.del-q:hover{background:var(--red-bg)}
+.disabled-badge{font-size:10px;font-weight:500;padding:2px 7px;border-radius:100px;background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);flex-shrink:0}
+/* Edit question modal */
+.eq-modal{background:var(--surface);border-radius:var(--r-xl);padding:0;width:100%;max-width:680px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,0.18)}
+.eq-modal-head{padding:20px 24px 16px;border-bottom:1px solid var(--surface-3);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0}
+.eq-modal-head h3{font-family:'DM Serif Display',serif;font-size:20px;letter-spacing:-0.4px}
+.eq-modal-head p{font-size:12px;color:var(--ink-soft);margin-top:2px}
+.eq-modal-close{width:28px;height:28px;border-radius:var(--r-sm);border:1px solid var(--surface-3);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink-soft);transition:all .15s}
+.eq-modal-close:hover{border-color:var(--ink-faint);color:var(--ink)}
+.eq-modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.eq-modal-foot{padding:14px 24px;border-top:1px solid var(--surface-3);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;background:var(--surface)}
+.eq-field{margin-bottom:14px}
+.eq-field-label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.eq-field-label .field-tone{font-size:10px;padding:1px 6px;border-radius:100px}
+.eq-field-label .field-tone.ex{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-border)}
+.eq-field-label .field-tone.pr{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.eq-input{width:100%;font-size:13px;padding:9px 11px;border:1px solid var(--surface-3);border-radius:var(--r-md);font-family:'DM Sans',sans-serif;color:var(--ink);outline:none;transition:border .15s;background:var(--surface)}
+.eq-input:focus{border-color:var(--accent)}
+.eq-textarea{width:100%;font-size:13px;padding:9px 11px;border:1px solid var(--surface-3);border-radius:var(--r-md);font-family:'DM Sans',sans-serif;color:var(--ink);outline:none;resize:vertical;transition:border .15s;background:var(--surface);line-height:1.55}
+.eq-textarea:focus{border-color:var(--accent)}
+.eq-signals-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.eq-ai-bar{display:flex;gap:8px;align-items:flex-start;background:var(--ink);border-radius:var(--r-lg);padding:12px 14px;margin-bottom:16px}
+.eq-ai-bar-icon{width:26px;height:26px;background:rgba(26,79,255,0.3);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.eq-ai-bar-icon svg{width:13px;height:13px;color:#88aaff}
+.eq-ai-bar-body{flex:1;min-width:0}
+.eq-ai-bar-label{font-size:12px;font-weight:500;color:#fff;margin-bottom:5px}
+.eq-ai-input{width:100%;font-size:12px;padding:7px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;color:#fff;background:rgba(255,255,255,0.08);outline:none;transition:border .15s}
+.eq-ai-input:focus{border-color:rgba(255,255,255,0.35)}
+.eq-ai-input::placeholder{color:rgba(255,255,255,0.3)}
+.eq-ai-actions{display:flex;gap:6px;margin-top:7px;align-items:center}
+.eq-ai-run{font-size:11px;font-weight:500;padding:5px 12px;border-radius:var(--r-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.eq-ai-run:hover{background:#1340dd}
+.eq-ai-run:disabled{opacity:.5;cursor:not-allowed}
+.eq-ai-spinner{width:11px;height:11px;border:1.5px solid rgba(255,255,255,0.2);border-top-color:rgba(255,255,255,0.7);border-radius:50%;animation:spin .7s linear infinite;display:none}
+.fields-section-divider{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);padding:10px 0 8px;border-bottom:1px solid var(--surface-3);margin-bottom:14px;margin-top:6px}
+/* Admin login modal */
+.admin-login-modal{background:var(--surface);border-radius:var(--r-xl);padding:32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.admin-login-modal .lock-icon{width:48px;height:48px;background:var(--purple-bg);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.admin-login-modal .lock-icon svg{width:22px;height:22px;color:var(--purple)}
+.admin-login-modal h3{text-align:center;font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:-0.4px;margin-bottom:6px}
+.admin-login-modal p{text-align:center;font-size:13px;color:var(--ink-mid);margin-bottom:24px;line-height:1.5}
+.login-error{font-size:12px;color:var(--red);text-align:center;margin-top:10px;min-height:18px}
+
+/* CUSTOM CONFIRM DIALOG */
+.confirm-overlay{position:fixed;inset:0;background:rgba(15,17,23,0.55);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}
+.confirm-overlay.hidden{display:none}
+.confirm-box{background:var(--surface);border-radius:var(--r-xl);padding:24px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.18)}
+.confirm-icon{width:40px;height:40px;border-radius:50%;background:var(--red-bg);border:1px solid var(--red-border);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.confirm-icon svg{width:18px;height:18px;color:var(--red)}
+.confirm-title{font-family:'DM Serif Display',serif;font-size:19px;text-align:center;letter-spacing:-0.3px;margin-bottom:6px}
+.confirm-msg{font-size:13px;color:var(--ink-mid);text-align:center;line-height:1.55;margin-bottom:20px}
+.confirm-actions{display:flex;gap:8px}
+.confirm-actions .btn-danger{flex:1;font-size:13px;font-weight:500;padding:9px 16px;border-radius:var(--r-md);border:none;background:var(--red);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.confirm-actions .btn-danger:hover{background:#a82020}
+.confirm-actions .btn-cancel{flex:1;font-size:13px;font-weight:500;padding:9px 16px;border-radius:var(--r-md);border:1px solid var(--surface-3);background:var(--surface);color:var(--ink-mid);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.confirm-actions .btn-cancel:hover{border-color:var(--ink-faint);color:var(--ink)}
+
+/* DELETED SESSIONS */
+.deleted-wrap{max-width:900px;margin:0 auto;padding:40px 2rem 80px}
+.deleted-hero{margin-bottom:24px}
+.deleted-hero h2{font-family:'DM Serif Display',serif;font-size:26px;letter-spacing:-0.6px;margin-bottom:6px}
+.deleted-hero p{font-size:13px;color:var(--ink-mid);line-height:1.6;max-width:520px}
+.deleted-notice{display:flex;align-items:center;gap:10px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:var(--r-lg);padding:10px 14px;margin-bottom:20px;font-size:13px;color:var(--amber-text);line-height:1.5}
+.deleted-notice svg{width:15px;height:15px;color:var(--amber);flex-shrink:0}
+.deleted-list{display:flex;flex-direction:column;gap:10px}
+.deleted-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--r-xl);padding:16px 18px;display:flex;align-items:center;gap:14px}
+.deleted-card:hover{border-color:var(--ink-faint)}
+.deleted-card-info{flex:1;min-width:0}
+.deleted-card-name{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:3px}
+.deleted-card-meta{font-size:12px;color:var(--ink-soft);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.deleted-card-actions{display:flex;gap:6px;flex-shrink:0}
+.days-left-pill{font-size:10px;font-weight:500;padding:2px 8px;border-radius:100px;background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.days-left-pill.urgent{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.empty-deleted{text-align:center;padding:48px 20px}
+.empty-deleted svg{width:36px;height:36px;color:var(--ink-faint);margin:0 auto 12px;display:block}
+.empty-deleted h3{font-size:16px;color:var(--ink-mid);margin-bottom:4px}
+.empty-deleted p{font-size:13px;color:var(--ink-soft)}
+
+/* ── TRANSCRIPT & TRACK SYSTEM ── */
+.track-bar{background:var(--surface-2);border-bottom:1px solid var(--surface-3);padding:10px 2rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:60px;z-index:89}
+.track-bar-inner{max-width:900px;margin:0 auto;width:100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.track-label{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);flex-shrink:0}
+.track-btns{display:flex;gap:5px}
+.track-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:var(--r-md);border:1px solid var(--surface-3);background:var(--surface);color:var(--ink-soft);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:5px}
+.track-btn:hover{border-color:var(--ink-faint);color:var(--ink)}
+.track-btn.active-manual{background:var(--teal-bg);color:var(--teal-text);border-color:var(--teal-border)}
+.track-btn.active-auto{background:var(--purple-bg);color:var(--purple-text);border-color:var(--purple-border)}
+.track-btn.active-both{background:var(--accent-dim);color:var(--accent-text);border-color:rgba(26,79,255,0.25)}
+.track-btn-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7}
+.transcript-btn{font-size:12px;font-weight:500;padding:6px 12px;border-radius:var(--r-md);border:1px solid var(--surface-3);background:var(--surface);color:var(--ink-mid);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:5px;margin-left:auto}
+.transcript-btn:hover{border-color:var(--ink-faint);color:var(--ink)}
+.transcript-btn.has-transcript{border-color:var(--purple-border);color:var(--purple);background:var(--purple-bg)}
+.transcript-btn svg{width:13px;height:13px;flex-shrink:0}
+.track-source-pill{font-size:10px;font-weight:500;padding:2px 8px;border-radius:100px;flex-shrink:0}
+.tsp-manual{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-border)}
+.tsp-auto{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.tsp-both{background:var(--accent-dim);color:var(--accent-text);border:1px solid rgba(26,79,255,0.25)}
+/* Transcript modal */
+.transcript-modal{background:var(--surface);border-radius:var(--r-xl);width:100%;max-width:700px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,0.18)}
+.tm-head{padding:20px 24px 16px;border-bottom:1px solid var(--surface-3);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0}
+.tm-head-text h3{font-family:'DM Serif Display',serif;font-size:20px;letter-spacing:-0.4px;margin-bottom:3px}
+.tm-head-text p{font-size:12px;color:var(--ink-soft);line-height:1.5}
+.tm-close{width:28px;height:28px;border-radius:var(--r-sm);border:1px solid var(--surface-3);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink-soft);transition:all .15s}
+.tm-close:hover{border-color:var(--ink-faint);color:var(--ink)}
+.tm-body{padding:20px 24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.tm-textarea{width:100%;min-height:220px;border:1px solid var(--surface-3);border-radius:var(--r-lg);padding:12px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);outline:none;resize:vertical;transition:border .15s;background:var(--surface);line-height:1.65}
+.tm-textarea:focus{border-color:var(--accent)}
+.tm-upload-zone{border:1.5px dashed var(--gray-border);border-radius:var(--r-lg);padding:16px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;background:var(--surface);position:relative}
+.tm-upload-zone:hover{border-color:var(--accent);background:var(--accent-dim)}
+.tm-upload-zone.has-file{border-color:var(--green-border);background:var(--green-bg)}
+.tm-upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.tm-upload-icon{width:32px;height:32px;border-radius:var(--r-md);background:var(--surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.tm-upload-zone:hover .tm-upload-icon{background:var(--accent-dim)}
+.tm-upload-zone.has-file .tm-upload-icon{background:var(--green-bg)}
+.tm-upload-icon svg{width:15px;height:15px;color:var(--ink-soft)}
+.tm-upload-zone:hover .tm-upload-icon svg{color:var(--accent)}
+.tm-upload-zone.has-file .tm-upload-icon svg{color:var(--green)}
+.tm-upload-text{flex:1;min-width:0}
+.tm-upload-title{font-size:13px;font-weight:500;color:var(--ink-mid);margin-bottom:2px}
+.tm-upload-zone:hover .tm-upload-title{color:var(--accent-text)}
+.tm-upload-zone.has-file .tm-upload-title{color:var(--green-text)}
+.tm-upload-sub{font-size:11px;color:var(--ink-faint)}
+.tm-divider{display:flex;align-items:center;gap:10px;color:var(--ink-faint);font-size:11px}
+.tm-divider::before,.tm-divider::after{content:'';flex:1;height:1px;background:var(--surface-3)}
+.track-btn.locked{opacity:.45;cursor:not-allowed}
+.track-locked-msg{font-size:11px;color:var(--amber);display:flex;align-items:center;gap:5px;margin-left:4px}
+.track-locked-msg svg{width:12px;height:12px;flex-shrink:0}
+.tm-hint{font-size:12px;color:var(--ink-soft);line-height:1.6;background:var(--surface-2);border-radius:var(--r-md);padding:10px 12px}
+.tm-hint strong{color:var(--ink-mid)}
+.tm-analyse-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tm-analyse-btn{font-size:13px;font-weight:500;padding:9px 20px;border-radius:var(--r-md);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:7px}
+.tm-analyse-btn:hover{background:#1340dd}
+.tm-analyse-btn:disabled{opacity:.5;cursor:not-allowed}
+.tm-analyse-btn svg{width:14px;height:14px}
+.tm-spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.tm-status{font-size:12px;color:var(--ink-soft)}
+.tm-status.running{color:var(--accent)}
+.tm-foot{padding:14px 24px;border-top:1px solid var(--surface-3);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+/* Auto-track results per card */
+.auto-result-block{background:var(--purple-bg);border:1px solid var(--purple-border);border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px}
+.auto-result-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.auto-result-label{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--purple)}
+.auto-result-score{display:flex;gap:4px}
+.auto-score-dot{width:8px;height:8px;border-radius:50%;background:var(--purple-border)}
+.auto-score-dot.filled{background:var(--purple)}
+.auto-result-quote{font-size:12px;color:var(--purple-text);font-style:italic;line-height:1.6;margin-bottom:6px;border-left:2px solid var(--purple-border);padding-left:8px}
+.auto-result-reasoning{font-size:11px;color:var(--ink-soft);line-height:1.5}
+/* Track comparison in cards */
+.track-compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.track-compare-col{border-radius:var(--r-md);padding:10px 12px}
+.track-compare-col.manual-col{background:var(--teal-bg);border:1px solid var(--teal-border)}
+.track-compare-col.auto-col{background:var(--purple-bg);border:1px solid var(--purple-border)}
+.tcc-label{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.manual-col .tcc-label{color:var(--teal)}
+.auto-col .tcc-label{color:var(--purple)}
+.tcc-score{font-size:18px;font-weight:500;margin-bottom:3px}
+.manual-col .tcc-score{color:var(--teal-text)}
+.auto-col .tcc-score{color:var(--purple-text)}
+.tcc-text{font-size:11px;line-height:1.5}
+.manual-col .tcc-text{color:var(--teal-text)}
+.auto-col .tcc-text{color:var(--purple-text)}
+.use-this-btn{font-size:11px;font-weight:500;padding:4px 9px;border-radius:var(--r-sm);border:1px solid;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;margin-top:6px;background:transparent;width:100%}
+.manual-col .use-this-btn{border-color:var(--teal-border);color:var(--teal-text)}
+.manual-col .use-this-btn:hover{background:rgba(11,110,110,0.1)}
+.manual-col .use-this-btn.active-source{background:var(--teal);color:#fff;border-color:var(--teal)}
+.auto-col .use-this-btn{border-color:var(--purple-border);color:var(--purple-text)}
+.auto-col .use-this-btn:hover{background:rgba(90,53,184,0.1)}
+.auto-col .use-this-btn.active-source{background:var(--purple);color:#fff;border-color:var(--purple)}
+@media(max-width:700px){
+  .track-bar{padding:8px 1rem;top:60px}
+  .track-bar-inner{gap:6px}
+  .track-label{display:none}
+  .transcript-btn{margin-left:0}
+  .eq-signals-grid{grid-template-columns:1fr}
+  .track-compare{grid-template-columns:1fr}
+  .main{grid-template-columns:1fr;gap:16px;padding:0 1rem 60px;margin-top:20px}
+  .sidebar{position:static;display:flex;gap:5px;flex-wrap:wrap}
+  .sidebar-label,.sidebar-divider,.reset-btn{display:none}
+  .score-inner{grid-template-columns:1fr 1fr}
+  .verdict-card{display:none}
+  .signals-row{grid-template-columns:1fr}
+  .score-grid{grid-template-columns:repeat(2,1fr)}
+  .score-section{padding:14px 1rem;top:100px}
+  .summary-wrap{padding:24px 1rem 60px}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">Novidea<span>.</span>Playbook</div>
+  <div class="header-nav">
+    <button class="hnav-btn active" id="nav-sessions" onclick="showPage('sessions')">Sessions</button>
+    <button class="hnav-btn" id="nav-summary" onclick="showPage('summary')">Summary & insights</button>
+    <button class="hnav-btn" id="nav-deleted" onclick="showPage('deleted')">Deleted <span id="deleted-count-badge" style="display:none;font-size:10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);padding:1px 6px;border-radius:100px;margin-left:3px"></span></button>
+    <button class="hnav-btn admin-nav" id="nav-admin" onclick="handleAdminNav()">Admin</button>
+  </div>
+  <div class="header-actions">
+    <button class="btn-icon export" onclick="openExportModal()" title="Export all sessions">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v7M4 6l3 3 3-3M2 10v1.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Export
+    </button>
+    <button class="btn-icon import" onclick="openImportModal()" title="Import sessions">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M7 10V3M4 6l3-3 3 3M2 10v1.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Import
+    </button>
+    <button class="btn-primary" onclick="openNewSessionModal()">+ New session</button>
+  </div>
+</header>
+
+<!-- SESSIONS PAGE -->
+<div class="page active" id="page-sessions">
+  <div class="sessions-wrap">
+    <div class="sessions-hero">
+      <h2>Novidea MGA Discovery Playbook</h2>
+      <p>Each session captures a full discovery conversation. Score answers in real time, save the session, and review patterns across all interviews in the summary.</p>
+    </div>
+    <div class="sessions-grid" id="sessions-grid"></div>
+  </div>
+</div>
+
+<!-- PLAYBOOK PAGE -->
+<div class="page" id="page-playbook">
+  <div class="playbook-header" id="playbook-header">
+    <button class="ph-back" onclick="showPage('sessions')">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      All sessions
+    </button>
+    <div class="ph-divider"></div>
+    <div>
+      <div class="ph-name" id="ph-name">—</div>
+      <div class="ph-company" id="ph-company">—</div>
+    </div>
+    <span class="ph-type" id="ph-type"></span>
+    <button class="ph-save-btn" id="ph-save-btn" onclick="saveCurrentSession()">Save session</button>
+  </div>
+  <!-- TRACK BAR -->
+  <div class="track-bar">
+    <div class="track-bar-inner">
+      <span class="track-label">Track</span>
+      <div class="track-btns">
+        <button class="track-btn active-manual" id="track-manual-btn" onclick="trySetTrack('manual')">
+          <span class="track-btn-dot"></span>Manual
+        </button>
+        <button class="track-btn" id="track-auto-btn" onclick="trySetTrack('auto')">
+          <span class="track-btn-dot"></span>Automatic (AI)
+        </button>
+        <button class="track-btn" id="track-both-btn" onclick="trySetTrack('both')">
+          <span class="track-btn-dot"></span>Both
+        </button>
+      </div>
+      <span id="track-lock-msg" style="display:none" class="track-locked-msg">
+        <svg viewBox="0 0 12 12" fill="none"><rect x="2" y="5.5" width="8" height="5.5" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M4 5.5V4a2 2 0 014 0v1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Track locked — clear input to switch
+      </span>
+      <button class="transcript-btn" id="transcript-btn" onclick="openTranscriptModal()" style="display:none">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 5h6M4 7.5h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span id="transcript-btn-label">Add transcript</span>
+      </button>
+    </div>
+  </div>
+  <div class="score-section">
+    <div class="score-inner">
+      <div class="scard"><div class="scard-label">Pain score</div><div class="scard-val" id="sc-total" style="color:#9aa0b8">—</div></div>
+      <div class="scard"><div class="scard-label">Critical signals</div><div class="scard-val red" id="sc-hot">0</div></div>
+      <div class="scard"><div class="scard-label">Answered</div><div class="scard-val amber" id="sc-answered">0 / 14</div></div>
+      <div class="scard"><div class="scard-label">Qualification</div><div class="scard-val" id="sc-qual" style="color:#9aa0b8;font-size:14px">Not started</div></div>
+      <div class="verdict-card">
+        <div class="verdict-icon" id="v-icon"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/><path d="M7 4.5v3" stroke="rgba(255,255,255,0.35)" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="10" r=".6" fill="rgba(255,255,255,0.35)"/></svg></div>
+        <div>
+          <div class="verdict-text-title" id="v-title">Score each reply to qualify</div>
+          <div class="verdict-text-sub" id="v-sub">Rate how real each pain point is based on what they say</div>
+        </div>
+        <span class="verdict-badge vb-pending" id="v-badge">Pending</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="main">
+    <aside class="sidebar">
+      <div class="sidebar-label">Phases</div>
+      <div id="sidebar-nav"></div>
+      <div class="sidebar-divider"></div>
+      <button class="reset-btn" onclick="resetCurrentSession()">Reset scores</button>
+    </aside>
+    <div id="phase-content"></div>
+  </div>
+</div>
+
+<!-- SUMMARY PAGE -->
+<div class="page" id="page-summary">
+  <div class="summary-wrap">
+    <div class="summary-section">
+      <div class="summary-section-title">All sessions</div>
+      <div class="summary-section-sub">Full matrix of scores across every interview. Click a row to review or edit that session.</div>
+      <div id="summary-table-wrap"></div>
+    </div>
+    <div class="summary-section">
+      <div class="summary-section-title">Pain heat map</div>
+      <div class="summary-section-sub">Average pain score per question across all completed sessions. Darker = more acute.</div>
+      <div id="heatmap-wrap"></div>
+    </div>
+    <div class="summary-section">
+      <div class="ai-panel">
+        <div class="ai-panel-header">
+          <div class="ai-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2a6 6 0 100 12A6 6 0 008 2z" stroke="#88aaff" stroke-width="1.2"/><path d="M8 5v4l2.5 1.5" stroke="#88aaff" stroke-width="1.2" stroke-linecap="round"/></svg></div>
+          <div>
+            <div class="ai-panel-title">AI insights</div>
+            <div class="ai-panel-sub">Patterns, priorities, and recommendations across all sessions</div>
+          </div>
+          <button class="ai-run-btn" id="ai-run-btn" onclick="runAIAnalysis()">Run analysis</button>
+        </div>
+        <div id="ai-output" class="ai-output empty">Run the analysis to generate strategic insights from your interview data.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW SESSION MODAL -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <h3 id="modal-title">New interview session</h3>
+    <p id="modal-desc">Name this session before you start. You can save and return to it at any time.</p>
+    <div class="modal-field">
+      <label class="modal-label">Interviewee name</label>
+      <input class="modal-input" id="modal-name" placeholder="e.g. Sarah Johnson" type="text">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Company / MGA</label>
+      <input class="modal-input" id="modal-company" placeholder="e.g. Vertex Specialty" type="text">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Relationship type</label>
+      <select class="modal-select" id="modal-type">
+        <option value="existing">Existing partner — consultative</option>
+        <option value="prospect">New prospect — insight-led</option>
+        <option value="mixed">Mixed / TBD</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="hideModal()">Cancel</button>
+      <button class="btn-primary" id="modal-confirm-btn" onclick="confirmModal()">Start session</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div class="page" id="page-admin">
+  <div class="admin-wrap">
+    <div class="admin-hero">
+      <div class="admin-hero-text">
+        <h2>Admin — playbook editor</h2>
+        <p>Use the AI prompt below to draft new questions or phases. Review generated suggestions, approve what you like, and they'll be saved as pending additions ready to ship in the next update.</p>
+      </div>
+      <button class="admin-logout-btn" onclick="adminLogout()">Sign out</button>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-prompt-area">
+        <div class="prompt-header">
+          <div class="prompt-header-icon"><svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="#88aaff" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="#88aaff" stroke-width="1.2" stroke-linecap="round"/></svg></div>
+          <div>
+            <div class="prompt-header-text">AI question generator</div>
+            <div class="prompt-header-sub">Describe your idea — Claude will draft a structured question</div>
+          </div>
+        </div>
+        <div class="prompt-body">
+          <div class="prompt-hint">
+            <strong>How to use:</strong> Describe the friction point or topic you want to explore. Be specific about the phase (intake, appetite, back office, etc.) and what you're trying to uncover. Claude will generate a fully structured question with both tones of voice, pain signals, no-pain signals, and a follow-up probe.
+            <br><br>
+            <strong>Examples:</strong> "Add a question about broker portal adoption in Phase 1" · "Create a question exploring how MGAs handle reinsurance arrangements" · "Add a phase 5 about technology vendor switching costs"
+          </div>
+          <textarea class="admin-textarea" id="admin-prompt" placeholder="Describe the question or phase idea you want to add..."></textarea>
+          <div class="prompt-actions">
+            <button class="prompt-generate-btn" id="admin-gen-btn" onclick="generateQuestion()">Generate with AI</button>
+            <button class="prompt-clear-btn" onclick="clearAdminPrompt()">Clear</button>
+            <div class="ai-gen-status" id="admin-gen-status" style="display:none"><div class="ai-gen-spinner"></div>Generating...</div>
+          </div>
+          <div id="gen-preview-wrap" style="display:none">
+            <div class="gen-preview">
+              <div class="gen-preview-header">
+                <span class="gen-preview-title">Generated question — review before saving</span>
+              </div>
+              <div class="gen-preview-body" id="gen-preview-body"></div>
+              <div class="gen-preview-actions">
+                <button class="btn-primary" onclick="approveGenerated()">Save as draft</button>
+                <button class="btn-outline" onclick="document.getElementById('gen-preview-wrap').style.display='none'">Discard</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-header">
+        <div>
+          <div class="admin-section-title">Saved question drafts</div>
+          <div class="admin-section-sub">Questions you've generated and saved. Approved items will be included in the next playbook update.</div>
+        </div>
+        <button class="btn-outline" id="export-drafts-btn" onclick="exportDrafts()" style="display:none">Export drafts</button>
+      </div>
+      <div class="custom-questions-list" id="custom-questions-list"></div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-header">
+        <div>
+          <div class="admin-section-title">Manage existing questions</div>
+          <div class="admin-section-sub">Edit any current question using AI or manually. Disable questions to hide them from sessions without deleting. Changes apply immediately.</div>
+        </div>
+      </div>
+      <div id="eq-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT QUESTION MODAL -->
+<div class="modal-overlay hidden" id="eq-modal-overlay">
+  <div class="eq-modal">
+    <div class="eq-modal-head">
+      <div>
+        <h3 id="eq-modal-title">Edit question</h3>
+        <p id="eq-modal-subtitle"></p>
+      </div>
+      <button class="eq-modal-close" onclick="closeEqModal()"><svg viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="eq-modal-body">
+      <div class="eq-ai-bar">
+        <div class="eq-ai-bar-icon"><svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="#88aaff" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="#88aaff" stroke-width="1.2" stroke-linecap="round"/></svg></div>
+        <div class="eq-ai-bar-body">
+          <div class="eq-ai-bar-label">Ask AI to update this question</div>
+          <input class="eq-ai-input" id="eq-ai-prompt" placeholder="e.g. 'Make the prospect version more direct' or 'Add a signal about API integrations' or 'Rewrite for reinsurance MGAs'">
+          <div class="eq-ai-actions">
+            <button class="eq-ai-run" id="eq-ai-run-btn" onclick="runEqAI()">Apply with AI</button>
+            <div class="eq-ai-spinner" id="eq-ai-spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="eq-field">
+        <div class="eq-field-label">Question title (short label)</div>
+        <input class="eq-input" id="eq-f-title" placeholder="3–5 word title">
+      </div>
+
+      <div class="fields-section-divider">Question text</div>
+      <div class="eq-field">
+        <div class="eq-field-label">Ask this <span class="field-tone ex">Existing partner</span></div>
+        <textarea class="eq-textarea" id="eq-f-existing" rows="3" placeholder="Consultative tone question..."></textarea>
+      </div>
+      <div class="eq-field">
+        <div class="eq-field-label">Ask this <span class="field-tone pr">New prospect</span></div>
+        <textarea class="eq-textarea" id="eq-f-prospect" rows="3" placeholder="Insight-led tone question..."></textarea>
+      </div>
+
+      <div class="fields-section-divider">Follow-up probes</div>
+      <div class="eq-field">
+        <div class="eq-field-label">Follow-up probe <span class="field-tone ex">Existing partner</span></div>
+        <textarea class="eq-textarea" id="eq-f-probe-existing" rows="2" placeholder="Probe for when their answer is vague..."></textarea>
+      </div>
+      <div class="eq-field">
+        <div class="eq-field-label">Follow-up probe <span class="field-tone pr">New prospect</span></div>
+        <textarea class="eq-textarea" id="eq-f-probe-prospect" rows="2" placeholder="Probe for when their answer is vague..."></textarea>
+      </div>
+
+      <div class="fields-section-divider">Signals</div>
+      <div class="eq-signals-grid">
+        <div>
+          <div class="eq-field">
+            <div class="eq-field-label" style="color:var(--red)">Pain signals (one per line)</div>
+            <textarea class="eq-textarea" id="eq-f-pain" rows="5" placeholder="Signal 1&#10;Signal 2&#10;Signal 3&#10;Signal 4"></textarea>
+          </div>
+        </div>
+        <div>
+          <div class="eq-field">
+            <div class="eq-field-label" style="color:var(--green)">No-pain signals (one per line)</div>
+            <textarea class="eq-textarea" id="eq-f-nopain" rows="5" placeholder="Signal 1&#10;Signal 2&#10;Signal 3&#10;Signal 4"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="eq-modal-foot">
+      <button class="btn-outline" onclick="closeEqModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveEqChanges()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETED SESSIONS PAGE -->
+<div class="page" id="page-deleted">
+  <div class="deleted-wrap">
+    <div class="deleted-hero">
+      <h2>Deleted sessions</h2>
+      <p>Sessions deleted in the last 30 days. Restore any item to bring it back, or let it expire automatically.</p>
+    </div>
+    <div class="deleted-notice">
+      <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 4.5v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="10" r=".65" fill="currentColor"/></svg>
+      Deleted sessions are kept for 30 days, then permanently removed. Only admins can delete sessions.
+    </div>
+    <div class="deleted-list" id="deleted-list"></div>
+  </div>
+</div>
+
+<!-- CUSTOM CONFIRM DIALOG -->
+<div class="confirm-overlay hidden" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">
+      <svg viewBox="0 0 18 18" fill="none"><path d="M3 5h12M7 5V3.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V5M5 5l.75 9.5a.5.5 0 00.5.5h5.5a.5.5 0 00.5-.5L13 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="confirm-title" id="confirm-title">Delete session?</div>
+    <div class="confirm-msg" id="confirm-msg">This will move the session to the Deleted tab where it can be restored within 30 days.</div>
+    <div class="confirm-actions">
+      <button class="btn-cancel" onclick="dismissConfirm()">Cancel</button>
+      <button class="btn-danger" id="confirm-ok-btn" onclick="executeConfirm()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSCRIPT MODAL -->
+<div class="modal-overlay hidden" id="transcript-modal-overlay">
+  <div class="transcript-modal">
+    <div class="tm-head">
+      <div class="tm-head-text">
+        <h3>Call transcript</h3>
+        <p>Upload a .docx file or paste the transcript text. AI will score every question from the conversation.</p>
+      </div>
+      <button class="tm-close" onclick="closeTranscriptModal()"><svg viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="tm-body">
+      <div class="tm-hint">
+        <strong>Supported:</strong> .docx file upload, or paste any plain text — Zoom, Otter.ai, Gong, Teams, Rev, or a manual write-up. Speaker labels are helpful but not required.
+      </div>
+      <label class="tm-upload-zone" id="tm-upload-zone">
+        <input type="file" id="tm-file-input" accept=".docx,.txt" onchange="handleTranscriptFile(event)">
+        <div class="tm-upload-icon">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 12h8M8 3v7M5 6l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="tm-upload-text">
+          <div class="tm-upload-title" id="tm-upload-title">Upload transcript file</div>
+          <div class="tm-upload-sub">.docx or .txt — click to browse or drag and drop</div>
+        </div>
+      </label>
+      <div class="tm-divider">or paste text directly</div>
+      <textarea class="tm-textarea" id="transcript-input" placeholder="Paste your call transcript here...&#10;&#10;Example:&#10;Interviewer: Walk me through what happens when a submission hits your team...&#10;Respondent: So right now everything comes in via email..." oninput="onTranscriptTextInput()"></textarea>
+      <div class="tm-analyse-row">
+        <button class="tm-analyse-btn" id="tm-analyse-btn" onclick="analyseTranscript()">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Analyse with AI
+        </button>
+        <span class="tm-status" id="tm-status"></span>
+      </div>
+    </div>
+    <div class="tm-foot">
+      <button class="btn-outline" onclick="clearTranscript()">Clear</button>
+      <button class="btn-outline" onclick="closeTranscriptModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-overlay hidden" id="admin-login-overlay">
+  <div class="admin-login-modal">
+    <div class="lock-icon"><svg viewBox="0 0 22 22" fill="none"><rect x="4" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M7 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="11" cy="15" r="1.5" fill="currentColor"/></svg></div>
+    <h3>Admin access</h3>
+    <p>This area is restricted to Novidea administrators.</p>
+    <div class="modal-field">
+      <label class="modal-label">Email</label>
+      <input class="modal-input" id="admin-email" type="email" placeholder="your@novidea.com" autocomplete="username">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Password</label>
+      <input class="modal-input" id="admin-password" type="password" placeholder="••••••••••••" autocomplete="current-password">
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-outline" onclick="closeAdminLogin()">Cancel</button>
+      <button class="btn-primary" onclick="attemptAdminLogin()">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay hidden" id="export-modal-overlay" onclick="closeExportModal(event)">
+  <div class="modal">
+    <h3>Export sessions</h3>
+    <p>Download all your interview data as a file. Re-import it on any device to continue exactly where you left off.</p>
+    <div class="export-section">
+      <div class="export-section-label">What's included</div>
+      <div id="export-preview" style="font-size:13px;color:var(--ink-mid);line-height:1.8"></div>
+    </div>
+    <div class="export-section">
+      <div class="export-section-label">Format</div>
+      <div class="export-option-row">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--ink-mid)">
+          <input type="radio" name="export-fmt" value="json" checked style="accent-color:var(--accent)"> Full backup (.json) — reimportable
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--ink-mid)">
+          <input type="radio" name="export-fmt" value="csv"> Scores only (.csv) — for spreadsheets
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="hideExportModal()">Cancel</button>
+      <button class="btn-primary" onclick="doExport()">
+        <span id="export-btn-label">Download file</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay hidden" id="import-modal-overlay" onclick="closeImportModal(event)">
+  <div class="modal">
+    <h3>Import sessions</h3>
+    <p>Load a previously exported <strong>.json</strong> backup file. Your data will be fully restored.</p>
+    <div class="import-drop-zone" id="import-drop-zone" onclick="document.getElementById('import-file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <svg viewBox="0 0 28 28" fill="none" style="display:block;margin:0 auto 10px"><path d="M14 4v14M8 12l6-6 6 6M4 22v1a1 1 0 001 1h18a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <p><strong>Click to choose a file</strong> or drag and drop here</p>
+      <p style="margin-top:4px;font-size:12px">Accepts .json files exported from this playbook</p>
+      <div class="import-file-name" id="import-file-name"></div>
+    </div>
+    <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleFileSelect(event)">
+    <div id="import-preview-wrap" style="margin-top:12px;display:none">
+      <div class="import-preview" id="import-preview"></div>
+      <div style="margin-top:14px">
+        <div style="font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px">Import mode</div>
+        <label class="import-option">
+          <input type="radio" name="import-mode" value="merge" checked>
+          <div class="import-option-text"><strong>Merge</strong><span>Add imported sessions alongside your existing ones. Duplicate IDs will be skipped.</span></div>
+        </label>
+        <label class="import-option">
+          <input type="radio" name="import-mode" value="replace">
+          <div class="import-option-text"><strong>Replace all</strong><span>Overwrite all current sessions with the imported data. Your existing sessions will be lost.</span></div>
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="hideImportModal()">Cancel</button>
+      <button class="btn-primary" id="import-confirm-btn" onclick="doImport()" disabled style="opacity:.5;cursor:not-allowed">Import</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════
+const PHASES=[
+{id:0,num:"Phase 1",title:"Intake, triage & clearance",desc:"How submissions arrive, get routed, and cleared for market. Pain here multiplies across every submission — the highest-leverage territory.",questions:[
+{id:"q1",n:1,title:"Manual data entry",existing:"Walk me through what happens the moment a submission hits your team. How does it get from email/anywhere else into the system?",prospect:"Roughly how much time does your team spend manually re-keying data from emails and others sources that include ACORD forms before evaluating risk?",probe_existing:"If smooth: 'At what point does someone first enter data into a system? How long does that step take per submission?'",probe_prospect:"Follow up: 'Even roughly — closer to 5 minutes or 30 per submission? At what monthly volume?'",pain:["15+ minutes per submission on re-keying","No structured intake or API feed","Multiple staff doing manual data entry","Errors from re-entering unstructured data"],nopain:["API or EDI feeds already live","Structured submission portal in use","Under 5 min per submission","ACORD XML or similar adopted"]},
+{id:"q2",n:2,title:"Clearance chaos & duplicates",existing:"How often do you find out a broker already submitted the same risk through someone else? How far in does it get before you catch it?",prospect:"In E&S, duplicates are a major problem. How do you currently detect if a broker has already blocked the market?",probe_existing:"'When that happens late — after a full review — what does the internal fallout look like?'",probe_prospect:"'How far into the underwriting process does that typically surface? What share of submissions does it affect?'",pain:["Late detection after full or partial review","No automated fuzzy-match clearance","Manual checking across email threads","5%+ of volume estimated as duplicates"],nopain:["Real-time market block detection","Automated clearance system in place","Very low duplicate submission rate","Single-channel submission flow"]},
+{id:"q3",n:3,title:"Triage & routing",existing:"When 100 submissions land on Monday, how do you ensure high-value risks get attention? Is it a manual judgment call?",prospect:"Is there programmatic logic deciding which risks go to which underwriter, or are seniors buried in low-premium renewals?",probe_existing:"'Has a large complex risk ever sat in the queue longer than it should? What happened?'",probe_prospect:"'What drives the routing decision — TIV, line, seniority, or first-come first-served?'",pain:["Manual inbox triage only","Senior UWs handling simple renewals","No TIV or risk-size routing rules","Shared inbox with no prioritisation logic"],nopain:["Rules engine routing by TIV or class","Automated priority queues in place","Dedicated triage team or process","Clean workflow management tool"]}
+]},
+{id:1,num:"Phase 2",title:"Appetite, assessment & data",desc:"Where wasted underwriting time accumulates fastest. Automating hard stops and data retrieval delivers the clearest, most measurable ROI.",questions:[
+{id:"q4",n:4,title:"Appetite sieve",existing:"What share of submissions does your team review before realising they're never going to write them? How much time does that eat?",prospect:"What percentage of your submissions are 'dead on arrival'? How do you stop the team from burning time on those?",probe_existing:"'Is it caught at first glance, or does it take a full review before someone says this isn't for us?'",probe_prospect:"'Walk me through a decline — at what point does the team realise it's out of appetite?'",pain:["20%+ decline rate after full or partial review","No automated hard-stop appetite check","Full UW review completed before declining","Appetite rules undocumented or ad hoc"],nopain:["Automated appetite filter at intake","Under 10% decline after initial triage","Digital appetite guide in UW workflow","Brokers pre-screened via portal"]},
+{id:"q5",n:5,title:"Tribal knowledge",existing:"When you bring on a new hire, how long before they work independently? Where does that knowledge live today?",prospect:"With an aging workforce, how are you planning to capture expertise before it walks out the door? What is your ramp-up time?",probe_existing:"'If your two most experienced underwriters retired tomorrow — what breaks in appetite enforcement?'",probe_prospect:"'Is appetite documented anywhere, or mostly in institutional memory? What happens during the onboarding gap?'",pain:["6+ months to full independence","No written appetite rules or playbook","Aging team with no succession planning","Errors and premium leakage during ramp-up"],nopain:["Documented rules engine for appetite","Under 3 months to independence","Knowledge already digitised in system","Recent successful new-hire onboarding"]},
+{id:"q6",n:6,title:"External data lookups",existing:"Once a submission looks viable, how many external portals or systems does your underwriter have to check to build a risk picture?",prospect:"How many separate vendor portals does your team log into to gather information? How much time is that per risk?",probe_existing:"'Separate logins for each? Any aggregation, or purely manual tab-switching?'",probe_prospect:"'Which vendors are in the mix? Does anyone track how much time that adds per submission?'",pain:["3+ separate vendor portals per submission","10+ minutes on data gathering alone","No API integrations — all manual","Separate credentials per portal to manage"],nopain:["Unified data layer or single API pull","Under 2 vendor portals used","Automated data fetch on submission receipt","Vendor data pushed directly into PAS"]},
+{id:"q7",n:7,title:"Cross-sell & companion coverages",existing:"On your most complex risks — does average premium per submission reflect all the companion lines the account should carry?",prospect:"For specialised risks, how confident are you that brokers remember companion coverages? Does your workflow prompt that?",probe_existing:"'Are there lines you routinely see missed? Is that tracked anywhere?'",probe_prospect:"'Commercial auto example — does the system flag Motor Truck Cargo, or does it depend on the underwriter remembering?'",pain:["No automated cross-sell or bundling prompts","Brokers frequently miss companion lines","E&O exposure on missed coverages acknowledged","Premium per submission below potential"],nopain:["System-driven bundling prompts in workflow","High attach rate on companion lines","Structured product matrix in workflow","Broker portal includes coverage checklist"]}
+]},
+{id:2,num:"Phase 3",title:"Complex E&S architecture & turnaround",desc:"Where deal-winning speed and structural E&S complexity collide. System fragmentation and subscription policy management are the sharpest differentiators.",questions:[
+{id:"q8",n:8,title:"Layered carrier stacks",existing:"For larger risks split across multiple carriers, how are you tracking who has what share? How does that play out at reporting?",prospect:"For large E&S risks, how are you managing carrier stacks? How painful is the split-premium bordereaux at month-end?",probe_existing:"'What does reconciliation look like if a carrier comes back with a discrepancy at audit time?'",probe_prospect:"'How many multi-carrier risks per month? Is tracking inside your PAS or on spreadsheets outside it?'",pain:["Spreadsheets outside core system for stacking","Bordereaux errors at month-end reconciliation","Manual carrier allocation tracking","Binding authority exposure from errors"],nopain:["Native multi-carrier stack support in PAS","Automated split bordereaux generation","Real-time carrier allocation tracking","Clean audit trail built into system"]},
+{id:"q9",n:9,title:"Capacity visibility",existing:"How do your underwriters know in real-time if binding a large risk puts you close to a capacity limit with a specific carrier?",prospect:"Is your capacity visibility in front of the underwriter during evaluation, or is it tracked retroactively after the fact?",probe_existing:"'Has there been a situation where you discovered you were over a limit only after binding?'",probe_prospect:"'Have there been cases where the team only realised there was a capacity issue after the fact?'",pain:["Capacity tracked retroactively after bind","No real-time portfolio dashboard in UW workflow","Over-lining incidents have occurred","Carrier limit breaches experienced"],nopain:["Real-time capacity dashboard in UW workflow","Automated limit alerts before binding","Carrier concentration visible by line","Portfolio vs limit tracked live"]},
+{id:"q10",n:10,title:"System fragmentation & quote speed",existing:"How long does it typically take to get a quote out? Have you lost deals because a competitor moved faster?",prospect:"If you count email, spreadsheets, and rating tools — how many systems does an underwriter touch to get a single quote out?",probe_existing:"'Biggest single source of delay — data gathering, system switching, or something else?'",probe_prospect:"'Average quote-to-bind time? How does that compare to what brokers say about other carriers?'",pain:["4+ systems touched per submission","48–72 hour turnaround or longer","Competitors winning on speed mentioned","Rating in Excel outside core system"],nopain:["Unified quote-to-bind platform","Under 24 hour turnaround","No speed complaints vs competitors","Integrated rating engine inside PAS"]},
+{id:"q10b",n:11,title:"Rating process & tools",
+existing:"Walk me through your current rating process — from the moment a submission clears appetite to the point a quote goes out. Which specific tools do your underwriters rely on, and where does the manual work actually sit today?",
+prospect:"Could you walk us through your current rating process and the tools your underwriters rely on? We're particularly interested in understanding the complexity of your rating rules and how much manual work — spreadsheets, external tracking, data re-entry — is currently required to move from risk assessment to a final quote.",
+probe_existing:"'When rating rules change — a new product, a market shift, a carrier requirement — how long does it take to update the logic in your current tools? Who owns that process?'",
+probe_prospect:"'If I asked your most experienced underwriter to rate a complex risk with no spreadsheets — could your current system handle it end-to-end? Where would it break down?'",
+pain:["Rating done in Excel or external spreadsheets outside PAS","Rating rules are manual, undocumented, or underwriter-dependent","Significant data re-entry between risk assessment and quote generation","Rating logic is hard to update — requires IT or specialist intervention","No audit trail on how a premium figure was reached"],
+nopain:["Integrated rating engine within core platform","Rules are codified, versioned, and updatable by the business","Quote generation is automated from structured input data","Audit trail on every rating calculation","Rating handles complex multi-variable risks without spreadsheets"]}
+]},
+{id:3,num:"Phase 4",title:"Back office, claims & compliance",desc:"Operational overhead that scales with book size. Compliance risk and bordereaux pain are the strongest late-stage proof points.",questions:[
+{id:"q11",n:12,title:"Claims & TPA data link",existing:"When a loss is reported, what is the data handoff to your TPA? How do you match claims data back to policies to track loss ratios?",prospect:"How does the hand-off to your TPA work? When claims come back, how are you accurately matching it to track loss ratios?",probe_existing:"'Loss ratio visibility — real-time, monthly, or mostly at annual audit?'",probe_prospect:"'How much back-office time goes into reconciling TPA data against your policy data?'",pain:["Manual FNOL data handoff to TPA","Claims not automatically matched back to policy","Loss ratio visibility delayed or manual","Significant back-office time on reconciliation"],nopain:["Automated FNOL data push to TPA","Claims matched in PAS automatically","Real-time loss ratio dashboard in place","Clean TPA API integration"]},
+{id:"q12",n:13,title:"Bordereaux pain",existing:"How much of your back-office time goes into assembling bordereaux? Are carriers pushing for real-time API data?",prospect:"How much time goes into correcting bordereaux for different carriers? Are providers asking for real-time API feeds?",probe_existing:"'How many different carrier formats? When one comes back with discrepancies, what does fixing that look like?'",probe_prospect:"'Is bordereaux volume growing with your book? Have capacity providers mentioned wanting automated reporting?'",pain:["5+ hours/month on bordereaux assembly","Multiple carrier-specific formats to maintain","Carriers demanding API feeds not yet delivered","Re-submissions required due to errors"],nopain:["Automated bordereaux engine in place","Single standardised output format","Carriers satisfied with current reporting","Under 1 hour/month on reports"]},
+{id:"q13",n:14,title:"Surplus lines tax & compliance",existing:"How is your team ensuring surplus lines taxes are calculated correctly and stamping office filings are on time across all states?",prospect:"Surplus lines taxes vary by state. How is your team currently ensuring accurate calculation and timely filings?",probe_existing:"'Has a state rule change caused a compliance issue? How did that surface and how did the team respond?'",probe_prospect:"'How many states are you active in? Is tax calculation manual per state, or handled by a system?'",pain:["Manual tax calculation per state","Stamping office filings delayed or missed","Prior regulatory penalty or notice","No automated state-by-state rule tracking"],nopain:["Automated surplus lines tax engine","Integrated stamping office API filing","Compliance team handling cleanly","Third-party compliance tool integrated"]},
+{id:"q14",n:15,title:"Double-entry & accounting integration",existing:"From submission to bound policy, how many times does the same data get re-entered into different systems?",prospect:"If you had a fast front-end quoting tool while tax, billing, and compliance happened in the back — how much time would that save?",probe_existing:"'Where's the biggest duplication — between rating tool and PAS, or somewhere else in the chain?'",probe_prospect:"'How many touch-points does the same data go through from intake to policy issuance and accounting?'",pain:["3+ re-entry points per policy lifecycle","Underwriters doing compliance data entry manually","Heavy PAS slowing down quoting speed","Team complaints about double entry"],nopain:["No double entry currently","Seamless PAS integration already live","Underwriters shielded from back-end entry","Single-entry workflow in place"]}
+]},
+{id:4,num:"Phase 5",title:"Platform design & user configuration",desc:"How the MGA thinks about system design, data ownership, and user access. Reveals sophistication level and openness to workflow-led platforms — critical for scoping the right solution.",questions:[
+{id:"q15",n:16,title:"Submission data editing & data ownership",
+existing:"Once your system extracts data from a submission — whether from email, PDF or ACORD — do your underwriters need to go back and correct or enrich that data manually? Who owns the accuracy of what's in the system at that point?",
+prospect:"If a system were to automatically extract data from incoming submissions, how important is it that your team can edit or override what was captured? Who should be responsible for data accuracy once it enters the workflow?",
+probe_existing:"'Has there been a situation where extracted data was wrong and caused a problem downstream — in rating, binding, or reporting? How was that handled?'",
+probe_prospect:"'Think about a recent submission — how much of the data that ends up in your system was touched or corrected by a human after it came in?'",
+pain:["Manual correction of extracted data is common","No audit trail for who changed what","Underwriters frustrated by inaccurate auto-extraction","Data errors surface late — in binding or bordereaux"],
+nopain:["Clean structured intake with high accuracy","Edit history and audit trail in place","Exceptions are rare and handled systematically","Data quality monitored proactively"]},
+{id:"q16",n:17,title:"User roles & permissions beyond basic access",
+existing:"Beyond admin and standard users, do you find that your team needs more granular control over who can do what — for example, someone who can review a submission but not approve it, or an underwriter who can only work on specific lines?",
+prospect:"When you think about the different people who'd touch a submission — from intake to binding — what are the distinct roles you'd need to configure in a system? Are there things certain people should see but not act on?",
+probe_existing:"'Have there been compliance or operational issues caused by a user having too much — or too little — access? How did you handle the boundary between review and approval?'",
+probe_prospect:"'Walk me through a submission journey: who touches it, in what order, and what can each person do versus what requires someone else to sign off?'",
+pain:["Only two permission levels — admin and user","Underwriters can approve risks they should only review","No approval workflow or dual-control on high-value risks","Compliance concerns about uncontrolled system access"],
+nopain:["Multi-tier role structure already in place","Approval workflows configured by risk size or line","Audit trail per action per user","Access scoped by product or geography"]},
+{id:"q17",n:18,title:"User scope: product, LoB & data access limits",
+existing:"Are your underwriters restricted to specific lines of business or product types within your current system, or can everyone see everything? Has that ever been a problem — either for compliance, focus, or data integrity?",
+prospect:"Should different users in your team be limited to only the submissions and policies relevant to their line of business or role — or is a single shared view the right model? How would you want to control what each person can see?",
+probe_existing:"'If a property underwriter can see casualty submissions — does that cause confusion, or is it actually useful? What's the right default?'",
+probe_prospect:"'Imagine you bring on a specialist underwriter for a new line — should they see your whole book, or only what's relevant to them?'",
+pain:["No LoB or product-level access restrictions","Specialists see irrelevant data causing distraction","Compliance risk from cross-LoB data visibility","Onboarding new underwriters exposes full book unnecessarily"],
+nopain:["LoB-level access scoping already configured","Users see only what is relevant to their role","Easy to add restrictions when bringing on new lines","Feels like a non-issue for current team size"]},
+{id:"q18",n:19,title:"Submission routing: LoB-driven vs user-assigned",
+existing:"Is your current workflow product or LoB-led — where submissions land in a shared pool and whoever is next picks them up — or is it user-assigned, where specific submissions go to specific underwriters or teams? Which model works better for you today?",
+prospect:"Think about how you'd want submissions to flow once they're in the system: should the platform automatically route each submission to the right person based on line, size, or territory — or should it be managed more manually by a supervisor or the underwriters themselves? And do you also need a way to handle submissions that come in by phone, where someone has to key them in manually?",
+probe_existing:"'Has the routing model caused bottlenecks or fairness issues — where one underwriter is overloaded and another is idle? How do you manage that today?'",
+probe_prospect:"'If a broker calls in a submission rather than emailing it — what happens? Is there a process for manual entry, or does it fall through the cracks?'",
+pain:["Manual routing with no rules or logic","Shared inbox causes duplication and missed submissions","No way to handle phone-in or walk-in submissions cleanly","Supervisors spending time manually assigning work"],
+nopain:["Rules-based routing already configured","Manual entry process exists for phone or walk-in","Workload is balanced across the team","Assignment is transparent and trackable"]}
+]}
+];
+
+let ALL_QUESTIONS=PHASES.flatMap(p=>p.questions);
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// SUPABASE CONFIG — paste your values here after creating a free project
+// at https://supabase.com (see setup guide for steps)
+// ══════════════════════════════════════════════
+let SUPABASE_URL = 'https://vewsrleqbqzrwdapizdc.supabase.co';
+let SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZld3NybGVxYnF6cndkYXBpemRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNjA0MzgsImV4cCI6MjA5MjgzNjQzOH0.CXW93ag6cSehSq_mlH4BT0iJ_83vLaM4xkyMLpdLAPE';
+let sb = null; // Supabase client, initialised in _init()
+
+// Local state — always kept in sync with Supabase
+let sessions=JSON.parse(localStorage.getItem('mga_sessions')||'[]');
+let currentSessionId=null;
+let activePhase=0;
+let modalMode='new'; // 'new' or 'edit'
+let editSessionId=null;
+
+function saveSessions(){
+  localStorage.setItem('mga_sessions',JSON.stringify(sessions));
+  if(sb) sb.from('sessions').upsert(sessions.map(s=>({id:s.id,data:s,updated_at:new Date().toISOString()}))).then(({error})=>{if(error)console.warn('Supabase sync error:',error.message);});
+}
+function getSession(id){return sessions.find(s=>s.id===id)}
+function getCurrentSession(){return getSession(currentSessionId)}
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+function showPage(name){_showPage(name)}
+function _showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.hnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const navBtn=document.getElementById('nav-'+name);
+  if(navBtn)navBtn.classList.add('active');
+  if(name==='sessions')renderSessionsGrid();
+  if(name==='summary')renderSummary();
+  if(name==='deleted')renderDeletedList();
+  if(name==='admin'&&typeof renderCustomQuestions==='function')renderCustomQuestions();
+  window.scrollTo(0,0);
+}
+// ══════════════════════════════════════════════
+function renderSessionsGrid(){
+  const grid=document.getElementById('sessions-grid');
+  grid.innerHTML='';
+  const newCard=document.createElement('div');
+  newCard.className='new-session-card';
+  newCard.innerHTML=`<div class="nsc-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div class="nsc-text">New session</div><div class="nsc-sub">Start a fresh interview</div></div>`;
+  newCard.onclick=openNewSessionModal;
+  grid.appendChild(newCard);
+  [...sessions].reverse().forEach(s=>{
+    const vals=ALL_QUESTIONS.map(q=>resolveScore(s,q.id)).filter(v=>v!==undefined);
+    const ans=vals.length;
+    const total=vals.reduce((a,b)=>a+b,0);
+    const hot=vals.filter(v=>v===3).length;
+    const pct=ans>0?Math.round((total/(ans*3))*100):0;
+    const qual=ans===0?'none':pct>=70||hot>=4?'hot':pct>=40||hot>=2?'warm':'cold';
+    const qualLabel={'none':'Not scored','hot':'Strong fit','warm':'Developing','cold':'Low urgency'}[qual];
+    const typeLabel={'existing':'Existing partner','prospect':'New prospect','mixed':'Mixed'}[s.type]||'—';
+    const trackLabel={'manual':'Manual','auto':'AI auto','both':'Both'}[s.track||'manual'];
+    const trackColor={'manual':'var(--teal)','auto':'var(--purple)','both':'var(--accent)'}[s.track||'manual'];
+    const hasTranscript=!!(s.transcript&&s.transcript.trim());
+    const card=document.createElement('div');
+    card.className='session-card';
+    card.innerHTML=`
+      <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
+        <div class="sc-type ${s.type}">${typeLabel}</div>
+        <div style="font-size:10px;font-weight:500;padding:3px 8px;border-radius:100px;border:1px solid var(--surface-3);color:var(--ink-soft);display:flex;align-items:center;gap:4px">
+          <span style="width:5px;height:5px;border-radius:50%;background:${trackColor};display:inline-block"></span>${trackLabel}
+        </div>
+        ${hasTranscript?'<div style="font-size:10px;font-weight:500;padding:3px 8px;border-radius:100px;background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)">Transcript</div>':''}
+      </div>
+      <div class="sc-name">${esc(s.name)}</div>
+      <div class="sc-company">${esc(s.company)||'No company'}</div>
+      <div class="sc-meta">
+        <div class="sc-score"><span class="sc-score-dot" style="background:${qual==='hot'?'#c93535':qual==='warm'?'#b85c00':qual==='cold'?'#1a4fff':'#b8bccb'}"></span><span class="sc-score-label">${qualLabel}</span></div>
+        <span class="sc-answered">${ans}/${ALL_QUESTIONS.length}</span>
+        <span class="sc-date">${formatDate(s.createdAt)}</span>
+      </div>
+      <div class="sc-actions">
+        <button class="sc-action-btn" title="Edit name" onclick="event.stopPropagation();openEditModal('${s.id}')"><svg viewBox="0 0 12 12" fill="none"><path d="M2 9l1.5-1.5 5-5L10 4 5 9H2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="sc-action-btn del" title="Delete session (admin only)" onclick="event.stopPropagation();deleteSession('${s.id}',false)"><svg viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V2h2v1M4 3l.5 7h3L8 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>`;
+    card.onclick=()=>openSession(s.id);
+    grid.appendChild(card);
+  });
+}
+
+function formatDate(ts){
+  if(!ts)return'';
+  const d=new Date(ts);
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ══════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════
+function openNewSessionModal(){
+  modalMode='new';editSessionId=null;
+  document.getElementById('modal-title').textContent='New interview session';
+  document.getElementById('modal-desc').textContent='Name this session before you start. You can save and return to it at any time.';
+  document.getElementById('modal-confirm-btn').textContent='Start session';
+  document.getElementById('modal-name').value='';
+  document.getElementById('modal-company').value='';
+  document.getElementById('modal-type').value='existing';
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('modal-name').focus(),50);
+}
+function openEditModal(id){
+  const s=getSession(id);if(!s)return;
+  modalMode='edit';editSessionId=id;
+  document.getElementById('modal-title').textContent='Edit session';
+  document.getElementById('modal-desc').textContent='Update the name, company, or relationship type for this session.';
+  document.getElementById('modal-confirm-btn').textContent='Save changes';
+  document.getElementById('modal-name').value=s.name||'';
+  document.getElementById('modal-company').value=s.company||'';
+  document.getElementById('modal-type').value=s.type||'existing';
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function hideModal(){document.getElementById('modal-overlay').classList.add('hidden')}
+function closeModal(e){if(e.target===document.getElementById('modal-overlay'))hideModal()}
+function confirmModal(){
+  const name=document.getElementById('modal-name').value.trim();
+  const company=document.getElementById('modal-company').value.trim();
+  const type=document.getElementById('modal-type').value;
+  if(!name){document.getElementById('modal-name').focus();return}
+  if(modalMode==='edit'){
+    const s=getSession(editSessionId);if(!s)return;
+    s.name=name;s.company=company;s.type=type;
+    saveSessions();hideModal();renderSessionsGrid();showToast('Session updated');
+  }else{
+    const s={id:'s'+Date.now(),name,company,type,scores:{},notes:{},tones:{},createdAt:Date.now(),savedAt:null};
+    sessions.unshift(s);saveSessions();hideModal();openSession(s.id);
+  }
+}
+var _mn=document.getElementById('modal-name');if(_mn)_mn.addEventListener('keydown',function(e){if(e.key==='Enter')confirmModal();});
+
+// ══════════════════════════════════════════════
+// PLAYBOOK SESSION
+// ══════════════════════════════════════════════
+function openSession(id){
+  currentSessionId=id;activePhase=0;
+  const s=getSession(id);if(!s)return;
+  document.getElementById('ph-name').textContent=s.name;
+  document.getElementById('ph-company').textContent=s.company||'—';
+  const typeLabel={'existing':'Existing partner','prospect':'New prospect','mixed':'Mixed / TBD'}[s.type]||'';
+  const phType=document.getElementById('ph-type');
+  phType.textContent=typeLabel;phType.className='ph-type '+s.type;
+  document.getElementById('ph-save-btn').textContent='Save session';
+  document.getElementById('ph-save-btn').className='ph-save-btn';
+  showPage('playbook');
+  renderTrackBar();
+  renderSidebarNav();
+  renderPhase(0);
+  updateStats();
+}
+
+function saveCurrentSession(){
+  const s=getCurrentSession();if(!s)return;
+  s.savedAt=Date.now();saveSessions();
+  const btn=document.getElementById('ph-save-btn');
+  btn.textContent='Saved';btn.className='ph-save-btn saved';
+  setTimeout(()=>{btn.textContent='Save session';btn.className='ph-save-btn'},2000);
+  showToast('Session saved');
+}
+
+function resetCurrentSession(){
+  const s=getCurrentSession();if(!s)return;
+  const hasAuto=s.autoScores&&Object.keys(s.autoScores).length>0;
+  const hasManual=s.scores&&Object.keys(s.scores).length>0;
+  if(!hasAuto&&!hasManual){showToast('No scores to reset');return;}
+  showConfirm(
+    'Reset scores?',
+    'This will clear all manual scores and notes'+(hasAuto?' and AI transcript scores':'')+'.',
+    'Reset',
+    function(){
+      s.scores={};s.notes={};
+      if(hasAuto){delete s.autoScores;delete s.autoNotes;delete s.autoReasons;delete s.autoQuotes;delete s.scoreSources;}
+      saveSessions();updateStats();renderPhase(activePhase);renderSidebarNav();renderTrackBar();showToast('Scores reset');
+    }
+  );
+}
+
+function sc(id){return getActiveScore(id)}
+function tone(id){
+  const s=getCurrentSession();
+  if(!s)return'existing';
+  if(s.type==='existing')return'existing';
+  if(s.type==='prospect')return'prospect';
+  return(s.tones&&s.tones[id])||'existing';
+}
+function getNote(id){const s=getCurrentSession();return(s&&s.notes&&s.notes[id])||''}
+
+function setScore(qid,v){
+  const s=getCurrentSession();if(!s)return;
+  s.scores[qid]=v;saveSessions();
+  updateStats();rerenderCard(qid);renderSidebarNav();
+}
+function setTone(qid,t){
+  const s=getCurrentSession();if(!s)return;
+  if(!s.tones)s.tones={};s.tones[qid]=t;saveSessions();rerenderCard(qid);
+}
+function setNote(qid,v){
+  const s=getCurrentSession();if(!s)return;
+  if(!s.notes)s.notes={};s.notes[qid]=v;saveSessions();
+}
+
+function updateStats(){
+  const s=getCurrentSession();
+  const total_qs=ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).length;
+  let total=0,hot=0,ans=0;
+  if(s)ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).forEach(q=>{
+    const v=getActiveScore(q.id);
+    if(v>=0){ans++;total+=v;if(v===3)hot++;}
+  });
+  document.getElementById('sc-total').textContent=ans>0?(total+' / '+(ans*3)):'—';
+  document.getElementById('sc-hot').textContent=hot;
+  document.getElementById('sc-answered').textContent=ans+' / '+total_qs;
+  document.getElementById('prog').style.width=Math.round((ans/total_qs)*100)+'%';
+  const qel=document.getElementById('sc-qual');
+  if(ans===0){qel.textContent='Not started';qel.style.color='#9aa0b8';qel.style.fontSize='14px';setVerdict('pending','Score each reply to qualify','Rate how real each pain point is based on what they say','Pending');return;}
+  const pct=Math.round((total/(ans*3))*100);
+  let qual,vtype,vtitle,vsub,vbadge;
+  if(pct>=70||hot>=4){qual='Strong fit';vtype='red';vtitle=hot>=4?(hot+' critical signals — qualified'):'Pain score '+pct+'% — strong fit';vsub='Prioritise demo booking. Anchor on the highest-scoring pain.';vbadge='Qualify now';qel.style.color='#ff7070';}
+  else if(pct>=40||hot>=2){qual='Developing';vtype='amber';vtitle='Moderate pain confirmed';vsub='Probe unanswered phases. Two more critical signals would upgrade this.';vbadge='Keep probing';qel.style.color='#ffb347';}
+  else{qual='Low urgency';vtype='blue';vtitle='Low pain signal';vsub='Pain appears managed. Revisit in 6 months.';vbadge='Revisit later';qel.style.color='#88aaff';}
+  qel.textContent=qual;qel.style.fontSize='13px';
+  setVerdict(vtype,vtitle,vsub,vbadge);
+}
+
+function setVerdict(type,title,sub,badge){
+  const im={pending:'<svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/><path d="M7 4.5v3" stroke="rgba(255,255,255,0.35)" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="10" r=".6" fill="rgba(255,255,255,0.35)"/></svg>',red:'<svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" fill="rgba(201,53,53,0.3)"/><path d="M4.5 7.5l2 2 3-4" stroke="#ff9999" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',amber:'<svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" fill="rgba(184,92,0,0.3)"/><path d="M7 4.5v3" stroke="#ffcc77" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="10" r=".7" fill="#ffcc77"/></svg>',blue:'<svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" fill="rgba(26,79,255,0.2)"/><path d="M5 7l2 2 2-2" stroke="#88aaff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
+  document.getElementById('v-icon').innerHTML=im[type]||im.pending;
+  document.getElementById('v-title').textContent=title;
+  document.getElementById('v-sub').textContent=sub;
+  const b=document.getElementById('v-badge');b.textContent=badge;
+  b.className='verdict-badge vb-'+(type==='pending'?'pending':type==='red'?'red':type==='amber'?'amber':'blue');
+}
+
+function renderSidebarNav(){
+  const nav=document.getElementById('sidebar-nav');nav.innerHTML='';
+  PHASES.forEach((p,i)=>{
+    const visible=p.questions.filter(q=>!disabledQuestions.has(q.id));
+    const ans=visible.filter(q=>getActiveScore(q.id)>=0).length;
+    const div=document.createElement('div');
+    div.className='pni'+(i===activePhase?' active':'');
+    div.innerHTML='<span class="pni-dot"></span><span class="pni-text">'+p.num+': '+p.title.split(',')[0].replace(' &','')+'</span><span class="pni-count" id="pni-c-'+i+'">'+(ans>0?ans+'/'+visible.length:'')+'</span>';
+    div.onclick=()=>{activePhase=i;renderSidebarNav();renderPhase(i);window.scrollTo({top:document.querySelector('.main').offsetTop-100,behavior:'smooth'})};
+    nav.appendChild(div);
+  });
+}
+
+function renderPhase(idx){
+  const p=PHASES[idx];
+  let html='<div class="phase-header"><div class="phase-number">'+p.num+' of 4</div><h2 class="phase-title">'+p.title+'</h2><p class="phase-desc">'+p.desc+'</p></div>';
+  p.questions.filter(q=>!disabledQuestions.has(q.id)).forEach(q=>{html+=buildCard(q);});
+  document.getElementById('phase-content').innerHTML=html;
+}
+
+function buildCard(q){
+  const sess=getCurrentSession();
+  const sessionType=sess?sess.type:'existing';
+  const isMixed=sessionType==='mixed';
+  const track=getSessionTrack();
+  const scoreSrc=getScoreSource(q.id);
+  const manualScore=sess&&sess.scores&&sess.scores[q.id]!==undefined?sess.scores[q.id]:-1;
+  const autoScore=sess&&sess.autoScores&&sess.autoScores[q.id]!==undefined?sess.autoScores[q.id]:-1;
+  const autoQuote=(sess&&sess.autoQuotes&&sess.autoQuotes[q.id])||'';
+  const autoReason=(sess&&sess.autoReasons&&sess.autoReasons[q.id])||'';
+  const hasAutoResult=autoScore>=0;
+  const s=sc(q.id);
+  const t=tone(q.id);
+  const note=getNote(q.id);
+
+  const scoreClass=s>=0?(' scored-'+s):'';
+  const tagClass=s<0?'qt-none':('qt-'+s);
+  const scoreLabel=['No pain','Mild pain','Moderate pain','Critical pain'];
+  const tagText=s<0?'Not scored':scoreLabel[s];
+  const pain=q.pain.map(x=>'<li><span class="sig-bullet"></span><span>'+x+'</span></li>').join('');
+  const nopain=q.nopain.map(x=>'<li><span class="sig-bullet"></span><span>'+x+'</span></li>').join('');
+  const probe=t==='existing'?q.probe_existing:q.probe_prospect;
+  const eb=t==='existing'?'active-existing':'';
+  const pb=t==='prospect'?'active-prospect':'';
+
+  // Source indicator for header (only in 'both' mode)
+  const srcPill=track==='both'?`<span class="track-source-pill ${scoreSrc==='auto'?'tsp-auto':'tsp-manual'}">${scoreSrc==='auto'?'Auto':'Manual'}</span>`:'';
+
+  // Tone toggle / label
+  const toneToggleHtml=isMixed?`<div class="tone-toggle"><button class="tone-btn ${eb}" onclick="event.stopPropagation();setTone('${q.id}','existing')">Existing partner</button><button class="tone-btn ${pb}" onclick="event.stopPropagation();setTone('${q.id}','prospect')">New prospect</button></div>`:'';
+  const voiceLabelHtml=!isMixed?`<div style="margin-bottom:12px"><span class="ask-voice-label ${t}"><span class="ask-dot"></span>${t==='existing'?'Existing partner — consultative':'New prospect — insight-led'}</span></div>`:'';
+
+  // Auto result block (shown in auto/both tracks when results exist)
+  const scoreDots=(v)=>[0,1,2,3].map(i=>`<span class="auto-score-dot${i<=v?' filled':''}"></span>`).join('');
+  const autoBlock=(track==='auto'||track==='both')&&hasAutoResult?`
+    <div class="auto-result-block">
+      <div class="auto-result-head">
+        <span class="auto-result-label">AI from transcript</span>
+        <div class="auto-result-score">${scoreDots(autoScore)}</div>
+        <span style="font-size:11px;font-weight:500;color:var(--purple-text);margin-left:4px">${scoreLabel[autoScore]}</span>
+      </div>
+      ${autoQuote?`<div class="auto-result-quote">"${esc(autoQuote)}"</div>`:''}
+      ${autoReason?`<div class="auto-result-reasoning">${esc(autoReason)}</div>`:''}
+    </div>`:'';
+
+  // Comparison view (both track only)
+  const mLabel=manualScore>=0?scoreLabel[manualScore]:'Not scored';
+  const aLabel=autoScore>=0?scoreLabel[autoScore]:'Not scored';
+  const mActive=scoreSrc==='manual'?'active-source':'';
+  const aActive=scoreSrc==='auto'?'active-source':'';
+  const compareBlock=track==='both'?`
+    <div class="track-compare">
+      <div class="track-compare-col manual-col">
+        <div class="tcc-label">Manual score</div>
+        <div class="tcc-score">${mLabel}</div>
+        ${note?`<div class="tcc-text">${esc(note.slice(0,80))}${note.length>80?'…':''}</div>`:''}
+        <button class="use-this-btn ${mActive}" onclick="setScoreSource('${q.id}','manual')">
+          ${mActive?'✓ Using for summary':'Use for summary'}
+        </button>
+      </div>
+      <div class="track-compare-col auto-col">
+        <div class="tcc-label">AI score</div>
+        <div class="tcc-score">${aLabel}</div>
+        ${autoReason?`<div class="tcc-text">${esc(autoReason.slice(0,80))}${autoReason.length>80?'…':''}</div>`:''}
+        <button class="use-this-btn ${aActive}" onclick="setScoreSource('${q.id}','auto')">
+          ${aActive?'✓ Using for summary':'Use for summary'}
+        </button>
+      </div>
+    </div>`:'';
+
+  // Score buttons — only show in manual/both tracks
+  const sb=(v,cls,num,ttl,sub)=>`<button class="sbtn ${cls}${manualScore===v?' active':manualScore>=0?' inactive':''}" onclick="setScore('${q.id}',${v})"><span class="sbtn-num">${num}</span><span class="sbtn-title">${ttl}</span><span class="sbtn-sub">${sub}</span></button>`;
+  const scoreBlock=(track==='manual'||track==='both')?`
+    <div class="score-block">
+      <p class="score-instruct">Based on their actual reply: <strong>how real and urgent is this pain for them?</strong></p>
+      <div class="score-grid">
+        ${sb(0,'s0','0','No pain','Not a concern for them')}
+        ${sb(1,'s1','1','Mild','Aware but not urgent')}
+        ${sb(2,'s2','2','Moderate','Real friction, affects work')}
+        ${sb(3,'s3','3','Critical','Active pain, must solve')}
+      </div>
+    </div>`:'';
+
+  // In auto-only track with no manual scoring UI, show a note
+  const autoOnlyNote=track==='auto'&&hasAutoResult?`
+    <div style="font-size:12px;color:var(--ink-soft);text-align:center;padding:8px 0">
+      Scores are from AI transcript analysis. Switch to <strong>Manual</strong> or <strong>Both</strong> to score manually.
+    </div>`:'';
+
+  return `<div class="qcard${scoreClass}" id="card-${q.id}">
+    <div class="qcard-head" onclick="toggleCard('${q.id}')">
+      <div class="qn-badge">${q.n}</div>
+      <span class="qtitle-text">${q.title}</span>
+      ${srcPill}
+      <span class="qscore-tag ${tagClass}">${tagText}</span>
+      <span class="chevron-btn"><svg viewBox="0 0 14 12" fill="none"><path d="M2 3l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </div>
+    <div class="qcard-body">
+      ${toneToggleHtml}
+      ${voiceLabelHtml}
+      <div class="ask-wrapper">
+        <div class="tone-panel${t==='existing'?' visible':''}">
+          <div class="ask-block existing">${q.existing}</div>
+        </div>
+        <div class="tone-panel${t==='prospect'?' visible':''}">
+          <div class="ask-block prospect">${q.prospect}</div>
+        </div>
+      </div>
+      ${autoBlock}
+      ${compareBlock}
+      <div class="section-label">Signals to listen for</div>
+      <div class="signals-row">
+        <div class="sig-box pain"><div class="sig-head"><span class="sig-dot-icon"></span>Pain signals</div><ul class="sig-list">${pain}</ul></div>
+        <div class="sig-box nopain"><div class="sig-head"><span class="sig-dot-icon"></span>No-pain signals</div><ul class="sig-list">${nopain}</ul></div>
+      </div>
+      <div class="probe-block"><div class="probe-label">Follow-up probe</div><div class="probe-text">${probe}</div></div>
+      ${track!=='auto'?`<div class="notes-label">Notes from their reply</div><textarea class="notes-field" placeholder="Type key quotes, observations..." onchange="setNote('${q.id}',this.value)" oninput="setNote('${q.id}',this.value)">${note}</textarea>`:''}
+      ${scoreBlock}
+      ${autoOnlyNote}
+    </div>
+  </div>`;
+}
+
+function rerenderCard(qid){
+  const ph=PHASES[activePhase];const q=ph.questions.find(x=>x.id===qid);if(!q)return;
+  const existing=document.getElementById('card-'+qid);if(!existing)return;
+  const wasCollapsed=existing.classList.contains('collapsed');
+  const tmp=document.createElement('div');tmp.innerHTML=buildCard(q);
+  const newCard=tmp.firstChild;
+  if(wasCollapsed)newCard.classList.add('collapsed');
+  existing.replaceWith(newCard);
+}
+
+function toggleCard(qid){const c=document.getElementById('card-'+qid);if(c)c.classList.toggle('collapsed')}
+
+// ══════════════════════════════════════════════
+// SOFT DELETE — 30 DAY RETENTION
+// ══════════════════════════════════════════════
+let deletedSessions=JSON.parse(localStorage.getItem('mga_deleted')||'[]');
+function saveDeleted(){
+  localStorage.setItem('mga_deleted',JSON.stringify(deletedSessions));
+  if(sb) sb.from('deleted_sessions').upsert(deletedSessions.map(s=>({id:s.id,data:s,updated_at:new Date().toISOString()}))).then(({error})=>{if(error)console.warn('Supabase sync error:',error.message);});
+}
+
+function purgeExpired(){
+  const cutoff=Date.now()-(30*24*60*60*1000);
+  const before=deletedSessions.length;
+  deletedSessions=deletedSessions.filter(s=>s.deletedAt>cutoff);
+  if(deletedSessions.length!==before)saveDeleted();
+}
+
+function updateDeletedBadge(){
+  purgeExpired();
+  const badge=document.getElementById('deleted-count-badge');
+  if(!badge)return;
+  if(deletedSessions.length>0){badge.textContent=deletedSessions.length;badge.style.display='';}
+  else{badge.style.display='none';}
+}
+
+let _confirmCb=null;
+function showConfirm(title,msg,btnLabel,cb){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  document.getElementById('confirm-ok-btn').textContent=btnLabel||'Delete';
+  _confirmCb=cb;
+  document.getElementById('confirm-overlay').classList.remove('hidden');
+}
+function dismissConfirm(){document.getElementById('confirm-overlay').classList.add('hidden');_confirmCb=null;}
+function executeConfirm(){document.getElementById('confirm-overlay').classList.add('hidden');if(_confirmCb){const cb=_confirmCb;_confirmCb=null;cb();}}
+
+function deleteSession(id,fromSummary){
+  if(!adminAuthed){
+    showToast('Admin sign-in required to delete sessions');
+    openAdminLogin();
+    return;
+  }
+  const s=getSession(id);
+  if(!s)return;
+  showConfirm(
+    'Delete "'+s.name+'"?',
+    'This session will be moved to the Deleted tab. You can restore it within 30 days.',
+    'Delete',
+    function(){
+      s.deletedAt=Date.now();
+      deletedSessions.unshift(JSON.parse(JSON.stringify(s)));
+      saveDeleted();
+      sessions=sessions.filter(function(x){return x.id!==id;});
+      saveSessions();
+      if(sb)sb.from('sessions').delete().eq('id',id).then(({error})=>{if(error)console.warn('Supabase delete error:',error.message);});
+      updateDeletedBadge();
+      if(fromSummary){renderSummary();}else{renderSessionsGrid();}
+      showToast('"'+s.name+'" moved to Deleted');
+    }
+  );
+}
+
+function restoreSession(id){
+  const s=deletedSessions.find(function(x){return x.id===id;});
+  if(!s)return;
+  const r=JSON.parse(JSON.stringify(s));
+  delete r.deletedAt;
+  sessions.unshift(r);
+  saveSessions();
+  deletedSessions=deletedSessions.filter(function(x){return x.id!==id;});
+  saveDeleted();
+  updateDeletedBadge();
+  renderDeletedList();
+  renderSessionsGrid();
+  showToast('"'+r.name+'" restored');
+}
+
+function permanentlyDelete(id){
+  const s=deletedSessions.find(function(x){return x.id===id;});
+  if(!s)return;
+  showConfirm(
+    'Permanently delete "'+s.name+'"?',
+    'This cannot be undone. The session will be gone forever.',
+    'Delete permanently',
+    function(){
+      deletedSessions=deletedSessions.filter(function(x){return x.id!==id;});
+      saveDeleted();
+      if(sb)sb.from('deleted_sessions').delete().eq('id',id).then(({error})=>{if(error)console.warn('Supabase delete error:',error.message);});
+      updateDeletedBadge();
+      renderDeletedList();
+      showToast('Permanently deleted');
+    }
+  );
+}
+
+function renderDeletedList(){
+  purgeExpired();
+  const list=document.getElementById('deleted-list');
+  if(!list)return;
+  if(deletedSessions.length===0){
+    list.innerHTML='<div class="empty-deleted"><svg viewBox="0 0 36 36" fill="none"><rect x="4" y="8" width="28" height="22" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M12 8V6a2 2 0 012-2h8a2 2 0 012 2v2M15 16l6 6M21 16l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><h3>No deleted sessions</h3><p>Sessions you delete will appear here for 30 days before being permanently removed.</p></div>';
+    return;
+  }
+  const now=Date.now();
+  const ms30=30*24*60*60*1000;
+  list.innerHTML=deletedSessions.map(function(s){
+    const daysLeft=Math.ceil((s.deletedAt+ms30-now)/(24*60*60*1000));
+    const urgent=daysLeft<=5;
+    const typeLabel={'existing':'Existing partner','prospect':'New prospect','mixed':'Mixed'}[s.type]||'—';
+    const ans=Object.keys(s.scores||{}).length;
+    return '<div class="deleted-card">'+
+      '<div class="deleted-card-info">'+
+        '<div class="deleted-card-name">'+esc(s.name)+'</div>'+
+        '<div class="deleted-card-meta">'+
+          '<span>'+esc(s.company||'No company')+'</span>'+
+          '<span>&nbsp;·&nbsp;</span>'+
+          '<span>'+typeLabel+'</span>'+
+          '<span>&nbsp;·&nbsp;</span>'+
+          '<span>'+ans+'/14 answered</span>'+
+          '<span>&nbsp;·&nbsp;</span>'+
+          '<span>Deleted '+formatDate(s.deletedAt)+'</span>'+
+          '<span class="days-left-pill'+(urgent?' urgent':'')+'">'+daysLeft+'d left</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="deleted-card-actions">'+
+        '<button class="btn-outline" style="font-size:12px;padding:6px 12px" onclick="restoreSession(\''+s.id+'\')">Restore</button>'+
+        '<button class="btn-outline" style="font-size:12px;padding:6px 12px;border-color:var(--red-border);color:var(--red)" onclick="permanentlyDelete(\''+s.id+'\')">Delete forever</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// SUMMARY & HEATMAP
+// ══════════════════════════════════════════════
+function renderSummary(){
+  renderSummaryTable();
+  renderHeatmap();
+}
+
+function renderSummaryTable(){
+  const wrap=document.getElementById('summary-table-wrap');
+  if(sessions.length===0){wrap.innerHTML='<div class="empty-state"><h3>No sessions yet</h3><p>Start your first interview to see data here.</p></div>';return;}
+  let html='<div style="overflow-x:auto"><table class="matrix-table"><thead><tr><th>Interviewee</th>';
+  ALL_QUESTIONS.forEach(q=>{html+=`<th title="${q.title}">Q${q.n}</th>`;});
+  html+='<th>Total</th><th>Qualification</th><th>Actions</th></tr></thead><tbody>';
+  sessions.forEach(s=>{
+    const vals=ALL_QUESTIONS.map(q=>resolveScore(s,q.id));
+    const scored=vals.filter(v=>v!==undefined);
+    const ans=scored.length;
+    const total=scored.reduce((a,b)=>a+b,0);
+    const hot=scored.filter(v=>v===3).length;
+    const pct=ans>0?Math.round((total/(ans*3))*100):0;
+    const qual=ans===0?'none':pct>=70||hot>=4?'hot':pct>=40||hot>=2?'warm':'cold';
+    const qualLabel={'none':'Not scored','hot':'Strong fit','warm':'Developing','cold':'Low urgency'}[qual];
+    const qualClass={'none':'qual-none','hot':'qual-hot','warm':'qual-warm','cold':'qual-cold'}[qual];
+    const trackLabel={'manual':'M','auto':'AI','both':'Both'}[s.track||'manual'];
+    const trackColor={'manual':'var(--teal)','auto':'var(--purple)','both':'var(--accent)'}[s.track||'manual'];
+    html+=`<tr><td><div class="mt-name">${esc(s.name)}</div><div class="mt-company">${esc(s.company)||'—'} <span style="font-size:10px;font-weight:500;padding:1px 5px;border-radius:100px;border:1px solid var(--surface-3);color:${trackColor}">${trackLabel}</span></div></td>`;
+    vals.forEach(v=>{
+      if(v===undefined){html+=`<td class="mt-score-cell"><span class="mt-score-pill mt-score-na">—</span></td>`;}
+      else{html+=`<td class="mt-score-cell"><span class="mt-score-pill mt-score-${v}">${v}</span></td>`;}
+    });
+    html+=`<td class="mt-total">${ans>0?total+'/'+ans*3:'—'}</td>`;
+    html+=`<td><span class="mt-qual ${qualClass}">${qualLabel}</span></td>`;
+    html+=`<td><div class="mt-action-btns">
+      <button class="mt-action-btn" onclick="openSession('${s.id}');showPage('playbook')">Edit</button>
+      <button class="mt-action-btn del" onclick="deleteSession('${s.id}',true)">Delete</button>
+    </div></td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  wrap.innerHTML=html;
+}
+
+function renderHeatmap(){
+  const wrap=document.getElementById('heatmap-wrap');
+  if(sessions.length===0){wrap.innerHTML='';return;}
+  const scoredSessions=sessions.filter(s=>hasAnyScore(s));
+  if(scoredSessions.length===0){wrap.innerHTML='<p style="font-size:13px;color:var(--ink-soft)">No scored sessions yet.</p>';return;}
+  let html='<div class="hg-legend"><div class="hg-legend-item"><div class="hg-legend-dot" style="background:#eef7f2;border:1px solid #9fd4b6"></div>0 — No pain</div><div class="hg-legend-item"><div class="hg-legend-dot" style="background:#fef6ec;border:1px solid #f5cf99"></div>1–2 — Moderate</div><div class="hg-legend-item"><div class="hg-legend-dot" style="background:#fdf1f1;border:1px solid #f0b8b8"></div>3 — Critical</div></div><div class="heat-grid">';
+  ALL_QUESTIONS.forEach(q=>{
+    const vals=scoredSessions.map(s=>resolveScore(s,q.id)).filter(v=>v!==undefined);
+    if(vals.length===0)return;
+    const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const pct=Math.round((avg/3)*100);
+    const barColor=avg>=2.5?'#f0b8b8':avg>=1.5?'#f5cf99':'#9fd4b6';
+    const textColor=avg>=2.5?'#a02020':avg>=1.5?'#a05200':'#1e6e3c';
+    html+=`<div class="hg-row">
+      <div class="hg-label" title="${q.title}">Q${q.n}: ${q.title}</div>
+      <div class="hg-bars"><div class="hg-bar-wrap">
+        <div class="hg-bar" style="width:${pct}%;background:${barColor}"></div>
+        <span class="hg-bar-val" style="color:${textColor}">${vals.length>1?avg.toFixed(1):avg}</span>
+      </div></div>
+      <div class="hg-avg" style="color:${textColor}">${vals.length} resp.</div>
+    </div>`;
+  });
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+
+// ══════════════════════════════════════════════
+// AI ANALYSIS
+// ══════════════════════════════════════════════
+async function runAIAnalysis(){
+  const scoredSessions=sessions.filter(s=>hasAnyScore(s));
+  if(scoredSessions.length===0){showToast('No scored sessions to analyse yet');return;}
+  const btn=document.getElementById('ai-run-btn');
+  const out=document.getElementById('ai-output');
+  btn.disabled=true;btn.textContent='Running...';
+  out.className='ai-output';
+  out.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div>Analysing '+scoredSessions.length+' session'+(scoredSessions.length>1?'s':'')+'...</div>';
+
+  const sessionSummaries=scoredSessions.map(s=>{
+    const trackLabel={'manual':'manual scoring','auto':'AI transcript analysis','both':'combined manual+AI'}[s.track||'manual'];
+    const scoreLines=ALL_QUESTIONS.map(q=>{
+      const v=resolveScore(s,q.id);
+      const note=(s.notes||{})[q.id]||'';
+      const autoQ=(s.autoQuotes||{})[q.id]||'';
+      if(v===undefined)return null;
+      const noteStr=note?` — Notes: "${note.slice(0,100)}"`:autoQ?` — AI quote: "${autoQ.slice(0,100)}"` :'';
+      return `  Q${q.n} ${q.title}: ${v}/3${noteStr}`;
+    }).filter(Boolean).join('\n');
+    const scored=ALL_QUESTIONS.map(q=>resolveScore(s,q.id)).filter(v=>v!==undefined);
+    const total=scored.reduce((a,b)=>a+b,0);
+    return `Session: ${s.name} (${s.company||'unknown'}) — ${s.type} — ${trackLabel} — ${scored.length} questions, score ${total}/${scored.length*3}\n${scoreLines}`;
+  }).join('\n\n---\n\n');
+
+  const avgByQ=ALL_QUESTIONS.map(q=>{
+    const vals=scoredSessions.map(s=>resolveScore(s,q.id)).filter(v=>v!==undefined);
+    if(!vals.length)return null;
+    const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+    return `Q${q.n} "${q.title}": avg ${avg.toFixed(2)}/3 across ${vals.length} sessions`;
+  }).filter(Boolean).join('\n');
+
+  const prompt=`You are a senior B2B sales strategist analysing discovery interview data from MGA (Managing General Agent) insurance prospects and partners. The interviews used a structured 14-question playbook across 4 operational phases.
+
+Here is the raw interview data (scores are 0=no pain, 1=mild, 2=moderate, 3=critical):
+
+${sessionSummaries}
+
+Average scores per question across all sessions:
+${avgByQ}
+
+Please provide a structured analysis with these sections:
+
+1. TOP PAIN POINTS (3–5 most acute issues across all sessions, with supporting evidence)
+2. PATTERN RECOGNITION (what themes or clusters emerge — e.g. back-office vs. underwriting pain, existing partners vs. prospects, etc.)
+3. QUALIFICATION SUMMARY (rank sessions by opportunity priority and explain why)
+4. STRATEGIC RECOMMENDATIONS (3–4 specific actions — what to demo first, which objections to prepare for, which segments to prioritise)
+5. GAPS & RISKS (any questions that weren't answered or sessions where the picture is incomplete)
+
+Be specific, direct, and grounded in the data. Do not pad. Use the interviewee names and company names from the data.`;
+
+  try{
+    const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:prompt}]});
+    if(data.error){out.className='ai-output empty';out.textContent='API error: '+data.error.message;btn.disabled=false;btn.textContent='Re-run analysis';return;}
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    if(text){out.className='ai-output';out.textContent=text;}
+    else{out.className='ai-output empty';out.textContent='Analysis returned empty. Please try again.';}
+  }catch(e){
+    out.className='ai-output empty';out.textContent='Could not reach the analysis service. Please check your connection and try again. ('+e.message+')';
+  }
+  btn.disabled=false;btn.textContent='Re-run analysis';
+}
+
+// ══════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════
+function openExportModal(){
+  const scored=sessions.filter(s=>hasAnyScore(s)).length;
+  const delCount=deletedSessions.length;
+  document.getElementById('export-preview').innerHTML=
+    `<div>📋 <strong>${sessions.length}</strong> active session${sessions.length!==1?'s':''}</div>`+
+    (delCount?`<div>🗑 <strong>${delCount}</strong> deleted session${delCount!==1?'s':''} (included in backup)</div>`:`<div style="color:var(--ink-faint)">🗑 No deleted sessions</div>`)+
+    `<div>✅ <strong>${scored}</strong> with scores</div>`+
+    `<div>📅 Last updated: <strong>${sessions.length?formatDate(Math.max(...sessions.map(s=>s.savedAt||s.createdAt||0))):'—'}</strong></div>`;
+  document.getElementById('export-modal-overlay').classList.remove('hidden');
+}
+function hideExportModal(){document.getElementById('export-modal-overlay').classList.add('hidden')}
+function closeExportModal(e){if(e.target===document.getElementById('export-modal-overlay'))hideExportModal()}
+
+function doExport(){
+  const fmt=document.querySelector('input[name="export-fmt"]:checked').value;
+  const ts=new Date().toISOString().slice(0,10);
+  if(fmt==='json'){
+    const payload={
+      version:2,
+      exportedAt:new Date().toISOString(),
+      source:'Novidea MGA Discovery Playbook',
+      sessions:sessions,
+      deletedSessions:deletedSessions
+    };
+    downloadFile(JSON.stringify(payload,null,2),'novidea-playbook-'+ts+'.json','application/json');
+    showToast('Exported '+(sessions.length+deletedSessions.length)+' session'+(sessions.length+deletedSessions.length!==1?'s':''));
+  }else{
+    // CSV export — scores matrix
+    const headers=['Name','Company','Type','Track','Qualification',...ALL_QUESTIONS.map(q=>'Q'+q.n+': '+q.title),'Total Score','Answered'];
+    const rows=sessions.map(s=>{
+      const vals=ALL_QUESTIONS.map(q=>{const v=resolveScore(s,q.id);return v!==undefined?v:'';});
+      const scored=vals.filter(v=>v!=='');
+      const ans=scored.length;
+      const total=scored.reduce((a,b)=>a+(+b),0);
+      const hot=scored.filter(v=>v===3).length;
+      const pct=ans>0?Math.round((total/(ans*3))*100):0;
+      const qual=ans===0?'Not scored':pct>=70||hot>=4?'Strong fit':pct>=40||hot>=2?'Developing':'Low urgency';
+      const trackLabel={'manual':'Manual','auto':'AI auto','both':'Both'}[s.track||'manual'];
+      return [s.name,s.company||'',s.type,trackLabel,qual,...vals,ans>0?total+'/'+ans*3:'',ans+'/'+ALL_QUESTIONS.length];
+    });
+    const csv=[headers,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+    downloadFile(csv,'novidea-playbook-'+ts+'.csv','text/csv');
+    showToast('Exported CSV');
+  }
+  hideExportModal();
+}
+
+function downloadFile(content,filename,mime){
+  // base64 data URL works in sandboxed iframes where createObjectURL is blocked
+  try{
+    const b64=btoa(unescape(encodeURIComponent(content)));
+    const a=document.createElement('a');
+    a.href='data:'+mime+';base64,'+b64;
+    a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }catch(e){
+    // Fallback: open in new window so user can copy/save manually
+    const w=window.open('','_blank');
+    if(w){
+      w.document.write('<pre style="word-wrap:break-word;white-space:pre-wrap;font-size:12px;padding:20px">'+content.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</pre>');
+      w.document.title=filename;
+      w.document.close();
+      showToast('Opened in new tab — use Ctrl+S / Cmd+S to save as '+filename);
+    }else{
+      showToast('Download blocked. Try opening this file in a regular browser tab.');
+    }
+  }
+}
+
+// ══════════════════════════════════════════════
+// IMPORT
+// ══════════════════════════════════════════════
+let importPayload=null;
+
+function openImportModal(){
+  importPayload=null;
+  document.getElementById('import-file-name').textContent='';
+  document.getElementById('import-preview-wrap').style.display='none';
+  document.getElementById('import-confirm-btn').disabled=true;
+  document.getElementById('import-confirm-btn').style.opacity='.5';
+  document.getElementById('import-confirm-btn').style.cursor='not-allowed';
+  document.getElementById('import-file-input').value='';
+  document.getElementById('import-drop-zone').classList.remove('drag-over');
+  document.querySelector('input[name="import-mode"][value="merge"]').checked=true;
+  document.getElementById('import-modal-overlay').classList.remove('hidden');
+}
+function hideImportModal(){document.getElementById('import-modal-overlay').classList.add('hidden');importPayload=null}
+function closeImportModal(e){if(e.target===document.getElementById('import-modal-overlay'))hideImportModal()}
+
+function handleDragOver(e){e.preventDefault();document.getElementById('import-drop-zone').classList.add('drag-over')}
+function handleDragLeave(){document.getElementById('import-drop-zone').classList.remove('drag-over')}
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('import-drop-zone').classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(file)readImportFile(file);
+}
+function handleFileSelect(e){
+  const file=e.target.files[0];
+  if(file)readImportFile(file);
+}
+
+function readImportFile(file){
+  if(!file.name.endsWith('.json')){showToast('Please select a .json file');return}
+  const reader=new FileReader();
+  reader.onload=evt=>{
+    try{
+      const data=JSON.parse(evt.target.result);
+      if(!data.sessions||!Array.isArray(data.sessions))throw new Error('Invalid format');
+      importPayload=data;
+      document.getElementById('import-file-name').textContent='✓ '+file.name;
+      const s=data.sessions;
+      const scored=s.filter(x=>Object.keys(x.scores||{}).length>0).length;
+      const delCount=(data.deletedSessions||[]).length;
+      const exported=data.exportedAt?new Date(data.exportedAt).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'unknown';
+      document.getElementById('import-preview').innerHTML=
+        `<strong>${s.length} session${s.length!==1?'s':''}</strong> found in this file<br>`+
+        `${scored} with scores`+(delCount?` &nbsp;·&nbsp; ${delCount} deleted (will be restored)`:'')+` &nbsp;·&nbsp; Exported ${exported}`;
+      document.getElementById('import-preview-wrap').style.display='block';
+      const btn=document.getElementById('import-confirm-btn');
+      btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';
+    }catch(err){
+      showToast('Could not read file — make sure it\'s a valid playbook export');
+      document.getElementById('import-file-name').textContent='';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function doImport(){
+  if(!importPayload)return;
+  const mode=document.querySelector('input[name="import-mode"]:checked').value;
+  const incoming=importPayload.sessions||[];
+  const incomingDeleted=importPayload.deletedSessions||[];
+  let added=0,skipped=0,restoredDel=0;
+  if(mode==='replace'){
+    sessions=incoming;
+    deletedSessions=incomingDeleted;
+    added=incoming.length;
+    restoredDel=incomingDeleted.length;
+  }else{
+    const existingIds=new Set(sessions.map(s=>s.id));
+    incoming.forEach(s=>{
+      if(existingIds.has(s.id)){skipped++;}
+      else{sessions.push(s);added++;existingIds.add(s.id);}
+    });
+    const existingDelIds=new Set(deletedSessions.map(s=>s.id));
+    incomingDeleted.forEach(s=>{
+      if(!existingDelIds.has(s.id)){deletedSessions.push(s);restoredDel++;existingDelIds.add(s.id);}
+    });
+  }
+  saveSessions();
+  saveDeleted();
+  purgeExpired();
+  updateDeletedBadge();
+  hideImportModal();
+  renderSessionsGrid();
+  const msg=mode==='replace'
+    ?'Replaced with '+added+' session'+(added!==1?'s':'')+(restoredDel?' + '+restoredDel+' deleted':'')
+    :'Added '+added+' session'+(added!==1?'s':'')+(skipped?' ('+skipped+' skipped)':'')+(restoredDel?', '+restoredDel+' deleted restored':'');
+  showToast(msg);
+}
+
+// ══════════════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════════════
+const ADMIN_EMAIL='barak.shavit@novidea.com';
+const ADMIN_PASS='NovideaMGA123';
+let adminAuthed=false;
+let customQuestions=JSON.parse(localStorage.getItem('mga_custom_questions')||'[]');
+let pendingGenerated=null;
+
+function saveCustomQuestions(){
+  localStorage.setItem('mga_custom_questions',JSON.stringify(customQuestions));
+  if(sb) sb.from('settings').upsert({key:'custom_questions',value:JSON.stringify(customQuestions),updated_at:new Date().toISOString()}).then(({error})=>{if(error)console.warn('Supabase sync error:',error.message);});
+}
+
+function handleAdminNav(){
+  if(adminAuthed){showPage('admin');}
+  else{openAdminLogin();}
+}
+
+function openAdminLogin(){
+  document.getElementById('admin-email').value='';
+  document.getElementById('admin-password').value='';
+  document.getElementById('login-error').textContent='';
+  document.getElementById('admin-login-overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('admin-email').focus(),60);
+}
+function closeAdminLogin(){document.getElementById('admin-login-overlay').classList.add('hidden')}
+
+function attemptAdminLogin(){
+  const email=document.getElementById('admin-email').value.trim().toLowerCase();
+  const pass=document.getElementById('admin-password').value;
+  const err=document.getElementById('login-error');
+  if(email===ADMIN_EMAIL&&pass===ADMIN_PASS){
+    adminAuthed=true;
+    closeAdminLogin();
+    showPage('admin');
+    renderCustomQuestions();
+    showToast('Welcome, Barak');
+  }else{
+    err.textContent='Incorrect email or password.';
+    document.getElementById('admin-password').value='';
+    document.getElementById('admin-password').focus();
+  }
+}
+
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('admin-login-overlay').classList.contains('hidden')&&e.key==='Enter')attemptAdminLogin();
+});
+
+function adminLogout(){
+  adminAuthed=false;
+  _showPage('sessions');
+  showToast('Signed out of admin');
+}
+
+// Override showPage to guard admin route
+showPage=function(name){
+  if(name==='admin'&&!adminAuthed){openAdminLogin();return;}
+  _showPage(name);
+}
+
+function clearAdminPrompt(){
+  document.getElementById('admin-prompt').value='';
+  document.getElementById('gen-preview-wrap').style.display='none';
+  pendingGenerated=null;
+}
+
+async function generateQuestion(){
+  const prompt=document.getElementById('admin-prompt').value.trim();
+  if(!prompt){document.getElementById('admin-prompt').focus();return;}
+  const btn=document.getElementById('admin-gen-btn');
+  const status=document.getElementById('admin-gen-status');
+  btn.disabled=true;status.style.display='flex';
+  document.getElementById('gen-preview-wrap').style.display='none';
+
+  const phaseList=PHASES.map(p=>`${p.num}: ${p.title}`).join(', ');
+  const existingTitles=PHASES.flatMap(p=>p.questions.map(q=>q.title)).join(', ');
+
+  const systemPrompt=`You are building structured discovery questions for the Novidea MGA Discovery Playbook — a sales tool used by Novidea (an insurance technology company) to run discovery conversations with MGAs (Managing General Agents) in the E&S insurance market.
+
+The playbook has 4 phases: ${phaseList}.
+Existing questions: ${existingTitles}.
+
+When given a brief, generate a fully structured question in this EXACT JSON format (no markdown, no extra text, just valid JSON):
+{
+  "title": "Short 3-5 word title",
+  "suggestedPhase": "Phase 1" (or 2, 3, 4 — or "New Phase" if it warrants one),
+  "existing": "The question text for existing partners (consultative, relationship-first tone)",
+  "prospect": "The question text for new prospects (insight-led, pain-first tone)",
+  "probe_existing": "Follow-up probe for the existing partner version",
+  "probe_prospect": "Follow-up probe for the new prospect version",
+  "pain": ["4 bullet strings describing pain signals to listen for"],
+  "nopain": ["4 bullet strings describing no-pain signals"],
+  "rationale": "1-2 sentences on why this question adds value to the playbook"
+}`;
+
+  try{
+    const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:1000,system:systemPrompt,messages:[{role:'user',content:prompt}]});
+    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const jsonMatch=raw.match(/\{[\s\S]*\}/);
+    if(!jsonMatch)throw new Error('No JSON found');
+    const parsed=JSON.parse(jsonMatch[0]);
+    pendingGenerated=parsed;
+    renderGenPreview(parsed);
+  }catch(e){
+    showToast('Could not generate — check your connection and try again');
+    console.error(e);
+  }
+  btn.disabled=false;status.style.display='none';
+}
+
+function renderGenPreview(q){
+  const wrap=document.getElementById('gen-preview-wrap');
+  const body=document.getElementById('gen-preview-body');
+  body.innerHTML=`
+    <div style="margin-bottom:12px">
+      <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft)">Suggested phase</span>
+      <span style="font-size:12px;font-weight:500;color:var(--accent);margin-left:8px">${esc(q.suggestedPhase||'—')}</span>
+    </div>
+    <div style="font-size:15px;font-weight:500;color:var(--ink);margin-bottom:14px">${esc(q.title)}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:var(--teal-bg);border:1px solid var(--teal-border);border-radius:var(--r-md);padding:10px 12px">
+        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--teal);margin-bottom:5px">Existing partner</div>
+        <div style="font-size:12px;font-style:italic;color:var(--teal-text);line-height:1.55">${esc(q.existing)}</div>
+      </div>
+      <div style="background:var(--purple-bg);border:1px solid var(--purple-border);border-radius:var(--r-md);padding:10px 12px">
+        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--purple);margin-bottom:5px">New prospect</div>
+        <div style="font-size:12px;font-style:italic;color:var(--purple-text);line-height:1.55">${esc(q.prospect)}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--r-md);padding:10px 12px">
+        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--red);margin-bottom:5px">Pain signals</div>
+        ${(q.pain||[]).map(x=>`<div style="font-size:11px;color:var(--red-text);margin-bottom:2px">· ${esc(x)}</div>`).join('')}
+      </div>
+      <div style="background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--r-md);padding:10px 12px">
+        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:5px">No-pain signals</div>
+        ${(q.nopain||[]).map(x=>`<div style="font-size:11px;color:var(--green-text);margin-bottom:2px">· ${esc(x)}</div>`).join('')}
+      </div>
+    </div>
+    ${q.rationale?`<div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px 12px;font-size:12px;color:var(--ink-mid);line-height:1.55"><strong style="color:var(--ink-soft)">Rationale:</strong> ${esc(q.rationale)}</div>`:''}
+  `;
+  wrap.style.display='block';
+}
+
+function approveGenerated(){
+  if(!pendingGenerated)return;
+  const entry={
+    id:'cq'+Date.now(),
+    ...pendingGenerated,
+    status:'draft',
+    createdAt:Date.now(),
+    prompt:document.getElementById('admin-prompt').value.trim()
+  };
+  customQuestions.unshift(entry);
+  saveCustomQuestions();
+  renderCustomQuestions();
+  document.getElementById('gen-preview-wrap').style.display='none';
+  document.getElementById('admin-prompt').value='';
+  pendingGenerated=null;
+  showToast('Question saved as draft');
+}
+
+function renderCustomQuestions(){
+  const list=document.getElementById('custom-questions-list');
+  const exportBtn=document.getElementById('export-drafts-btn');
+  if(!customQuestions.length){
+    list.innerHTML='<div class="empty-admin">No drafts yet. Use the AI generator above to create your first question idea.</div>';
+    exportBtn.style.display='none';
+  }else{
+    exportBtn.style.display='';
+    list.innerHTML=customQuestions.map((q,i)=>`
+      <div class="cq-card ${q.status}">
+        <div class="cq-num">${i+1}</div>
+        <div class="cq-body">
+          <div class="cq-phase-tag">${esc(q.suggestedPhase||'—')}</div>
+          <div class="cq-title">${esc(q.title)}</div>
+          <div class="cq-text">${esc(q.existing)}</div>
+          <div class="cq-meta">
+            <span class="cq-status ${q.status}">${q.status==='approved'?'Live in playbook':q.status==='draft'?'Draft — pending review':'Pending'}</span>
+            <span class="cq-date">${formatDate(q.createdAt)}</span>
+          </div>
+          <div class="cq-actions">
+            ${q.status!=='approved'?`<button class="cq-action-btn approve" onclick="approveCustomQ('${q.id}')">Mark as approved</button>`:'<button class="cq-action-btn" onclick="unapproveCustomQ(\''+q.id+'\')">Revert to draft</button>'}
+            <button class="cq-action-btn" onclick="previewCustomQ('${q.id}')">Preview</button>
+            <button class="cq-action-btn del" onclick="deleteCustomQ('${q.id}')">Delete</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  renderEqList();
+}
+
+function approveCustomQ(id){
+  const q=customQuestions.find(x=>x.id===id);if(!q)return;
+  q.status='approved';
+  q.approvedAt=Date.now();
+  saveCustomQuestions();
+  applyCustomQuestions();
+  renderCustomQuestions();
+  showToast('Question added to the live playbook');
+}
+function unapproveCustomQ(id){
+  const q=customQuestions.find(x=>x.id===id);if(!q)return;
+  q.status='draft';
+  saveCustomQuestions();
+  applyCustomQuestions();
+  renderCustomQuestions();
+  showToast('Question removed from live playbook — still saved as draft');
+}
+function deleteCustomQ(id){
+  const q=customQuestions.find(x=>x.id===id);if(!q)return;
+  showConfirm('Delete this draft?','This draft will be permanently removed.',
+    'Delete',function(){
+      customQuestions=customQuestions.filter(x=>x.id!==id);
+      saveCustomQuestions();
+      applyCustomQuestions();
+      renderCustomQuestions();
+      showToast('Draft deleted');
+    });
+}
+
+function exportDrafts(){
+  const ts=new Date().toISOString().slice(0,10);
+  const payload={exportedAt:new Date().toISOString(),source:'Novidea MGA Discovery Playbook — Admin Drafts',questions:customQuestions};
+  downloadFile(JSON.stringify(payload,null,2),'novidea-question-drafts-'+ts+'.json','application/json');
+  showToast('Drafts exported');
+}
+
+// ══════════════════════════════════════════════
+// MANAGE EXISTING QUESTIONS
+// ══════════════════════════════════════════════
+// Overrides are stored in localStorage — they patch the PHASES data at runtime
+let questionOverrides=JSON.parse(localStorage.getItem('mga_q_overrides')||'{}');
+// disabledQuestions is a Set of question IDs hidden from sessions
+// Q8 and Q14 are hidden by default per admin instruction
+const DEFAULT_DISABLED=['q8','q14'];
+let disabledQuestions=new Set([...DEFAULT_DISABLED,...JSON.parse(localStorage.getItem('mga_q_disabled')||'[]')]);
+
+function saveOverrides(){
+  localStorage.setItem('mga_q_overrides',JSON.stringify(questionOverrides));
+  if(sb) sb.from('settings').upsert({key:'q_overrides',value:JSON.stringify(questionOverrides),updated_at:new Date().toISOString()}).then(({error})=>{if(error)console.warn('Supabase sync error:',error.message);});
+}
+function saveDisabled(){
+  const extra=[...disabledQuestions].filter(id=>!DEFAULT_DISABLED.includes(id));
+  localStorage.setItem('mga_q_disabled',JSON.stringify(extra));
+  if(sb) sb.from('settings').upsert({key:'q_disabled',value:JSON.stringify(extra),updated_at:new Date().toISOString()}).then(({error})=>{if(error)console.warn('Supabase sync error:',error.message);});
+}
+
+// Apply stored overrides to PHASES so the playbook always reflects edits
+function applyOverrides(){
+  PHASES.forEach(p=>p.questions.forEach(q=>{
+    if(questionOverrides[q.id]){
+      const ov=questionOverrides[q.id];
+      Object.keys(ov).forEach(k=>{q[k]=ov[k];});
+    }
+  }));
+}
+
+// Inject approved custom questions into PHASES — called on load and on every approve/unapprove/delete
+function applyCustomQuestions(){
+  // First strip any previously injected custom questions from all phases
+  PHASES.forEach(p=>{
+    p.questions=p.questions.filter(q=>!q._custom);
+  });
+
+  // Re-inject all currently approved custom questions
+  const approved=customQuestions.filter(q=>q.status==='approved');
+  approved.forEach(cq=>{
+    // Match phase by suggestedPhase string e.g. "Phase 1", "Phase 2" etc.
+    const phaseNum=parseInt((cq.suggestedPhase||'').replace(/[^0-9]/g,''),10);
+    let targetPhase=PHASES.find(p=>p.id===phaseNum-1);
+    // Fallback: if "New Phase" or unmatched, append to last phase
+    if(!targetPhase)targetPhase=PHASES[PHASES.length-1];
+
+    // Build a full question object compatible with the playbook
+    const qObj={
+      id: cq.id,
+      n: null, // will be set below after insertion
+      title: cq.title||'Custom question',
+      existing: cq.existing||'',
+      prospect: cq.prospect||'',
+      probe_existing: cq.probe_existing||'',
+      probe_prospect: cq.probe_prospect||'',
+      pain: Array.isArray(cq.pain)?cq.pain:[],
+      nopain: Array.isArray(cq.nopain)?cq.nopain:[],
+      _custom: true,
+      _approvedAt: cq.approvedAt||cq.createdAt
+    };
+    targetPhase.questions.push(qObj);
+  });
+
+  // Renumber all questions sequentially across all phases
+  let counter=1;
+  PHASES.forEach(p=>p.questions.forEach(q=>{q.n=counter++;}));
+
+  // Rebuild ALL_QUESTIONS reference
+  while(ALL_QUESTIONS.length)ALL_QUESTIONS.pop();
+  PHASES.forEach(p=>p.questions.forEach(q=>ALL_QUESTIONS.push(q)));
+}
+
+function getEffectiveQuestion(qid){
+  const base=PHASES.flatMap(p=>p.questions).find(q=>q.id===qid);
+  if(!base)return null;
+  return Object.assign({},base,questionOverrides[qid]||{});
+}
+
+function renderEqList(){
+  const el=document.getElementById('eq-list');
+  if(!el)return;
+  let html='';
+  PHASES.forEach(p=>{
+    html+='<div class="eq-phase-group"><div class="eq-phase-label">'+p.num+' — '+p.title+'</div>';
+    p.questions.forEach(q=>{
+      const eff=getEffectiveQuestion(q.id);
+      const isDisabled=disabledQuestions.has(q.id);
+      const hasOverride=!!questionOverrides[q.id];
+      html+='<div class="eq-row'+(isDisabled?' disabled-q':'')+'">'+
+        '<div class="eq-num">Q'+q.n+'</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div class="eq-title">'+esc(eff.title)+'</div>'+
+          '<div class="eq-subtitle">'+esc((eff.existing||'').slice(0,80))+'…</div>'+
+        '</div>'+
+        (hasOverride?'<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:100px;background:var(--accent-dim);color:var(--accent-text);border:1px solid rgba(26,79,255,0.2);flex-shrink:0">Edited</span>':'')+
+        (isDisabled?'<span class="disabled-badge">Hidden</span>':'')+
+        '<div class="eq-row-actions">'+
+          '<button class="eq-btn edit" onclick="openEqModal(\''+q.id+'\')">Edit</button>'+
+          (isDisabled
+            ?'<button class="eq-btn enable" onclick="enableQuestion(\''+q.id+'\')">Show</button>'
+            :'<button class="eq-btn disable" onclick="disableQuestion(\''+q.id+'\')">Hide</button>')+
+          (hasOverride?'<button class="eq-btn" onclick="resetQuestion(\''+q.id+'\')">Reset</button>':'')+
+        '</div>'+
+      '</div>';
+    });
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+function disableQuestion(qid){
+  disabledQuestions.add(qid);saveDisabled();renderEqList();showToast('Question hidden from sessions');
+}
+function enableQuestion(qid){
+  disabledQuestions.delete(qid);saveDisabled();renderEqList();showToast('Question restored to sessions');
+}
+function resetQuestion(qid){
+  showConfirm('Reset to original?','All edits to this question will be discarded. The original playbook text will be restored.','Reset',function(){
+    delete questionOverrides[qid];saveOverrides();applyOverrides();renderEqList();showToast('Question reset to original');
+  });
+}
+
+// ── Edit question modal ──
+let _eqEditingId=null;
+
+function openEqModal(qid){
+  _eqEditingId=qid;
+  const q=getEffectiveQuestion(qid);
+  if(!q)return;
+  const p=PHASES.find(ph=>ph.questions.some(x=>x.id===qid));
+  document.getElementById('eq-modal-title').textContent='Edit: '+q.title;
+  document.getElementById('eq-modal-subtitle').textContent=(p?p.num+' — '+p.title:'');
+  document.getElementById('eq-f-title').value=q.title||'';
+  document.getElementById('eq-f-existing').value=q.existing||'';
+  document.getElementById('eq-f-prospect').value=q.prospect||'';
+  document.getElementById('eq-f-probe-existing').value=q.probe_existing||'';
+  document.getElementById('eq-f-probe-prospect').value=q.probe_prospect||'';
+  document.getElementById('eq-f-pain').value=(q.pain||[]).join('\n');
+  document.getElementById('eq-f-nopain').value=(q.nopain||[]).join('\n');
+  document.getElementById('eq-ai-prompt').value='';
+  document.getElementById('eq-modal-overlay').classList.remove('hidden');
+}
+
+function closeEqModal(){
+  document.getElementById('eq-modal-overlay').classList.add('hidden');
+  _eqEditingId=null;
+}
+
+function saveEqChanges(){
+  if(!_eqEditingId)return;
+  const title=document.getElementById('eq-f-title').value.trim();
+  const existing=document.getElementById('eq-f-existing').value.trim();
+  const prospect=document.getElementById('eq-f-prospect').value.trim();
+  const probe_existing=document.getElementById('eq-f-probe-existing').value.trim();
+  const probe_prospect=document.getElementById('eq-f-probe-prospect').value.trim();
+  const pain=document.getElementById('eq-f-pain').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const nopain=document.getElementById('eq-f-nopain').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!title||!existing||!prospect){showToast('Title and both question texts are required');return;}
+  questionOverrides[_eqEditingId]={title,existing,prospect,probe_existing,probe_prospect,pain,nopain};
+  saveOverrides();
+  applyOverrides();
+  renderEqList();
+  closeEqModal();
+  showToast('Question updated');
+}
+
+async function runEqAI(){
+  const prompt=document.getElementById('eq-ai-prompt').value.trim();
+  if(!prompt){document.getElementById('eq-ai-prompt').focus();return;}
+  if(!_eqEditingId)return;
+  const btn=document.getElementById('eq-ai-run-btn');
+  const spinner=document.getElementById('eq-ai-spinner');
+  btn.disabled=true;spinner.style.display='inline-block';
+
+  const current={
+    title:document.getElementById('eq-f-title').value,
+    existing:document.getElementById('eq-f-existing').value,
+    prospect:document.getElementById('eq-f-prospect').value,
+    probe_existing:document.getElementById('eq-f-probe-existing').value,
+    probe_prospect:document.getElementById('eq-f-probe-prospect').value,
+    pain:document.getElementById('eq-f-pain').value.split('\n').filter(Boolean),
+    nopain:document.getElementById('eq-f-nopain').value.split('\n').filter(Boolean)
+  };
+
+  const sys='You are editing a specific discovery question in the Novidea MGA Discovery Playbook — a sales tool for insurance technology. You will receive the current question data and an instruction. Return ONLY a valid JSON object with these exact keys: title, existing, prospect, probe_existing, probe_prospect, pain (array), nopain (array). No markdown, no commentary, just the JSON.';
+  const userMsg='Current question:\n'+JSON.stringify(current,null,2)+'\n\nInstruction: '+prompt;
+
+  try{
+    const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:900,system:sys,messages:[{role:'user',content:userMsg}]});
+    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=raw.match(/\{[\s\S]*\}/);
+    if(!match)throw new Error('No JSON');
+    const updated=JSON.parse(match[0]);
+    if(updated.title)document.getElementById('eq-f-title').value=updated.title;
+    if(updated.existing)document.getElementById('eq-f-existing').value=updated.existing;
+    if(updated.prospect)document.getElementById('eq-f-prospect').value=updated.prospect;
+    if(updated.probe_existing)document.getElementById('eq-f-probe-existing').value=updated.probe_existing;
+    if(updated.probe_prospect)document.getElementById('eq-f-probe-prospect').value=updated.probe_prospect;
+    if(updated.pain)document.getElementById('eq-f-pain').value=updated.pain.join('\n');
+    if(updated.nopain)document.getElementById('eq-f-nopain').value=updated.nopain.join('\n');
+    document.getElementById('eq-ai-prompt').value='';
+    showToast('Fields updated by AI — review and save');
+  }catch(e){
+    showToast('AI update failed — try again');
+  }
+  btn.disabled=false;spinner.style.display='none';
+}
+
+// Close edit modal on overlay click
+var _eq=document.getElementById('eq-modal-overlay');if(_eq)_eq.addEventListener('click',function(e){if(e.target===_eq)closeEqModal();});
+
+// ══════════════════════════════════════════════
+// TRANSCRIPT & TRACK SYSTEM
+// ══════════════════════════════════════════════
+
+// Track state: 'manual' | 'auto' | 'both'
+function getSessionTrack(){const s=getCurrentSession();return(s&&s.track)||'manual';}
+function getScoreSource(qid){const s=getCurrentSession();return(s&&s.scoreSources&&s.scoreSources[qid])||'manual';}
+
+function sessionHasInput(s){
+  if(!s)return false;
+  const hasManual=Object.keys(s.scores||{}).length>0||Object.keys(s.notes||{}).length>0;
+  const hasAuto=Object.keys(s.autoScores||{}).length>0;
+  const hasTranscript=!!(s.transcript&&s.transcript.trim());
+  return hasManual||hasAuto||hasTranscript;
+}
+
+function trySetTrack(t){
+  const s=getCurrentSession();if(!s)return;
+  if(t===getSessionTrack())return;
+  if(sessionHasInput(s)){
+    const msg=document.getElementById('track-lock-msg');
+    if(msg){msg.style.display='flex';clearTimeout(msg._t);msg._t=setTimeout(()=>{msg.style.display='none';},3000);}
+    showToast('Clear scores and transcript first to switch tracks');
+    return;
+  }
+  setTrack(t);
+}
+
+function setTrack(t){
+  const s=getCurrentSession();if(!s)return;
+  s.track=t;saveSessions();
+  renderTrackBar();renderPhase(activePhase);updateStats();
+}
+
+function setScoreSource(qid,src){
+  const s=getCurrentSession();if(!s)return;
+  if(!s.scoreSources)s.scoreSources={};
+  s.scoreSources[qid]=src;
+  saveSessions();rerenderCard(qid);updateStats();
+}
+
+function renderTrackBar(){
+  const s=getCurrentSession();
+  const track=getSessionTrack();
+  const hasTranscript=!!(s&&s.transcript&&s.transcript.trim());
+  const hasAutoResults=!!(s&&s.autoScores&&Object.keys(s.autoScores).length>0);
+  const isLocked=sessionHasInput(s);
+  ['manual','auto','both'].forEach(t=>{
+    const btn=document.getElementById('track-'+t+'-btn');
+    if(!btn)return;
+    const isActive=track===t;
+    btn.className='track-btn'+(isActive?' active-'+t:'')+((!isActive&&isLocked)?' locked':'');
+    btn.title=(!isActive&&isLocked)?'Clear all input to switch tracks':'';
+  });
+  const tBtn=document.getElementById('transcript-btn');
+  const tLabel=document.getElementById('transcript-btn-label');
+  const lockMsg=document.getElementById('track-lock-msg');
+  const showT=track==='auto'||track==='both';
+  if(tBtn)tBtn.style.display=showT?'':'none';
+  if(tLabel&&showT){
+    if(hasAutoResults){tBtn.className='transcript-btn has-transcript';tLabel.textContent='Transcript analysed';}
+    else if(hasTranscript){tBtn.className='transcript-btn has-transcript';tLabel.textContent='Transcript added';}
+    else{tBtn.className='transcript-btn';tLabel.textContent='Add transcript';}
+  }
+  if(lockMsg&&!isLocked)lockMsg.style.display='none';
+}
+
+// ── Transcript modal ──
+function openTranscriptModal(){
+  const s=getCurrentSession();
+  document.getElementById('transcript-input').value=(s&&s.transcript)||'';
+  document.getElementById('tm-status').textContent='';
+  const btn=document.getElementById('tm-analyse-btn');
+  btn.disabled=false;
+  btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Analyse with AI';
+  const zone=document.getElementById('tm-upload-zone');
+  const title=document.getElementById('tm-upload-title');
+  if(zone)zone.className='tm-upload-zone';
+  if(title)title.textContent='Upload transcript file';
+  document.getElementById('tm-file-input').value='';
+  document.getElementById('transcript-modal-overlay').classList.remove('hidden');
+}
+
+function closeTranscriptModal(){document.getElementById('transcript-modal-overlay').classList.add('hidden');}
+
+function clearTranscript(){
+  document.getElementById('transcript-input').value='';
+  document.getElementById('tm-file-input').value='';
+  const zone=document.getElementById('tm-upload-zone');
+  const title=document.getElementById('tm-upload-title');
+  if(zone)zone.className='tm-upload-zone';
+  if(title)title.textContent='Upload transcript file';
+  const s=getCurrentSession();if(!s)return;
+  s.transcript='';
+  delete s.autoScores;delete s.autoNotes;delete s.autoReasons;delete s.autoQuotes;delete s.scoreSources;
+  saveSessions();renderTrackBar();renderPhase(activePhase);updateStats();showToast('Transcript cleared');
+}
+
+function onTranscriptTextInput(){
+  const zone=document.getElementById('tm-upload-zone');
+  const title=document.getElementById('tm-upload-title');
+  if(zone&&zone.classList.contains('has-file')){
+    zone.className='tm-upload-zone';
+    if(title)title.textContent='Upload transcript file';
+    document.getElementById('tm-file-input').value='';
+  }
+}
+
+async function handleTranscriptFile(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const zone=document.getElementById('tm-upload-zone');
+  const title=document.getElementById('tm-upload-title');
+  const statusEl=document.getElementById('tm-status');
+  title.textContent='Reading file…';
+  statusEl.textContent='';
+  try{
+    let text='';
+    if(file.name.endsWith('.txt')){
+      text=await file.text();
+    }else if(file.name.endsWith('.docx')){
+      text=await extractDocxText(file);
+    }else{showToast('Please upload a .docx or .txt file');return;}
+    if(!text.trim()){showToast('File appears empty');return;}
+    document.getElementById('transcript-input').value=text;
+    zone.className='tm-upload-zone has-file';
+    title.textContent=file.name+' (≈'+Math.round(text.length/100)/10+'k chars loaded)';
+    statusEl.textContent='File loaded — ready to analyse';
+    statusEl.className='tm-status';
+  }catch(e){
+    showToast('Could not read file — try pasting the text instead');
+    title.textContent='Upload transcript file';
+    zone.className='tm-upload-zone';
+  }
+}
+
+async function extractDocxText(file){
+  if(!window.JSZip){
+    await new Promise((res,rej)=>{
+      const sc=document.createElement('script');
+      sc.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      sc.onload=res;sc.onerror=rej;
+      document.head.appendChild(sc);
+    });
+  }
+  const ab=await file.arrayBuffer();
+  const zip=await JSZip.loadAsync(ab);
+  const xmlFile=zip.file('word/document.xml');
+  if(!xmlFile)throw new Error('Not a valid docx');
+  const xml=await xmlFile.async('string');
+  const text=xml
+    .replace(/<w:p[ >][^>]*>/g,'\n')
+    .replace(/<w:br[^>]*/g,' ')
+    .replace(/<[^>]+>/g,'')
+    .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&apos;/g,"'")
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+  return text;
+}
+
+var _tm=document.getElementById('transcript-modal-overlay');if(_tm)_tm.addEventListener('click',function(e){if(e.target===_tm)closeTranscriptModal();});
+
+// ── AI transcript analysis ──
+async function analyseTranscript(){
+  const text=document.getElementById('transcript-input').value.trim();
+  if(!text){document.getElementById('transcript-input').focus();return;}
+  const s=getCurrentSession();if(!s)return;
+
+  const btn=document.getElementById('tm-analyse-btn');
+  const statusEl=document.getElementById('tm-status');
+  btn.disabled=true;
+  btn.innerHTML='<div class="tm-spinner" style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></div> Analysing…';
+  statusEl.className='tm-status running';
+  statusEl.textContent='Reading transcript and scoring questions…';
+
+  // Save transcript immediately
+  s.transcript=text;saveSessions();
+
+  const qList=ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).map(q=>
+    `Q${q.n} "${q.title}": existing_ask="${q.existing}" prospect_ask="${q.prospect}" pain_signals=${JSON.stringify(q.pain)} nopain_signals=${JSON.stringify(q.nopain)}`
+  ).join('\n');
+
+  const sys=`You are analysing a sales discovery call transcript for Novidea, an insurance technology company. Your job is to score how strongly each discovery question's pain point was confirmed in the transcript.
+
+For each question, return a JSON object with:
+- score: 0 (no pain), 1 (mild), 2 (moderate), or 3 (critical)  
+- quote: the most relevant excerpt from the transcript (max 120 chars, or "" if none)
+- reasoning: 1 sentence explaining the score
+
+Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and values are {score, quote, reasoning}. No markdown, no commentary.`;
+
+  const userMsg=`TRANSCRIPT:\n${text.slice(0,12000)}\n\nQUESTIONS TO SCORE:\n${qList}`;
+
+  try{
+    const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:2000,system:sys,messages:[{role:'user',content:userMsg}]});
+    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=raw.match(/\{[\s\S]*\}/);
+    if(!match)throw new Error('No JSON');
+    const results=JSON.parse(match[0]);
+
+    // Store auto scores and notes
+    s.autoScores={};s.autoNotes={};s.autoReasons={};s.autoQuotes={};
+    Object.keys(results).forEach(qid=>{
+      const r=results[qid];
+      if(r&&typeof r.score==='number'){
+        s.autoScores[qid]=r.score;
+        s.autoQuotes[qid]=r.quote||'';
+        s.autoReasons[qid]=r.reasoning||'';
+      }
+    });
+
+    // If track is 'auto', auto-set scoreSources
+    if(!s.scoreSources)s.scoreSources={};
+    if(s.track==='auto'){
+      ALL_QUESTIONS.forEach(q=>{if(s.autoScores[q.id]!==undefined)s.scoreSources[q.id]='auto';});
+    }
+
+    saveSessions();
+    renderTrackBar();
+    renderPhase(activePhase);
+    updateStats();
+
+    const count=Object.keys(s.autoScores).length;
+    statusEl.className='tm-status';
+    statusEl.textContent=count+' questions scored from transcript';
+    spinner.style.display='none';
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Re-analyse';
+
+    // Auto-switch to auto track if user was on manual with no scores yet
+    const manualScored=Object.keys(s.scores||{}).length;
+    if(s.track==='manual'&&manualScored===0){setTrack('auto');}
+
+    showToast('Transcript analysed — '+count+' questions scored');
+  }catch(err){
+    statusEl.className='tm-status';
+    statusEl.textContent='Analysis failed — check connection and try again';
+    spinner.style.display='none';
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><div class="tm-spinner" id="tm-spinner" style="display:none"></div> Analyse with AI';
+  }
+}
+
+// ── Score resolution: returns the score that counts for summary ──
+function getActiveScore(qid){
+  const s=getCurrentSession();if(!s)return -1;
+  const track=getSessionTrack();
+  const src=getScoreSource(qid);
+  if(track==='manual'){return s.scores[qid]!==undefined?s.scores[qid]:-1;}
+  if(track==='auto'){return s.autoScores&&s.autoScores[qid]!==undefined?s.autoScores[qid]:-1;}
+  // both: use the scoreSources per question
+  if(src==='auto')return s.autoScores&&s.autoScores[qid]!==undefined?s.autoScores[qid]:-1;
+  return s.scores[qid]!==undefined?s.scores[qid]:-1;
+}
+
+// Resolve effective score for any session (used in summary/heatmap)
+function resolveScore(session, qid){
+  if(!session)return undefined;
+  const track=session.track||'manual';
+  const src=(session.scoreSources&&session.scoreSources[qid])||'manual';
+  if(track==='manual') return session.scores&&session.scores[qid]!==undefined?session.scores[qid]:undefined;
+  if(track==='auto') return session.autoScores&&session.autoScores[qid]!==undefined?session.autoScores[qid]:undefined;
+  // both
+  if(src==='auto') return session.autoScores&&session.autoScores[qid]!==undefined?session.autoScores[qid]:undefined;
+  return session.scores&&session.scores[qid]!==undefined?session.scores[qid]:undefined;
+}
+
+function hasAnyScore(session){
+  if(!session)return false;
+  const track=session.track||'manual';
+  if(track==='manual'||track==='both') return Object.keys(session.scores||{}).length>0;
+  if(track==='auto') return Object.keys(session.autoScores||{}).length>0;
+  return false;
+}
+
+// ══════════════════════════════════════════════
+// API HELPER — works in claude.ai artifact AND standalone page
+// ══════════════════════════════════════════════
+// ── Proxy URL: deploy the Cloudflare Worker from the setup guide,
+//    then paste your worker URL here (e.g. https://novidea-proxy.yourname.workers.dev)
+const CLAUDE_PROXY_URL = localStorage.getItem('novidea_proxy_url') || '';
+
+async function callClaude(payload){
+  const isArtifact=window.location.hostname.includes('claude.ai')||
+    window.location.hostname.includes('anthropic.com')||
+    (function(){try{return window.parent!==window;}catch(e){return true;}})();
+
+  // ── Path A: inside claude.ai artifact — direct call with special header
+  if(isArtifact){
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify(payload)
+    });
+    const data=await resp.json();
+    if(!resp.ok||data.error)throw new Error((data.error&&data.error.message)||'API error '+resp.status);
+    return data;
+  }
+
+  // ── Path B: standalone page — route through Cloudflare Worker proxy
+  let proxyUrl=CLAUDE_PROXY_URL||localStorage.getItem('novidea_proxy_url')||'';
+  if(!proxyUrl){
+    proxyUrl=prompt(
+      'AI features require a one-time proxy setup.\n\n' +
+      'Step 1: Go to https://dash.cloudflare.com → Workers & Pages → Create Worker\n' +
+      'Step 2: Replace the worker code with the code from novidea-worker.js (included in your files)\n' +
+      'Step 3: Set an Environment Variable: ANTHROPIC_KEY = your Anthropic API key\n' +
+      'Step 4: Deploy and paste your worker URL below\n\n' +
+      'Paste your Worker URL (e.g. https://novidea-proxy.yourname.workers.dev):'
+    );
+    if(!proxyUrl||!proxyUrl.trim())throw new Error('Proxy URL required for AI features on standalone page');
+    proxyUrl=proxyUrl.trim().replace(/\/+$/,'');
+    localStorage.setItem('novidea_proxy_url',proxyUrl);
+  }
+
+  let resp;
+  try{
+    resp=await fetch(proxyUrl+'/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+  }catch(netErr){
+    // Clear stored proxy URL so user can re-enter if it was wrong
+    localStorage.removeItem('novidea_proxy_url');
+    throw new Error('Could not reach proxy — check the Worker URL is correct and re-try');
+  }
+  const data=await resp.json();
+  if(!resp.ok||data.error){
+    if(resp.status===401||resp.status===403){
+      localStorage.removeItem('novidea_proxy_url');
+      throw new Error('Proxy auth error — check your ANTHROPIC_KEY environment variable in the Worker');
+    }
+    throw new Error((data.error&&data.error.message)||'Proxy error '+resp.status);
+  }
+  return data;
+}
+
+// ══════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ══════════════════════════════════════════════
+// SUPABASE INIT & SYNC
+// ══════════════════════════════════════════════
+async function initSupabase(){
+  // Use localStorage override if present, otherwise keep hardcoded defaults
+  SUPABASE_URL = localStorage.getItem('sb_url') || SUPABASE_URL;
+  SUPABASE_KEY = localStorage.getItem('sb_key') || SUPABASE_KEY;
+
+  if(!SUPABASE_URL||!SUPABASE_KEY){ return false; }
+
+  // Always create the client with whatever credentials we have
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth:{persistSession:false}
+  });
+
+  // Test connection via plain REST fetch (avoids DataCloneError in sandboxed environments)
+  try{
+    const testUrl = SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/sessions?select=id&limit=1';
+    const res = await fetch(testUrl, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    if(!res.ok){
+      const body = await res.json().catch(()=>({}));
+      if((body.code||'')==='42P01'||(body.message||'').includes('relation')){
+        console.warn('Supabase: sessions table not found. Run the SQL schema.');
+      }
+      // Even if test fails, keep sb alive — maybe it works for actual queries
+      return true;
+    }
+    return true;
+  }catch(e){
+    // Fetch blocked (sandbox) — keep sb client alive anyway so downloaded file works
+    console.warn('Supabase connection test failed:', e.message);
+    return true;
+  }
+}
+
+async function loadFromSupabase(){
+  if(!sb)return;
+  try{
+    // Load active sessions
+    const {data:sData}=await sb.from('sessions').select('data').order('updated_at',{ascending:false});
+    if(sData&&sData.length>0){
+      sessions=sData.map(r=>r.data);
+      localStorage.setItem('mga_sessions',JSON.stringify(sessions));
+    }
+    // Load deleted sessions
+    const {data:dData}=await sb.from('deleted_sessions').select('data');
+    if(dData&&dData.length>0){
+      deletedSessions=dData.map(r=>r.data);
+      localStorage.setItem('mga_deleted',JSON.stringify(deletedSessions));
+    }
+    // Load settings (custom questions, overrides, disabled)
+    const {data:settings}=await sb.from('settings').select('key,value');
+    if(settings){
+      settings.forEach(({key,value})=>{
+        try{
+          if(key==='custom_questions'){customQuestions=JSON.parse(value);localStorage.setItem('mga_custom_questions',value);}
+          if(key==='q_overrides'){questionOverrides=JSON.parse(value);localStorage.setItem('mga_q_overrides',value);}
+          if(key==='q_disabled'){
+            const extra=JSON.parse(value);
+            disabledQuestions=new Set([...DEFAULT_DISABLED,...extra]);
+            localStorage.setItem('mga_q_disabled',value);
+          }
+        }catch(e){}
+      });
+    }
+  }catch(e){
+    console.warn('Failed to load from Supabase:',e.message);
+  }
+}
+
+function subscribeRealtime(){
+  if(!sb)return;
+  // Sessions table — any insert/update/delete triggers a full reload + re-render
+  sb.channel('sessions-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'sessions'},async(payload)=>{
+      await loadFromSupabase();
+      renderSessionsGrid();
+      if(document.getElementById('page-summary').classList.contains('active'))renderSummary();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'deleted_sessions'},async()=>{
+      await loadFromSupabase();
+      updateDeletedBadge();
+      if(document.getElementById('page-deleted').classList.contains('active'))renderDeletedList();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'settings'},async()=>{
+      await loadFromSupabase();
+      applyOverrides();
+      applyCustomQuestions();
+    })
+    .subscribe();
+}
+
+// Supabase setup modal
+function showSbSetupModal(msg){
+  const existing=document.getElementById('sb-setup-overlay');
+  if(existing)existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='sb-setup-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(15,17,23,0.75);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:DM Sans,sans-serif';
+  overlay.innerHTML=`<div style="background:#fff;border-radius:20px;padding:32px;max-width:560px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.2)">
+    <div style="font-size:28px;font-weight:500;font-family:DM Serif Display,serif;letter-spacing:-0.5px;margin-bottom:8px">Connect to Supabase</div>
+    <p style="font-size:13px;color:#555;line-height:1.65;margin-bottom:20px">${msg||'To share sessions across all users, connect a free Supabase database. Takes about 5 minutes.'}</p>
+    <div style="background:#f5f6f9;border-radius:12px;padding:14px 16px;font-size:12px;color:#444;line-height:1.8;margin-bottom:20px">
+      <strong style="color:#0f1117;display:block;margin-bottom:6px">Setup steps:</strong>
+      1. Go to <a href="https://supabase.com" target="_blank" style="color:#1a4fff">supabase.com</a> → New project (free tier)<br>
+      2. Once created, go to <strong>SQL Editor</strong> and run the SQL from <code>supabase-schema.sql</code> (included in your files)<br>
+      3. Go to <strong>Settings → API</strong> and copy your <strong>Project URL</strong> and <strong>anon/public key</strong><br>
+      4. Paste them below and click Connect
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:#888;display:block;margin-bottom:5px">Project URL</label>
+      <input id="sb-url-input" type="text" placeholder="https://xxxxxxxxxxxx.supabase.co" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:#888;display:block;margin-bottom:5px">Anon / public key</label>
+      <input id="sb-key-input" type="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="skipSbSetup()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;color:#666;cursor:pointer;font-size:13px;font-family:inherit">Use offline only</button>
+      <button onclick="connectSupabase()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#1a4fff;color:#fff;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit">Connect</button>
+    </div>
+    <div id="sb-connect-error" style="font-size:12px;color:#c93535;margin-top:10px;min-height:16px"></div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function connectSupabase(){
+  const url=(document.getElementById('sb-url-input').value||'').trim();
+  const key=(document.getElementById('sb-key-input').value||'').trim();
+  const errEl=document.getElementById('sb-connect-error');
+  if(!url||!key){errEl.textContent='Both fields are required.';return;}
+  const btn=document.querySelector('#sb-setup-overlay button:last-child');
+  btn.textContent='Connecting…';btn.disabled=true;
+  try{
+    const testUrl = url.replace(/\/$/, '') + '/rest/v1/sessions?select=id&limit=1';
+    let res;
+    try{
+      res = await fetch(testUrl, {
+        headers: { 'apikey': key, 'Authorization': 'Bearer ' + key }
+      });
+    }catch(fetchErr){
+      errEl.innerHTML = '<strong>Network blocked in this preview.</strong> Your credentials are saved. Download the file and open it locally to use Supabase sync. <a href="#" onclick="event.preventDefault();downloadPlaybook()" style="color:#1a4fff;text-decoration:underline">Download now</a>';
+      localStorage.setItem('sb_url',url);
+      localStorage.setItem('sb_key',key);
+      btn.textContent='Connect';btn.disabled=false;
+      return;
+    }
+    if(!res.ok){
+      const body = await res.json().catch(()=>({}));
+      if((body.code||'')==='42P01'||(body.message||'').includes('relation')){
+        errEl.textContent='Tables not found — please run the SQL schema first (step 2 above).';
+        btn.textContent='Connect';btn.disabled=false;return;
+      }
+      throw new Error(body.message||body.error||'HTTP '+res.status);
+    }
+    const client=supabase.createClient(url,key,{auth:{persistSession:false}});
+    localStorage.setItem('sb_url',url);
+    localStorage.setItem('sb_key',key);
+    SUPABASE_URL=url;SUPABASE_KEY=key;sb=client;
+    document.getElementById('sb-setup-overlay').remove();
+    await loadFromSupabase();
+    subscribeRealtime();
+    applyOverrides();applyCustomQuestions();purgeExpired();updateDeletedBadge();renderSessionsGrid();
+    showToast('Connected to Supabase ✓ — sessions now shared across all users');
+  }catch(e){
+    errEl.textContent='Connection failed: '+e.message;
+    btn.textContent='Connect';btn.disabled=false;
+  }
+}
+
+function downloadPlaybook(){
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mga-discovery-playbook.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function skipSbSetup(){
+  const overlay=document.getElementById('sb-setup-overlay');
+  if(overlay)overlay.remove();
+  // Work offline with localStorage only
+  applyOverrides();applyCustomQuestions();purgeExpired();updateDeletedBadge();renderSessionsGrid();
+}
+
+// Add a "Reconnect DB" button visible in the sessions header when offline
+function renderConnectionStatus(){
+  let bar=document.getElementById('sb-status-bar');
+  if(!bar){
+    bar=document.createElement('div');
+    bar.id='sb-status-bar';
+    bar.style.cssText='text-align:center;padding:6px 16px;font-size:12px;font-family:DM Sans,sans-serif;display:flex;align-items:center;justify-content:center;gap:10px';
+    const wrap=document.querySelector('.sessions-wrap');
+    if(wrap)wrap.insertBefore(bar,wrap.firstChild);
+  }
+  if(sb){
+    bar.style.background='#eef7f2';bar.style.color='#1e6e3c';
+    bar.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:#1e6e3c;display:inline-block"></span> Live sync active — sessions shared across all users';
+  }else{
+    bar.style.background='#fef6ec';bar.style.color='#854f0b';
+    bar.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:#b85c00;display:inline-block"></span> Offline mode — sessions stored locally only <button onclick="showSbSetupModal()" style="font-size:11px;padding:3px 8px;border:1px solid #f5cf99;border-radius:6px;background:#fff;color:#854f0b;cursor:pointer;font-family:DM Sans,sans-serif;margin-left:6px">Connect database</button>';
+  }
+}
+
+// INIT — runs after DOM is ready (handles both early and late script execution)
+async function _init(){
+  applyOverrides();
+  applyCustomQuestions();
+
+  try{
+    await initSupabase();
+  }catch(e){
+    console.warn('initSupabase error:', e.message);
+  }
+
+  if(sb){
+    try{
+      await loadFromSupabase();
+      subscribeRealtime();
+    }catch(e){
+      console.warn('loadFromSupabase error:', e.message);
+    }
+  }
+
+  purgeExpired();
+  updateDeletedBadge();
+  renderSessionsGrid();
+  renderConnectionStatus();
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',_init);
+}else{
+  _init();
+}
+</script>
+</body>
+</html>
