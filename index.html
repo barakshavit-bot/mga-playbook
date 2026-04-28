@@ -1023,10 +1023,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
     <div class="import-drop-zone" id="import-drop-zone" onclick="document.getElementById('import-file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
       <svg viewBox="0 0 28 28" fill="none" style="display:block;margin:0 auto 10px"><path d="M14 4v14M8 12l6-6 6 6M4 22v1a1 1 0 001 1h18a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <p><strong>Click to choose a file</strong> or drag and drop here</p>
-      <p style="margin-top:4px;font-size:12px">Accepts .json files exported from this playbook</p>
+      <p style="margin-top:4px;font-size:12px">Accepts .json or .csv files exported from this playbook</p>
       <div class="import-file-name" id="import-file-name"></div>
     </div>
-    <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleFileSelect(event)">
+    <input type="file" id="import-file-input" accept=".json,.csv" style="display:none" onchange="handleFileSelect(event)">
     <div id="import-preview-wrap" style="margin-top:12px;display:none">
       <div class="import-preview" id="import-preview"></div>
       <div style="margin-top:14px">
@@ -1648,6 +1648,17 @@ function renderDeletedList(){
 function renderSummary(){
   renderSummaryTable();
   renderHeatmap();
+  // Restore persisted AI insight
+  const saved = localStorage.getItem('mga_ai_insight');
+  const savedAt = localStorage.getItem('mga_ai_insight_at');
+  const out = document.getElementById('ai-output');
+  if(saved && out){
+    out.className='ai-output';
+    const ts = savedAt ? ' (generated '+new Date(savedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+')' : '';
+    out.textContent = saved;
+    const btn = document.getElementById('ai-run-btn');
+    if(btn) btn.textContent = 'Re-run analysis';
+  }
 }
 
 function renderSummaryTable(){
@@ -1767,7 +1778,14 @@ Be specific, direct, and grounded in the data. Do not pad. Use the interviewee n
     const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:prompt}]});
     if(data.error){out.className='ai-output empty';out.textContent='API error: '+data.error.message;btn.disabled=false;btn.textContent='Re-run analysis';return;}
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    if(text){out.className='ai-output';out.textContent=text;}
+    if(text){
+      out.className='ai-output';out.textContent=text;
+      // Persist the insight text
+      localStorage.setItem('mga_ai_insight', text);
+      localStorage.setItem('mga_ai_insight_at', new Date().toISOString());
+      if(sb) sb.from('settings').upsert({key:'ai_insight',value:text,updated_at:new Date().toISOString()}).then(({error})=>{if(error)console.warn('Supabase insight save error:',error.message);});
+      if(sb) sb.from('settings').upsert({key:'ai_insight_at',value:new Date().toISOString(),updated_at:new Date().toISOString()}).then(()=>{});
+    }
     else{out.className='ai-output empty';out.textContent='Analysis returned empty. Please try again.';}
   }catch(e){
     out.className='ai-output empty';out.textContent='Could not reach the analysis service. Please check your connection and try again. ('+e.message+')';
@@ -1800,7 +1818,9 @@ function doExport(){
       exportedAt:new Date().toISOString(),
       source:'Novidea MGA Discovery Playbook',
       sessions:sessions,
-      deletedSessions:deletedSessions
+      deletedSessions:deletedSessions,
+      aiInsight: localStorage.getItem('mga_ai_insight')||'',
+      aiInsightAt: localStorage.getItem('mga_ai_insight_at')||''
     };
     downloadFile(JSON.stringify(payload,null,2),'novidea-playbook-'+ts+'.json','application/json');
     showToast('Exported '+(sessions.length+deletedSessions.length)+' session'+(sessions.length+deletedSessions.length!==1?'s':''));
@@ -1823,7 +1843,11 @@ function doExport(){
       return [s.name,s.company||'',s.type,trackLabel,qual,...vals,ans>0?total+'/'+ans*3:'',ans+'/'+ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).length,aiSource,...aiQuotes,...aiReasons];
     });
     const csv=[headers,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-    downloadFile(csv,'novidea-playbook-'+ts+'.csv','text/csv');
+    // Append AI insight as a separate section at bottom of CSV
+    const insight = localStorage.getItem('mga_ai_insight')||'';
+    const insightAt = localStorage.getItem('mga_ai_insight_at')||'';
+    const insightBlock = insight ? '\n\n"## AI STRATEGIC INSIGHTS","Generated: '+insightAt+'"\n"'+insight.replace(/"/g,'""')+'"' : '';
+    downloadFile(csv+insightBlock,'novidea-playbook-'+ts+'.csv','text/csv');
     showToast('Exported CSV');
   }
   hideExportModal();
@@ -1887,21 +1911,123 @@ function handleFileSelect(e){
 }
 
 function readImportFile(file){
-  if(!file.name.endsWith('.json')){showToast('Please select a .json file');return}
+  const isCSV = file.name.endsWith('.csv');
+  const isJSON = file.name.endsWith('.json');
+  if(!isJSON && !isCSV){showToast('Please select a .json or .csv file');return;}
   const reader=new FileReader();
   reader.onload=evt=>{
     try{
-      const data=JSON.parse(evt.target.result);
-      if(!data.sessions||!Array.isArray(data.sessions))throw new Error('Invalid format');
-      importPayload=data;
-      document.getElementById('import-file-name').textContent='✓ '+file.name;
-      const s=data.sessions;
-      const scored=s.filter(x=>Object.keys(x.scores||{}).length>0).length;
-      const delCount=(data.deletedSessions||[]).length;
-      const exported=data.exportedAt?new Date(data.exportedAt).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'unknown';
-      document.getElementById('import-preview').innerHTML=
-        `<strong>${s.length} session${s.length!==1?'s':''}</strong> found in this file<br>`+
-        `${scored} with scores`+(delCount?` &nbsp;·&nbsp; ${delCount} deleted (will be restored)`:'')+` &nbsp;·&nbsp; Exported ${exported}`;
+      if(isJSON){
+        const data=JSON.parse(evt.target.result);
+        if(!data.sessions||!Array.isArray(data.sessions))throw new Error('Invalid format');
+        importPayload=data;
+        document.getElementById('import-file-name').textContent='✓ '+file.name;
+        const s=data.sessions;
+        const scored=s.filter(x=>Object.keys(x.scores||{}).length>0).length;
+        const delCount=(data.deletedSessions||[]).length;
+        const exported=data.exportedAt?new Date(data.exportedAt).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'unknown';
+        document.getElementById('import-preview').innerHTML=
+          `<strong>${s.length} session${s.length!==1?'s':''}</strong> found in this file<br>`+
+          `${scored} with scores`+(delCount?` &nbsp;·&nbsp; ${delCount} deleted (will be restored)`:'')+` &nbsp;·&nbsp; Exported ${exported}`;
+      } else {
+        // CSV import — parse and reconstruct session objects
+        const lines = evt.target.result.split('\n').filter(l=>l.trim());
+        if(lines.length < 2) throw new Error('Empty CSV');
+
+        // Parse CSV respecting quoted fields
+        function parseCSVRow(line){
+          const result=[]; let cur=''; let inQ=false;
+          for(let i=0;i<line.length;i++){
+            const ch=line[i];
+            if(ch==='"'){
+              if(inQ && line[i+1]==='"'){cur+='"';i++;}
+              else{inQ=!inQ;}
+            } else if(ch===',' && !inQ){result.push(cur);cur='';}
+            else{cur+=ch;}
+          }
+          result.push(cur);
+          return result;
+        }
+
+        const headers = parseCSVRow(lines[0]);
+        const qCols = ALL_QUESTIONS.map(q=>({q, idx: headers.indexOf('Q'+q.n+': '+q.title)}));
+        const aiSourceIdx = headers.indexOf('AI Score Source');
+        const aiQuoteStart = headers.indexOf('AI Q'+ALL_QUESTIONS[0].n+' Quote');
+        const aiReasonStart = headers.indexOf('AI Q'+ALL_QUESTIONS[0].n+' Reasoning');
+
+        const sessions_csv = lines.slice(1).map((line,rowIdx)=>{
+          const cols = parseCSVRow(line);
+          const name = cols[0]||('Import '+(rowIdx+1));
+          const company = cols[1]||'';
+          const type = cols[2]||'prospect';
+          const trackRaw = cols[3]||'Manual';
+          const track = trackRaw==='AI auto'?'auto':trackRaw==='Both'?'both':'manual';
+
+          const scores={};
+          qCols.forEach(({q,idx})=>{
+            if(idx>=0 && cols[idx]!==undefined && cols[idx]!==''){
+              const v=parseInt(cols[idx]);
+              if(!isNaN(v)) scores[q.id]=v;
+            }
+          });
+
+          // Restore AI insights if columns exist
+          const autoScores={}, autoQuotes={}, autoReasons={};
+          const hasAI = aiSourceIdx>=0 && cols[aiSourceIdx]==='Yes';
+          if(hasAI){
+            ALL_QUESTIONS.forEach((q,i)=>{
+              const quoteIdx = aiQuoteStart>=0 ? aiQuoteStart+i : -1;
+              const reasonIdx = aiReasonStart>=0 ? aiReasonStart+i : -1;
+              const scoreCol = qCols.find(c=>c.q.id===q.id);
+              if(scoreCol && scoreCol.idx>=0 && cols[scoreCol.idx]!==''){
+                const v=parseInt(cols[scoreCol.idx]);
+                if(!isNaN(v)) autoScores[q.id]=v;
+              }
+              if(quoteIdx>=0 && cols[quoteIdx]) autoQuotes[q.id]=cols[quoteIdx];
+              if(reasonIdx>=0 && cols[reasonIdx]) autoReasons[q.id]=cols[reasonIdx];
+            });
+          }
+
+          return {
+            id: 'csv-'+Date.now()+'-'+rowIdx,
+            name, company, type, track,
+            scores: track==='manual'||track==='both' ? scores : {},
+            autoScores: hasAI ? autoScores : {},
+            autoQuotes: hasAI ? autoQuotes : {},
+            autoReasons: hasAI ? autoReasons : {},
+            scoreSources: {},
+            notes:{}, autoNotes:{},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+        }).filter(s=>s.name);
+
+        if(!sessions_csv.length) throw new Error('No rows found');
+        // Extract AI insight block if present at bottom of CSV
+        const rawText = evt.target.result;
+        const insightMarker = '"## AI STRATEGIC INSIGHTS"';
+        let csvAiInsight = '', csvAiInsightAt = '';
+        if(rawText.includes(insightMarker)){
+          const parts = rawText.split(insightMarker);
+          if(parts[1]){
+            const insightLines = parts[1].trim().split('\n');
+            // First line has the date, second has the text
+            const dateLine = insightLines[0]||'';
+            const dateMatch = dateLine.match(/"Generated: ([^"]+)"/);
+            if(dateMatch) csvAiInsightAt = dateMatch[1];
+            const textLine = insightLines.slice(1).join('\n').replace(/^"|"$/g,'').replace(/""/g,'"');
+            csvAiInsight = textLine.trim();
+          }
+        }
+        importPayload={sessions:sessions_csv, deletedSessions:[], aiInsight:csvAiInsight, aiInsightAt:csvAiInsightAt};
+        document.getElementById('import-file-name').textContent='✓ '+file.name;
+        const withAI = sessions_csv.filter(s=>Object.keys(s.autoScores||{}).length>0).length;
+        const withScores = sessions_csv.filter(s=>Object.keys(s.scores||{}).length>0).length;
+        document.getElementById('import-preview').innerHTML=
+          `<strong>${sessions_csv.length} session${sessions_csv.length!==1?'s':''}</strong> found in CSV<br>`+
+          `${withScores} with manual scores`+(withAI?` &nbsp;·&nbsp; ${withAI} with AI insights`:'');
+      }
+
       document.getElementById('import-preview-wrap').style.display='block';
       const btn=document.getElementById('import-confirm-btn');
       btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';
@@ -1939,6 +2065,14 @@ function doImport(){
   saveDeleted();
   purgeExpired();
   updateDeletedBadge();
+  // Restore AI insight if present in import
+  if(importPayload.aiInsight){
+    localStorage.setItem('mga_ai_insight', importPayload.aiInsight);
+    if(importPayload.aiInsightAt) localStorage.setItem('mga_ai_insight_at', importPayload.aiInsightAt);
+    if(sb) sb.from('settings').upsert({key:'ai_insight',value:importPayload.aiInsight,updated_at:new Date().toISOString()}).then(()=>{});
+    const out = document.getElementById('ai-output');
+    if(out && importPayload.aiInsight){out.className='ai-output';out.textContent=importPayload.aiInsight;}
+  }
   hideImportModal();
   renderSessionsGrid();
   const msg=mode==='replace'
@@ -2807,6 +2941,12 @@ async function loadFromSupabase(){
             const extra=JSON.parse(value);
             disabledQuestions=new Set([...DEFAULT_DISABLED,...extra]);
             localStorage.setItem('mga_q_disabled',value);
+          }
+          if(key==='ai_insight'){
+            localStorage.setItem('mga_ai_insight',value);
+          }
+          if(key==='ai_insight_at'){
+            localStorage.setItem('mga_ai_insight_at',value);
           }
         }catch(e){}
       });
