@@ -1806,7 +1806,7 @@ function doExport(){
     showToast('Exported '+(sessions.length+deletedSessions.length)+' session'+(sessions.length+deletedSessions.length!==1?'s':''));
   }else{
     // CSV export — scores matrix
-    const headers=['Name','Company','Type','Track','Qualification',...ALL_QUESTIONS.map(q=>'Q'+q.n+': '+q.title),'Total Score','Answered'];
+    const headers=['Name','Company','Type','Track','Qualification',...ALL_QUESTIONS.map(q=>'Q'+q.n+': '+q.title),'Total Score','Answered','AI Score Source',...ALL_QUESTIONS.map(q=>'AI Q'+q.n+' Quote'),...ALL_QUESTIONS.map(q=>'AI Q'+q.n+' Reasoning')];
     const rows=sessions.map(s=>{
       const vals=ALL_QUESTIONS.map(q=>{const v=resolveScore(s,q.id);return v!==undefined?v:'';});
       const scored=vals.filter(v=>v!=='');
@@ -1816,7 +1816,11 @@ function doExport(){
       const pct=ans>0?Math.round((total/(ans*3))*100):0;
       const qual=ans===0?'Not scored':pct>=70||hot>=4?'Strong fit':pct>=40||hot>=2?'Developing':'Low urgency';
       const trackLabel={'manual':'Manual','auto':'AI auto','both':'Both'}[s.track||'manual'];
-      return [s.name,s.company||'',s.type,trackLabel,qual,...vals,ans>0?total+'/'+ans*3:'',ans+'/'+ALL_QUESTIONS.length];
+      const hasAI=!!(s.autoScores&&Object.keys(s.autoScores).length>0);
+      const aiSource=hasAI?'Yes':'No';
+      const aiQuotes=ALL_QUESTIONS.map(q=>(s.autoQuotes&&s.autoQuotes[q.id])||'');
+      const aiReasons=ALL_QUESTIONS.map(q=>(s.autoReasons&&s.autoReasons[q.id])||'');
+      return [s.name,s.company||'',s.type,trackLabel,qual,...vals,ans>0?total+'/'+ans*3:'',ans+'/'+ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).length,aiSource,...aiQuotes,...aiReasons];
     });
     const csv=[headers,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
     downloadFile(csv,'novidea-playbook-'+ts+'.csv','text/csv');
@@ -2568,12 +2572,18 @@ async function analyseTranscript(){
 
   const sys=`You are analysing a sales discovery call transcript for Novidea, an insurance technology company. Your job is to score how strongly each discovery question's pain point was confirmed in the transcript.
 
-For each question, return a JSON object with:
-- score: 0 (no pain), 1 (mild), 2 (moderate), or 3 (critical)  
-- quote: the most relevant excerpt from the transcript (max 120 chars, or "" if none)
-- reasoning: 1 sentence explaining the score
+CRITICAL RULES:
+1. Only score a question if the topic was ACTUALLY discussed in the transcript — even indirectly or using different words than the question itself.
+2. If a topic was NOT discussed at all, OMIT that question ID from your response entirely. Do NOT return score 0 for undiscussed topics — simply leave them out.
+3. Be LIBERAL in recognising discussion — if the prospect mentions something semantically related to the pain area, even tangentially or with different terminology, score it.
+4. Score meanings: 0=topic came up but NO pain expressed, 1=mild or potential pain hinted, 2=clear pain confirmed, 3=critical or urgent pain with strong signals.
 
-Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and values are {score, quote, reasoning}. No markdown, no commentary.`;
+For each question that WAS discussed, return:
+- score: 0, 1, 2, or 3
+- quote: most relevant verbatim excerpt from the transcript (max 120 chars, or "" if none)
+- reasoning: 1 sentence explaining the score and how it relates to the question topic
+
+Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and values are {score, quote, reasoning}. Omit IDs not discussed at all. No markdown, no commentary.`;
 
   const userMsg=`TRANSCRIPT:\n${text.slice(0,12000)}\n\nQUESTIONS TO SCORE:\n${qList}`;
 
