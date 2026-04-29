@@ -52,6 +52,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .home-theme-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--surface-3);color:var(--ink-soft);background:var(--surface);}
 .home-theme-pill-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .session-theme-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-faint);background:var(--surface-2);border:1px solid var(--surface-3);border-radius:10px;padding:2px 7px;margin-top:4px;}
+.sessions-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px;}
+.sessions-loader-spinner{width:36px;height:36px;border:3px solid var(--surface-3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+.sessions-loader-text{font-size:13px;color:var(--ink-soft);}
+@keyframes spin{to{transform:rotate(360deg)}}
 .session-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--r-xl);padding:18px 20px;cursor:pointer;transition:all .2s;position:relative}
 .session-card:hover{border-color:var(--ink-faint);box-shadow:0 4px 16px rgba(0,0,0,0.06);transform:translateY(-1px)}
 .sc-type{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:100px}
@@ -738,7 +742,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
       <div id="home-theme-intro" style="display:none;"></div>
       <div id="home-themes-bar" style="display:none;margin-top:16px;"></div>
     </div>
-    <div class="sessions-grid" id="sessions-grid"></div>
+    <div id="sessions-loading" class="sessions-loader" style="display:none;">
+        <div class="sessions-loader-spinner"></div>
+        <div class="sessions-loader-text">Loading your sessions...</div>
+      </div>
+      <div class="sessions-grid" id="sessions-grid"></div>
   </div>
 </div>
 
@@ -1394,6 +1402,10 @@ function setThemeFilter(themeId){
 }
 
 function renderSessionsGrid(){
+  const _loader = document.getElementById('sessions-loading');
+  const _grid = document.getElementById('sessions-grid');
+  if(_loader) _loader.style.display='none';
+  if(_grid) _grid.style.display='';
   // Update theme title and intro
   const titleEl = document.getElementById('home-theme-title');
   const introEl = document.getElementById('home-theme-intro');
@@ -3360,6 +3372,10 @@ async function initSupabase(){
 }
 
 async function loadFromSupabase(){
+  const loader = document.getElementById('sessions-loading');
+  const grid = document.getElementById('sessions-grid');
+  if(loader){ loader.style.display='flex'; }
+  if(grid){ grid.style.display='none'; }
   if(!sb)return;
   try{
     // Load active sessions
@@ -4247,7 +4263,11 @@ function completeLogin(user){
   sessionStorage.setItem('playbook_user', JSON.stringify(user));
   hideLoginScreen();
   document.getElementById('invite-screen').style.display='none';
+  document.getElementById('account-setup-screen').style.display='none';
+  // Apply role BEFORE showing any page
   applyRoleUI();
+  // Always land on sessions — never leave a restricted page visible
+  _showPage('sessions');
   showToast('Welcome, '+user.username+' 👋');
 }
 
@@ -4281,6 +4301,15 @@ function applyRoleUI(){
 
   // Hide delete buttons for regular users
   document.querySelectorAll('.sc-action-btn.del').forEach(el=>el.style.display=isManager?'':'none');
+
+  // Security: force-redirect if on a restricted page
+  const activePage = document.querySelector('.page.active');
+  if(activePage){
+    const pid = activePage.id;
+    if(pid==='page-admin' && !isAdmin) _showPage('sessions');
+    if(pid==='page-playbook-mgmt' && !isManager) _showPage('sessions');
+    if(pid==='page-deleted' && !isManager) _showPage('sessions');
+  }
 }
 
 // ── INVITE MODAL ──
