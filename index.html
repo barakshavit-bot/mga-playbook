@@ -702,6 +702,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
   </div>
 </div>
 
+<!-- ACCOUNT SETUP PAGE (first login with temp credentials) -->
+<div id="account-setup-screen" style="display:none;position:fixed;inset:0;background:var(--surface);z-index:9997;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--surface-3);border-radius:16px;padding:40px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.08);">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:32px;margin-bottom:10px;">👋</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink);margin-bottom:6px;">Welcome to Novidea Playbook</div>
+      <div style="font-size:13px;color:var(--ink-soft);line-height:1.5;">Your temporary credentials worked. Now set your permanent username and password — you'll use these every time you sign in.</div>
+    </div>
+    <input type="hidden" id="setup-temp-username">
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:500;color:var(--ink-soft);display:block;margin-bottom:5px;">Choose a username <span style="color:var(--red)">*</span></label>
+      <input id="setup-username" class="modal-input" type="text" placeholder="e.g. john.smith" autocomplete="username" style="width:100%;box-sizing:border-box;">
+      <div style="font-size:11px;color:var(--ink-faint);margin-top:4px;">This is how you'll appear to other team members.</div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:500;color:var(--ink-soft);display:block;margin-bottom:5px;">Password <span style="color:var(--red)">*</span></label>
+      <input id="setup-password" class="modal-input" type="password" placeholder="Min 6 characters" style="width:100%;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:500;color:var(--ink-soft);display:block;margin-bottom:5px;">Confirm password <span style="color:var(--red)">*</span></label>
+      <input id="setup-password2" class="modal-input" type="password" placeholder="Repeat password" style="width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter')completeAccountSetup()">
+    </div>
+    <div id="setup-error" style="display:none;font-size:12px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-border);border-radius:6px;padding:8px 12px;margin-bottom:14px;"></div>
+    <button onclick="completeAccountSetup()" style="width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;">Save & continue →</button>
+  </div>
+</div>
+
+
 <!-- SESSIONS PAGE -->
 <div class="page active" id="page-sessions">
   <div class="sessions-wrap">
@@ -945,14 +973,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
           <div class="admin-section-title">Team members</div>
           <div class="admin-section-sub">All users with access to this playbook. You can change roles or deactivate accounts.</div>
         </div>
-        <button class="btn-primary" onclick="openInviteModal()">+ Invite user</button>
+        <button class="btn-primary" onclick="openInviteModal()">+ Add user</button>
       </div>
       <div id="users-list"></div>
     </div>
-    <!-- Invite Link Generator -->
+    <!-- Recent temp credentials -->
     <div class="admin-section">
-      <div class="admin-section-title">Invite links</div>
-      <div class="admin-section-sub" style="margin-bottom:16px;">Generate a one-time invite link. The recipient opens it, sets their username and password, and joins with the role you choose.</div>
+      <div class="admin-section-title">Recent temporary credentials</div>
+      <div class="admin-section-sub" style="margin-bottom:16px;">Temporary credentials you have created. They expire 5 minutes after creation.</div>
       <div id="invites-list"></div>
     </div>
   </div>
@@ -4131,7 +4159,24 @@ async function doLogin(){
     const url = SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?username=eq.'+encodeURIComponent(username)+'&select=id,username,role,active';
     const res = await fetch(url,{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
     const users = await res.json();
-    if(!users||!users.length){ errEl.style.display=''; errEl.textContent='Invalid username or password.'; btn.textContent='Sign in'; btn.disabled=false; return; }
+    if(!users||!users.length){
+      // Not a regular user — check temp credentials
+      const tempRecord = await checkTempCredential(username, hash);
+      if(tempRecord){
+        // Valid temp credential — redirect to account setup
+        window._pendingTempRole = tempRecord.role;
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('setup-temp-username').value = username;
+        document.getElementById('setup-username').value = '';
+        document.getElementById('setup-password').value = '';
+        document.getElementById('setup-password2').value = '';
+        document.getElementById('setup-error').style.display='none';
+        document.getElementById('account-setup-screen').style.display='flex';
+        btn.textContent='Sign in'; btn.disabled=false;
+        return;
+      }
+      errEl.style.display=''; errEl.textContent='Invalid username or password.'; btn.textContent='Sign in'; btn.disabled=false; return;
+    }
     const user = users[0];
     if(!user.active){ errEl.style.display=''; errEl.textContent='Your account has been deactivated. Contact an admin.'; btn.textContent='Sign in'; btn.disabled=false; return; }
     const pwUrl = SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?id=eq.'+user.id+'&select=password_hash';
@@ -4150,6 +4195,7 @@ async function doLogin(){
       errEl.style.display=''; errEl.textContent='Invalid username or password.';
       btn.textContent='Sign in'; btn.disabled=false;
     }
+    return;
   }
 }
 
@@ -4247,8 +4293,8 @@ function openInviteModal(){
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:5000;display:flex;align-items:center;justify-content:center;';
   modal.innerHTML = `
     <div style="background:var(--surface);border-radius:14px;padding:28px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,.15);">
-      <h3 style="margin-bottom:6px;">Invite a team member</h3>
-      <p style="font-size:13px;color:var(--ink-soft);margin-bottom:20px;">Choose a role and generate a one-time invite link. Share it with the new user — they'll set their own username and password.</p>
+      <h3 style="margin-bottom:6px;">Add a team member</h3>
+        <p style="font-size:13px;color:var(--ink-soft);margin-bottom:20px;">Set temporary credentials for the new user — valid for 5 minutes. On first login they will be asked to set their own permanent username and password.</p>
       <div class="modal-field" style="margin-bottom:14px;">
         <label class="modal-label">Role</label>
         <select class="modal-input" id="invite-role-select">
@@ -4257,13 +4303,19 @@ function openInviteModal(){
           <option value="admin">Admin — full access including user management</option>
         </select>
       </div>
-      <div class="modal-field" style="margin-bottom:16px;">
-        <label class="modal-label">Send invite by email <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">optional — leave blank to just copy the link</span></label>
-        <input class="modal-input" id="invite-email-input" type="email" placeholder="colleague@company.com">
+      <div class="modal-field" style="margin-bottom:14px;">
+        <label class="modal-label">Temporary username <span style="color:var(--red)">*</span></label>
+        <input class="modal-input" id="temp-username-input" placeholder="e.g. john.smith" autocomplete="off">
+        <div style="font-size:11px;color:var(--ink-faint);margin-top:4px;">Share this with the new user — they'll change it on first login.</div>
       </div>
-      <div id="invite-link-result" style="display:none;margin-bottom:16px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--surface-3);border-radius:8px;font-size:12px;color:var(--ink);"></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-primary" onclick="generateInviteLink()" id="gen-invite-btn" style="flex:1;">Generate & send</button>
+      <div class="modal-field" style="margin-bottom:6px;">
+        <label class="modal-label">Temporary password <span style="color:var(--red)">*</span></label>
+        <input class="modal-input" id="temp-password-input" placeholder="e.g. Welcome2024!" autocomplete="off">
+        <div style="font-size:11px;color:var(--ink-faint);margin-top:4px;">Valid for 5 minutes only. User sets their own password on first login.</div>
+      </div>
+      <div id="temp-cred-result" style="display:none;margin:14px 0;padding:12px 14px;background:#f0fff4;border:1px solid #b8d8b8;border-radius:8px;font-size:13px;color:var(--ink);"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn-primary" onclick="createTempCredential()" id="create-temp-btn" style="flex:1;">Create credentials</button>
         <button class="btn-outline" onclick="document.getElementById('invite-gen-modal').remove()">Close</button>
       </div>
     </div>`;
@@ -4304,19 +4356,8 @@ async function generateInviteLink(){
     copyBtn.addEventListener('click',function(){ navigator.clipboard.writeText(link).then(function(){ showToast('Link copied ✓'); copyBtn.textContent='Copied ✓'; }); });
     btnRow.appendChild(copyBtn);
     if(email){
-      const mailBtn=document.createElement('button');
-      mailBtn.style.cssText='background:none;border:1px solid var(--surface-3);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;color:var(--ink);';
-      mailBtn.textContent='Open in email client';
-      const subject=encodeURIComponent('You have been invited to Novidea Discovery Playbook');
-      const emailBody = 'Hi,\n\nYou have been invited to join the Novidea Discovery Playbook as a '+role+'.\n\nClick the link below to set up your account:\n'+link+'\n\nThis link can only be used once.\n\nBest,\nNovidea Team';
-      const body=encodeURIComponent(emailBody);
-      mailBtn.addEventListener('click',function(){ window.location.href='mailto:'+email+'?subject='+subject+'&body='+body; });
-      btnRow.appendChild(mailBtn);
-      const sentNote=document.createElement('div');
-      sentNote.style.cssText='font-size:11px;color:var(--green,#2d6a2d);margin-top:6px;';
-      sentNote.textContent='✓ Ready to send to '+email;
-      result.appendChild(roleNote); result.appendChild(linkText); result.appendChild(btnRow); result.appendChild(sentNote);
-    } else {
+        // Email sending via worker - coming soon
+      } else {
       result.appendChild(roleNote); result.appendChild(linkText); result.appendChild(btnRow);
     }
     btn.textContent='Generate another'; btn.disabled=false;
@@ -4336,58 +4377,168 @@ async function loadUsersList(){
   const el = document.getElementById('users-list');
   if(!el) return;
   el.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0;">Loading...</div>';
+
   let usersList = null;
+  let tempList = [];
+
   try{
     const res = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?select=id,username,role,active,created_at,last_login&order=created_at.asc',{
       headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
     });
     usersList = await res.json();
-  }catch(e){
-    // Offline fallback
-    usersList = OFFLINE_USERS.map(function(u){ return Object.assign({},u,{created_at:new Date().toISOString(),last_login:null}); });
-  }
-  try{
-    const users = usersList;
-    if(!users||!users.length){ el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);padding:16px 0;">No users yet. Generate an invite link to add team members.</div>'; return; }
-    el.innerHTML='';
-    users.forEach(function(u){
-      const row = document.createElement('div');
-      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid var(--surface-3);border-radius:8px;margin-bottom:8px;background:var(--surface);gap:12px;flex-wrap:wrap;';
-      const roleColors={user:'background:#f0f5ff;color:#1a4fff;',manager:'background:#eef7ee;color:#2d6a2d;',admin:'background:#fff5e6;color:#b85c00;'};
-      const isSelf = currentUser && u.id===currentUser.id;
-      const lastLogin = u.last_login ? new Date(u.last_login).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : 'Never';
-      // Left
-      const left = document.createElement('div');
-      left.style.cssText='display:flex;align-items:center;gap:12px;min-width:0;';
-      left.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;">'+u.username.charAt(0).toUpperCase()+'</div>'
-        +'<div><div style="font-size:13px;font-weight:500;color:var(--ink);">'+u.username+(isSelf?' <span style="font-size:11px;color:var(--ink-faint);">(you)</span>':'')+'</div>'
-        +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Last login: '+lastLogin+'</div></div>';
-      // Right
-      const right = document.createElement('div');
-      right.style.cssText='display:flex;align-items:center;gap:8px;flex-shrink:0;';
-      const roleBadge=document.createElement('span');
-      roleBadge.style.cssText='font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;'+(roleColors[u.role]||'');
-      roleBadge.textContent=u.role.charAt(0).toUpperCase()+u.role.slice(1);
-      right.appendChild(roleBadge);
-      if(!u.active){const db=document.createElement('span');db.style.cssText='font-size:11px;color:var(--red);background:var(--red-bg);padding:2px 8px;border-radius:10px;';db.textContent='Deactivated';right.appendChild(db);}
-      if(!isSelf){
-        const sel=document.createElement('select');
-        sel.style.cssText='font-size:12px;padding:4px 8px;border:1px solid var(--surface-3);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;';
-        sel.innerHTML='<option value="">Change role...</option><option value="user">User</option><option value="manager">Manager</option><option value="admin">Admin</option>';
-        sel.addEventListener('change',function(){ changeUserRole(u.id, sel.value, sel); });
-        right.appendChild(sel);
-        const toggleBtn=document.createElement('button');
-        toggleBtn.style.cssText='font-size:11px;padding:4px 10px;border:1px solid '+(u.active?'var(--red-border)':'var(--surface-3)')+';border-radius:6px;color:'+(u.active?'var(--red)':'var(--ink-soft)')+';background:none;cursor:pointer;';
-        toggleBtn.textContent=u.active?'Deactivate':'Reactivate';
-        toggleBtn.addEventListener('click',(function(uid,act,uname){return function(){toggleUserActive(uid,act,uname);};})(u.id,u.active,u.username));
-        right.appendChild(toggleBtn);
-      }
-      row.appendChild(left); row.appendChild(right);
-      el.appendChild(row);
+    // Also fetch pending temp credentials
+    const now = new Date().toISOString();
+    const tRes = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?select=id,username,role,created_by,expires_at&order=created_at.desc',{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
     });
+    tempList = await tRes.json() || [];
+  }catch(e){
+    usersList = OFFLINE_USERS.map(function(u){ return Object.assign({},u,{created_at:new Date().toISOString(),last_login:null}); });
+    tempList = (window._offlineTempCreds||[]).map(function(c){ return {id:'offline-'+c.username, username:c.username, role:c.role, created_by:currentUser?currentUser.username:'admin', expires_at:c.expires_at}; });
+  }
+
+  try{
+    el.innerHTML = '';
+    const now = new Date();
+
+    // Active users
+    if(usersList && usersList.length){
+      usersList.forEach(function(u){
+        const row = document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid var(--surface-3);border-radius:8px;margin-bottom:8px;background:var(--surface);gap:12px;flex-wrap:wrap;';
+        const roleColors={user:'background:#f0f5ff;color:#1a4fff;',manager:'background:#eef7ee;color:#2d6a2d;',admin:'background:#fff5e6;color:#b85c00;'};
+        const isSelf = currentUser && u.id===currentUser.id;
+        const lastLogin = u.last_login ? new Date(u.last_login).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : 'Never';
+        const left = document.createElement('div');
+        left.style.cssText='display:flex;align-items:center;gap:12px;min-width:0;';
+        left.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;">'+u.username.charAt(0).toUpperCase()+'</div>'
+          +'<div><div style="font-size:13px;font-weight:500;color:var(--ink);">'+u.username+(isSelf?' <span style="font-size:11px;color:var(--ink-faint);">(you)</span>':'')+'</div>'
+          +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Last login: '+lastLogin+'</div></div>';
+        const right = document.createElement('div');
+        right.style.cssText='display:flex;align-items:center;gap:8px;flex-shrink:0;';
+        // Status badge
+        const statusBadge=document.createElement('span');
+        statusBadge.style.cssText='font-size:10px;padding:2px 7px;border-radius:10px;'+(u.active?'background:#f0fff4;color:#2d6a2d;border:1px solid #b8d8b8;':'background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);');
+        statusBadge.textContent=u.active?'Active':'Deactivated';
+        right.appendChild(statusBadge);
+        const roleBadge=document.createElement('span');
+        roleBadge.style.cssText='font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;'+(roleColors[u.role]||'');
+        roleBadge.textContent=u.role.charAt(0).toUpperCase()+u.role.slice(1);
+        right.appendChild(roleBadge);
+        if(!isSelf){
+          const sel=document.createElement('select');
+          sel.style.cssText='font-size:12px;padding:4px 8px;border:1px solid var(--surface-3);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;';
+          sel.innerHTML='<option value="">Change role...</option><option value="user">User</option><option value="manager">Manager</option><option value="admin">Admin</option>';
+          sel.addEventListener('change',function(){ changeUserRole(u.id, sel.value, sel); });
+          right.appendChild(sel);
+          const toggleBtn=document.createElement('button');
+          toggleBtn.style.cssText='font-size:11px;padding:4px 10px;border:1px solid '+(u.active?'var(--red-border)':'var(--surface-3)')+';border-radius:6px;color:'+(u.active?'var(--red)':'var(--ink-soft)')+';background:none;cursor:pointer;';
+          toggleBtn.textContent=u.active?'Deactivate':'Reactivate';
+          toggleBtn.addEventListener('click',(function(uid,act,uname){return function(){toggleUserActive(uid,act,uname);};})(u.id,u.active,u.username));
+          right.appendChild(toggleBtn);
+        }
+        row.appendChild(left); row.appendChild(right);
+        el.appendChild(row);
+      });
+    }
+
+    // Pending invitations (temp credentials not yet used)
+    const pendingCreds = tempList.filter(function(c){ return new Date(c.expires_at) > now; });
+    const expiredCreds = tempList.filter(function(c){ return new Date(c.expires_at) <= now; });
+
+    if(pendingCreds.length){
+      const header = document.createElement('div');
+      header.style.cssText='font-size:11px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;';
+      header.textContent='Pending invitations';
+      el.appendChild(header);
+      pendingCreds.forEach(function(c){
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border:1px solid #f5d080;border-radius:8px;margin-bottom:8px;background:#fffdf0;gap:12px;flex-wrap:wrap;';
+        const left=document.createElement('div');
+        left.style.cssText='display:flex;align-items:center;gap:12px;';
+        const mins = Math.max(0, Math.round((new Date(c.expires_at)-now)/60000));
+        left.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:#f5d080;color:#b85c00;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">⏳</div>'
+          +'<div><div style="font-size:13px;font-weight:500;color:var(--ink);">'+c.username+'</div>'
+          +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Invited by '+c.created_by+' · expires in '+mins+' min</div></div>';
+        const right=document.createElement('div');
+        right.style.cssText='display:flex;align-items:center;gap:8px;flex-shrink:0;';
+        const pendBadge=document.createElement('span');
+        pendBadge.style.cssText='font-size:10px;padding:2px 7px;border-radius:10px;background:#fff8e6;color:#b85c00;border:1px solid #f5d080;';
+        pendBadge.textContent='Pending';
+        const roleB=document.createElement('span');
+        const roleColors2={user:'background:#f0f5ff;color:#1a4fff;',manager:'background:#eef7ee;color:#2d6a2d;',admin:'background:#fff5e6;color:#b85c00;'};
+        roleB.style.cssText='font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;'+(roleColors2[c.role]||'');
+        roleB.textContent=c.role.charAt(0).toUpperCase()+c.role.slice(1);
+        const revokeBtn=document.createElement('button');
+        revokeBtn.style.cssText='font-size:11px;padding:4px 10px;border:1px solid var(--red-border,#f0b8b8);border-radius:6px;color:var(--red,#c93535);background:none;cursor:pointer;';
+        revokeBtn.textContent='Revoke';
+        revokeBtn.addEventListener('click',(function(id,uname){return async function(){
+          await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?id=eq.'+id,{method:'DELETE',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}}).catch(function(){
+            if(window._offlineTempCreds) window._offlineTempCreds=window._offlineTempCreds.filter(function(c){return c.username!==uname;});
+          });
+          showToast('Invitation revoked for '+uname);
+          loadUsersList(); loadInvitesList();
+        };})(c.id, c.username));
+        right.appendChild(pendBadge); right.appendChild(roleB); right.appendChild(revokeBtn);
+        row.appendChild(left); row.appendChild(right);
+        el.appendChild(row);
+      });
+    }
+
+    if(expiredCreds.length){
+      const header2=document.createElement('div');
+      header2.style.cssText='font-size:11px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;display:flex;align-items:center;justify-content:space-between;';
+      header2.innerHTML='Expired invitations <button onclick="clearExpiredCreds()" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--surface-3);border-radius:4px;cursor:pointer;color:var(--ink-soft);font-weight:400;">Clear all expired</button>';
+      el.appendChild(header2);
+      expiredCreds.forEach(function(c){
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border:1px solid var(--surface-3);border-radius:8px;margin-bottom:8px;background:var(--surface-2);gap:12px;opacity:0.7;';
+        const left=document.createElement('div');
+        left.style.cssText='display:flex;align-items:center;gap:12px;';
+        left.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:var(--surface-3);color:var(--ink-faint);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">👤</div>'
+          +'<div><div style="font-size:13px;font-weight:500;color:var(--ink-soft);">'+c.username+'</div>'
+          +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Invited by '+c.created_by+' · expired '+new Date(c.expires_at).toLocaleTimeString()+'</div></div>';
+        const right=document.createElement('div');
+        right.style.cssText='display:flex;align-items:center;gap:8px;flex-shrink:0;';
+        const expBadge=document.createElement('span');
+        expBadge.style.cssText='font-size:10px;padding:2px 7px;border-radius:10px;background:var(--surface-3);color:var(--ink-faint);';
+        expBadge.textContent='Expired';
+        const delBtn=document.createElement('button');
+        delBtn.style.cssText='font-size:11px;padding:4px 10px;border:1px solid var(--surface-3);border-radius:6px;color:var(--ink-soft);background:none;cursor:pointer;';
+        delBtn.textContent='Delete';
+        delBtn.addEventListener('click',(function(id,uname){return async function(){
+          await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?id=eq.'+id,{method:'DELETE',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}}).catch(function(){
+            if(window._offlineTempCreds) window._offlineTempCreds=window._offlineTempCreds.filter(function(c){return c.username!==uname;});
+          });
+          showToast('Deleted');
+          loadUsersList(); loadInvitesList();
+        };})(c.id, c.username));
+        right.appendChild(expBadge); right.appendChild(delBtn);
+        row.appendChild(left); row.appendChild(right);
+        el.appendChild(row);
+      });
+    }
+
+    if(!usersList.length && !pendingCreds.length && !expiredCreds.length){
+      el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);padding:16px 0;">No users yet. Click + Add user to get started.</div>';
+    }
+
   }catch(e){
     el.innerHTML='<div style="font-size:12px;color:var(--red);">Failed to load users: '+e.message+'</div>';
   }
+}
+
+async function clearExpiredCreds(){
+  try{
+    await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?expires_at=lt.'+encodeURIComponent(new Date().toISOString()),{
+      method:'DELETE',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+    });
+  }catch(e){
+    if(window._offlineTempCreds) window._offlineTempCreds=window._offlineTempCreds.filter(function(c){return new Date(c.expires_at)>new Date();});
+  }
+  showToast('Expired invitations cleared');
+  loadUsersList(); loadInvitesList();
 }
 
 
@@ -4422,13 +4573,17 @@ async function loadInvitesList(){
   const el = document.getElementById('invites-list');
   if(!el) return;
   try{
-    const res = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/invites?select=id,token,role,used,used_by,created_by,created_at&order=created_at.desc&limit=20',{
+    const now = new Date().toISOString();
+    const res = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?select=id,username,role,created_by,created_at,expires_at&order=created_at.desc&limit=20',{
       headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
     });
     const invites = await res.json();
-    if(!invites||!invites.length){ el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);">No invite links generated yet.</div>'; return; }
+    if(!invites||!invites.length){ el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);">No temporary credentials created yet.</div>'; return; }
     el.innerHTML='';
     invites.forEach(function(inv){
+      const isExpired = new Date(inv.expires_at) < new Date();
+      // reuse inv variable but treat as temp cred
+      inv.used = isExpired; inv.used_by = isExpired ? 'expired' : null; inv.token = inv.username;
       const row=document.createElement('div');
       row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--surface-3);border-radius:8px;margin-bottom:6px;background:var(--surface);gap:12px;';
       const base=window.location.href.split('?')[0];
@@ -4436,23 +4591,23 @@ async function loadInvitesList(){
       const roleColors={user:'color:#1a4fff;',manager:'color:#2d6a2d;',admin:'color:#b85c00;'};
       const invLeft = document.createElement('div');
       invLeft.style.cssText='min-width:0;';
-      const usedBadge = inv.used
-        ? '<span style="margin-left:8px;font-size:10px;color:var(--ink-faint);">Used by '+inv.used_by+'</span>'
-        : '<span style="margin-left:8px;font-size:10px;background:#f0fff4;color:#2d6a2d;border:1px solid #b8d8b8;padding:1px 6px;border-radius:8px;">Active</span>';
-      invLeft.innerHTML='<div style="font-size:12px;font-weight:500;color:var(--ink);">'+inv.role.charAt(0).toUpperCase()+inv.role.slice(1)+' invite'+usedBadge+'</div>'
+      const isExp = inv.used || new Date(inv.expires_at) < new Date();
+      const usedBadge = isExp
+        ? '<span style="margin-left:8px;font-size:10px;color:var(--ink-faint);">Expired</span>'
+        : '<span style="margin-left:8px;font-size:10px;background:#f0fff4;color:#2d6a2d;border:1px solid #b8d8b8;padding:1px 6px;border-radius:8px;">Active — expires '+new Date(inv.expires_at).toLocaleTimeString()+'</span>';
+      invLeft.innerHTML='<div style="font-size:12px;font-weight:500;color:var(--ink);">'+'@'+inv.username+' ('+inv.role.charAt(0).toUpperCase()+inv.role.slice(1)+')'+usedBadge+'</div>'
         +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Created by '+inv.created_by+' · '+new Date(inv.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</div>';
       row.appendChild(invLeft);
-      if(!inv.used){
-        const copyBtn=document.createElement('button');
-        copyBtn.style.cssText='font-size:11px;padding:4px 10px;background:var(--surface-2);border:1px solid var(--surface-3);border-radius:6px;cursor:pointer;flex-shrink:0;';
-        copyBtn.textContent='Copy link';
-        (function(l){ copyBtn.addEventListener('click',function(){ navigator.clipboard.writeText(l).then(function(){ showToast('Link copied ✓'); }); }); })(link);
-        row.appendChild(copyBtn);
-      } else {
-        const exp=document.createElement('span');
-        exp.style.cssText='font-size:11px;color:var(--ink-faint);';
-        exp.textContent='Expired';
-        row.appendChild(exp);
+      if(!isExp){
+        const delBtn=document.createElement('button');
+        delBtn.style.cssText='font-size:11px;padding:4px 10px;background:none;border:1px solid var(--red-border,#f0b8b8);border-radius:6px;cursor:pointer;flex-shrink:0;color:var(--red,#c93535);';
+        delBtn.textContent='Revoke';
+        delBtn.addEventListener('click', async function(){
+          await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?id=eq.'+inv.id,{method:'DELETE',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
+          loadInvitesList();
+          showToast('Credentials revoked');
+        });
+        row.appendChild(delBtn);
       }
       el.appendChild(row);
       // Wire copy buttons
@@ -4466,6 +4621,222 @@ async function loadInvitesList(){
   }catch(e){
     el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);padding:8px 0;">Invite links are unavailable in offline/preview mode. They will work on GitHub Pages with a live Supabase connection.</div>';
   }
+}
+
+
+// ══════════════════════════════════════════════
+// TEMP CREDENTIALS SYSTEM
+// ══════════════════════════════════════════════
+
+async function createTempCredential(){
+  const role     = document.getElementById('invite-role-select').value;
+  const username = document.getElementById('temp-username-input').value.trim();
+  const password = document.getElementById('temp-password-input').value.trim();
+  const resultEl = document.getElementById('temp-cred-result');
+  const btn      = document.getElementById('create-temp-btn');
+
+  if(!username){ showToast('Username is required'); return; }
+  if(!password){ showToast('Password is required'); return; }
+  if(password.length < 4){ showToast('Password must be at least 4 characters'); return; }
+
+  btn.textContent = 'Creating...'; btn.disabled = true;
+
+  // Hash password outside try/catch so it's available in catch block too
+  let hash;
+  try{ hash = await hashPassword(password); }
+  catch(e){ showToast('Hashing failed: '+e.message); btn.textContent='Create credentials'; btn.disabled=false; return; }
+
+  try{
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
+
+    // Check username not already taken in users table
+    const checkRes = await fetch(
+      SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?username=eq.'+encodeURIComponent(username)+'&select=id',
+      { headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY} }
+    );
+    const existing = await checkRes.json();
+    if(existing && existing.length){
+      resultEl.style.display='';
+      resultEl.style.background='var(--red-bg)';
+      resultEl.style.borderColor='var(--red-border)';
+      resultEl.innerHTML='<strong>Username already taken.</strong> Choose a different one.';
+      btn.textContent='Create credentials'; btn.disabled=false;
+      return;
+    }
+
+    // Delete any existing temp credential with same username
+    await fetch(
+      SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?username=eq.'+encodeURIComponent(username),
+      { method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY} }
+    ).catch(()=>{});
+
+    // Insert new temp credential
+    const res = await fetch(
+      SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials',
+      {
+        method:'POST',
+        headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+        body: JSON.stringify({ username, password_hash:hash, role, created_by:currentUser.username, expires_at:expiresAt })
+      }
+    );
+    if(!res.ok) throw new Error('HTTP '+res.status);
+
+    resultEl.style.display='';
+    resultEl.style.background='#f0fff4';
+    resultEl.style.borderColor='#b8d8b8';
+    resultEl.innerHTML =
+      '<div style="font-weight:600;color:#1a6a1a;margin-bottom:8px;">✓ Credentials created — valid for 5 minutes</div>'
+      +'<div style="margin-bottom:4px;">Username: <strong>'+username+'</strong></div>'
+      +'<div style="margin-bottom:10px;">Password: <strong>'+password+'</strong></div>'
+      +'<div style="font-size:11px;color:var(--ink-soft);">Share these details with '+username+'. They will be asked to set a permanent username and password on first login. Credentials expire at '+new Date(expiresAt).toLocaleTimeString()+'.</div>';
+    btn.textContent='Create another'; btn.disabled=false;
+    loadUsersList();
+    loadInvitesList();
+  } catch(e){
+    const isOffline = e.message && e.message.includes('fetch');
+    if(isOffline){
+      // Offline/sandbox fallback
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      if(!window._offlineTempCreds) window._offlineTempCreds = [];
+      window._offlineTempCreds.push({ username, password_hash:hash, role, expires_at:expiresAt });
+      resultEl.style.display='';
+      resultEl.style.background='#f0fff4';
+      resultEl.style.borderColor='#b8d8b8';
+      resultEl.innerHTML =
+        '<div style="font-weight:600;color:#1a6a1a;margin-bottom:8px;">✓ Credentials created (preview mode) — valid for 5 minutes</div>'
+        +'<div style="margin-bottom:4px;">Username: <strong>'+username+'</strong></div>'
+        +'<div style="margin-bottom:10px;">Password: <strong>'+password+'</strong></div>'
+        +'<div style="font-size:11px;color:var(--ink-soft);">Stored locally — test the login flow in this session.</div>';
+      btn.textContent='Create another'; btn.disabled=false;
+      loadUsersList(); loadInvitesList();
+    } else {
+      // Real error — show it clearly
+      resultEl.style.display='';
+      resultEl.style.background='var(--red-bg)';
+      resultEl.style.borderColor='var(--red-border)';
+      resultEl.innerHTML='<strong>Error:</strong> '+e.message;
+      btn.textContent='Retry'; btn.disabled=false;
+    }
+  }
+}
+
+// ── LOGIN: Check temp credentials ──
+async function checkTempCredential(username, hash){
+  // Returns temp record if valid, null otherwise
+  try{
+    const now = new Date().toISOString();
+    const res = await fetch(
+      SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?username=eq.'+encodeURIComponent(username)+'&expires_at=gt.'+encodeURIComponent(now)+'&select=id,username,role,expires_at',
+      { headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY} }
+    );
+    const rows = await res.json();
+    if(!rows || !rows.length) return null;
+    const pwRes = await fetch(
+      SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?id=eq.'+rows[0].id+'&select=password_hash',
+      { headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY} }
+    );
+    const pwData = await pwRes.json();
+    if(!pwData || !pwData[0] || pwData[0].password_hash !== hash) return null;
+    return rows[0];
+  } catch(e){
+    // Offline fallback — check in-memory temp creds
+    if(window._offlineTempCreds){
+      const now = new Date();
+      const match = window._offlineTempCreds.find(function(c){
+        return c.username.toLowerCase()===username.toLowerCase()
+          && c.password_hash===hash
+          && new Date(c.expires_at) > now;
+      });
+      if(match) return { id:'offline', username:match.username, role:match.role, expires_at:match.expires_at };
+    }
+    return null;
+  }
+}
+
+// ── ACCOUNT SETUP: Complete permanent account creation ──
+async function completeAccountSetup(){
+  const tempUsername = document.getElementById('setup-temp-username').value;
+  const newUsername  = document.getElementById('setup-username').value.trim();
+  const password     = document.getElementById('setup-password').value;
+  const password2    = document.getElementById('setup-password2').value;
+  const errEl        = document.getElementById('setup-error');
+
+  if(!newUsername){ errEl.style.display=''; errEl.textContent='Please choose a username.'; return; }
+  if(newUsername.length < 3){ errEl.style.display=''; errEl.textContent='Username must be at least 3 characters.'; return; }
+  if(password.length < 6){ errEl.style.display=''; errEl.textContent='Password must be at least 6 characters.'; return; }
+  if(password !== password2){ errEl.style.display=''; errEl.textContent='Passwords do not match.'; return; }
+
+  const btn = document.querySelector('#account-setup-screen button');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+
+  try{
+    const hash = await hashPassword(password);
+
+    // Check new username not taken
+    const checkRes = await fetch(
+      SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?username=eq.'+encodeURIComponent(newUsername)+'&select=id',
+      { headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY} }
+    );
+    const existing = await checkRes.json();
+    if(existing && existing.length){
+      errEl.style.display=''; errEl.textContent='Username already taken — please choose another.';
+      btn.textContent='Save & continue →'; btn.disabled=false; return;
+    }
+
+    // Get role from temp credential (already stored in pendingTempRole)
+    const role = window._pendingTempRole || 'user';
+
+    // Create permanent user
+    const createRes = await fetch(
+      SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users',
+      {
+        method:'POST',
+        headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+        body: JSON.stringify({ username:newUsername, password_hash:hash, role, active:true, created_at:new Date().toISOString(), last_login:new Date().toISOString() })
+      }
+    );
+    const newUsers = await createRes.json();
+    if(!newUsers || !newUsers[0]) throw new Error('Failed to create account');
+
+    // Delete temp credential
+    await fetch(
+      SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/temp_credentials?username=eq.'+encodeURIComponent(tempUsername),
+      { method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY} }
+    ).catch(()=>{});
+
+    // Clean up
+    window._pendingTempRole = null;
+    document.getElementById('account-setup-screen').style.display='none';
+
+    // Log them in
+    completeLogin({ id:newUsers[0].id, username:newUsers[0].username, role:newUsers[0].role });
+    showToast('Account created! Welcome, '+newUsers[0].username+' 👋');
+
+  } catch(e){
+    // Offline fallback
+    const role = window._pendingTempRole || 'user';
+    window._pendingTempRole = null;
+    document.getElementById('account-setup-screen').style.display='none';
+    completeLogin({ id:'local-'+Date.now(), username:newUsername, role:role });
+    showToast('Account set up! Welcome, '+newUsername+' 👋 (offline mode)');
+  }
+}
+
+// Offline fallback for account setup
+async function completeAccountSetupOffline(){
+  const newUsername = document.getElementById('setup-username').value.trim();
+  const password    = document.getElementById('setup-password').value;
+  const password2   = document.getElementById('setup-password2').value;
+  const errEl       = document.getElementById('setup-error');
+
+  if(!newUsername){ errEl.style.display=''; errEl.textContent='Please choose a username.'; return; }
+  if(password.length < 6){ errEl.style.display=''; errEl.textContent='Password must be at least 6 characters.'; return; }
+  if(password !== password2){ errEl.style.display=''; errEl.textContent='Passwords do not match.'; return; }
+
+  const role = window._pendingTempRole || 'user';
+  document.getElementById('account-setup-screen').style.display='none';
+  completeLogin({ id:'local-'+Date.now(), username:newUsername, role:role });
+  showToast('Account set up! Welcome, '+newUsername+' 👋');
 }
 
 async function _init(){
@@ -4521,168 +4892,5 @@ if(document.readyState==='loading'){
 }else{
   _init();
 }
-</script>
-
-<!-- NEW / EDIT THEME MODAL -->
-<div class="modal-overlay hidden" id="theme-modal-overlay" onclick="closeThemeModal(event)">
-  <div class="modal" style="max-width:680px;max-height:92vh;overflow-y:auto;">
-    <h3 id="theme-modal-title">New discovery theme</h3>
-    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:20px;">Create a self-contained discovery playbook for a specific domain. Users will select this theme when starting a new session.</p>
-    <div style="border:1px solid var(--surface-3);border-radius:10px;margin-bottom:16px;overflow:hidden;">
-      <div style="background:var(--surface-2);padding:10px 16px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;gap:8px;">
-        <span style="font-size:15px;">🏷️</span>
-        <span style="font-size:13px;font-weight:600;color:var(--ink);">Theme identity</span>
-      </div>
-      <div style="padding:16px;">
-        <div class="modal-field" style="margin-bottom:10px;">
-          <label class="modal-label">Theme name <span style="color:var(--red)">*</span></label>
-          <input class="modal-input" id="theme-name-input" placeholder="e.g. SaaS Operations Discovery, Healthcare Provider Playbook">
-        </div>
-        <div class="modal-field" style="margin-bottom:10px;">
-          <label class="modal-label">Description <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">— shown to users when selecting a theme</span></label>
-          <input class="modal-input" id="theme-desc-input" placeholder="e.g. Discovery playbook for mid-market SaaS ops teams">
-        </div>
-        <div class="modal-field" style="margin-bottom:10px;">
-          <label class="modal-label">Session page intro <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">— context shown above sessions on the home screen</span></label>
-          <textarea class="modal-input" id="theme-intro-input" rows="3" style="resize:vertical;" placeholder="Brief context for interviewers — what to focus on, who the audience is."></textarea>
-        </div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <div class="modal-field" style="flex:0 0 auto;margin-bottom:0;">
-            <label class="modal-label">Icon <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">emoji</span></label>
-            <input class="modal-input" id="theme-icon-input" placeholder="📋" maxlength="4" style="width:72px;">
-          </div>
-          <div class="modal-field" style="flex:0 0 auto;margin-bottom:0;">
-            <label class="modal-label">Accent color</label>
-            <input type="color" id="theme-color-input" value="#1a4fff" style="height:38px;width:72px;border:1px solid var(--surface-3);border-radius:6px;cursor:pointer;padding:2px 4px;background:var(--surface);">
-          </div>
-          <div class="modal-field" style="flex:0 0 auto;margin-bottom:0;">
-            <label class="modal-label">Interview language</label>
-            <select class="modal-input" id="theme-lang-input" style="width:140px;" onchange="onThemeLangChange()">
-              <option value="en">🇺🇸 English</option>
-              <option value="he">🇮🇱 Hebrew (עברית)</option>
-            </select>
-          </div>
-        </div>
-        <div id="theme-lang-note" style="display:none;margin-top:10px;padding:10px 12px;background:#f0f5ff;border:1px solid #c8d8ff;border-radius:8px;font-size:12px;color:#1a4fff;line-height:1.5;">
-          <strong>Hebrew mode:</strong> Questions and phases will be in Hebrew (RTL). The UI stays in English. AI features will be prompted in Hebrew context.
-        </div>
-      </div>
-    </div>
-    <!-- Questions section -->
-    <div style="border:1px solid var(--surface-3);border-radius:10px;margin-bottom:16px;overflow:hidden;">
-      <div style="background:var(--surface-2);padding:10px 16px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:15px;">❓</span>
-          <span style="font-size:13px;font-weight:600;color:var(--ink);">Questions</span>
-        </div>
-        <span id="theme-questions-count" style="font-size:12px;color:var(--ink-soft);">No questions yet</span>
-      </div>
-      <div style="display:flex;border-bottom:1px solid var(--surface-3);background:var(--surface);">
-        <button class="theme-q-tab active" id="tqtab-manual" onclick="switchThemeQTab('manual')"><span style="font-size:14px;">✏️</span> Option 1 — Build manually</button>
-        <button class="theme-q-tab" id="tqtab-import" onclick="switchThemeQTab('import')"><span style="font-size:14px;">📂</span> Option 2 — Import JSON</button>
-      </div>
-      <!-- Manual panel -->
-      <div id="tqpanel-manual" style="padding:16px;">
-        <div style="background:var(--surface-2);border:1px solid var(--surface-3);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--ink-soft);line-height:1.6;">
-          <strong style="color:var(--ink);">How it works:</strong> Create phases (logical groupings), then add questions to each phase. Each question needs two versions — one for existing partners, one for prospects — plus good/bad answer signals.
-        </div>
-        <div id="manual-phases-list"></div>
-        <div id="manual-add-phase-form" style="display:none;border:1px solid var(--accent);border-radius:8px;padding:14px;margin-bottom:12px;background:var(--surface);">
-          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;">New phase</div>
-          <div class="modal-field" style="margin-bottom:8px;">
-            <label class="modal-label">Phase title <span style="color:var(--red)">*</span></label>
-            <input class="modal-input" id="new-phase-title" placeholder="e.g. Intake & Triage, Tech Stack, Reporting">
-          </div>
-          <div class="modal-field" style="margin-bottom:10px;">
-            <label class="modal-label">Description <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">optional</span></label>
-            <input class="modal-input" id="new-phase-desc" placeholder="What this phase explores">
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn-primary" onclick="confirmAddPhase()" style="font-size:12px;">Add phase</button>
-            <button class="btn-outline" onclick="document.getElementById('manual-add-phase-form').style.display='none'" style="font-size:12px;">Cancel</button>
-          </div>
-        </div>
-        <button class="btn-outline" onclick="addManualPhase()" style="font-size:12px;width:100%;justify-content:center;display:flex;align-items:center;gap:6px;padding:10px;">
-          <span style="font-size:16px;line-height:1">+</span> Add phase
-        </button>
-        <div id="manual-add-q-form" style="display:none;border:1px solid var(--accent);border-radius:8px;padding:14px;margin-top:14px;background:var(--surface);">
-          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;">Add question to: <span id="manual-q-phase-name"></span></div>
-          <input type="hidden" id="manual-q-phase-idx">
-          <div class="modal-field" style="margin-bottom:8px;">
-            <label class="modal-label">Short title <span style="color:var(--red)">*</span> <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">3–5 words · shown in score grid</span></label>
-            <input class="modal-input" id="mq-title" placeholder="e.g. Manual data entry">
-          </div>
-          <div class="modal-field" style="margin-bottom:8px;">
-            <label class="modal-label">Question — existing partner version <span style="color:var(--red)">*</span></label>
-            <textarea class="modal-input" id="mq-existing" rows="2" style="resize:vertical;" placeholder="Consultative tone for existing customers"></textarea>
-          </div>
-          <div class="modal-field" style="margin-bottom:8px;">
-            <label class="modal-label">Question — new prospect version <span style="color:var(--red)">*</span></label>
-            <textarea class="modal-input" id="mq-prospect" rows="2" style="resize:vertical;" placeholder="Insight-led tone for new prospects"></textarea>
-          </div>
-          <div class="modal-field" style="margin-bottom:8px;">
-            <label class="modal-label">✅ Good answer — pain signal <span style="color:var(--red)">*</span></label>
-            <textarea class="modal-input" id="mq-good" rows="2" style="resize:vertical;" placeholder="What you want to hear — signals real pain"></textarea>
-          </div>
-          <div class="modal-field" style="margin-bottom:14px;">
-            <label class="modal-label">❌ Bad answer — no-pain signal <span style="color:var(--red)">*</span></label>
-            <textarea class="modal-input" id="mq-bad" rows="2" style="resize:vertical;" placeholder="What suggests low urgency or poor fit"></textarea>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn-primary" onclick="addManualQuestion()" style="font-size:12px;">Add question</button>
-            <button class="btn-outline" onclick="document.getElementById('manual-add-q-form').style.display='none'" style="font-size:12px;">Cancel</button>
-          </div>
-        </div>
-      </div>
-      <!-- Import panel -->
-      <div id="tqpanel-import" style="display:none;padding:16px;">
-        <div style="background:var(--surface-2);border:1px solid var(--surface-3);border-radius:8px;padding:14px;margin-bottom:16px;">
-          <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;">How Import JSON works</div>
-          <div style="font-size:12px;color:var(--ink-soft);line-height:1.7;">
-            <strong style="color:var(--ink);">Step 1</strong> — Fill in your domain details and download a ready-to-paste prompt.<br>
-            <strong style="color:var(--ink);">Step 2</strong> — Open a new Claude chat, paste the prompt, copy the JSON it returns.<br>
-            <strong style="color:var(--ink);">Step 3</strong> — Come back here and paste or upload the JSON.
-          </div>
-        </div>
-        <div style="border:1px solid var(--surface-3);border-radius:8px;margin-bottom:14px;overflow:hidden;">
-          <div style="background:var(--surface-2);padding:10px 14px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="togglePromptForm()">
-            <span style="font-size:12px;font-weight:600;color:var(--ink);">Step 1 — Generate your Claude prompt</span>
-            <span id="prompt-form-toggle-icon" style="font-size:12px;color:var(--ink-soft);">▼ expand</span>
-          </div>
-          <div id="prompt-gen-form" style="display:none;padding:14px;">
-            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Domain / industry <span style="color:var(--red)">*</span></label><input class="modal-input" id="pg-domain" placeholder="e.g. B2B SaaS, Healthcare, Insurance"></div>
-            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Target audience <span style="color:var(--red)">*</span></label><input class="modal-input" id="pg-audience" placeholder="e.g. VP Operations at mid-market logistics companies"></div>
-            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Key operational areas to probe</label><textarea class="modal-input" id="pg-areas" rows="2" style="resize:vertical;" placeholder="e.g. Data management, reporting, integrations"></textarea></div>
-            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Expected pain areas</label><textarea class="modal-input" id="pg-pains" rows="2" style="resize:vertical;" placeholder="e.g. Manual processes, lack of visibility"></textarea></div>
-            <div style="display:flex;gap:12px;">
-              <div class="modal-field" style="flex:1;margin-bottom:8px;"><label class="modal-label">Questions</label><input class="modal-input" id="pg-qcount" type="number" value="12" min="5" max="30"></div>
-              <div class="modal-field" style="flex:1;margin-bottom:8px;"><label class="modal-label">Phases</label><input class="modal-input" id="pg-phases" type="number" value="4" min="2" max="8"></div>
-            </div>
-            <div class="modal-field" style="margin-bottom:12px;"><label class="modal-label">Additional context</label><textarea class="modal-input" id="pg-context" rows="2" style="resize:vertical;" placeholder="Anything else Claude should know"></textarea></div>
-            <button class="btn-primary" onclick="downloadGeneratedPrompt()" style="font-size:13px;">⬇ Download prompt for Claude</button> <span class="api-required-badge" data-tip="Requires Claude access — not available in this beta version.">🔑 Requires Claude access</span>
-          </div>
-        </div>
-        <div style="border:1px solid var(--surface-3);border-radius:8px;overflow:hidden;">
-          <div style="background:var(--surface-2);padding:10px 14px;border-bottom:1px solid var(--surface-3);">
-            <span style="font-size:12px;font-weight:600;color:var(--ink);">Step 3 — Import Claude's JSON output</span>
-          </div>
-          <div style="padding:14px;">
-            <button class="btn-outline" onclick="document.getElementById('theme-json-file').click()" style="font-size:12px;margin-bottom:10px;">📂 Upload .json file</button>
-            <input type="file" id="theme-json-file" accept=".json,.txt" style="display:none" onchange="handleThemeJsonImport(event)">
-            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Or paste JSON here:</div>
-            <textarea class="modal-input" id="theme-json-paste" rows="5" style="resize:vertical;font-family:monospace;font-size:11px;" placeholder="Paste the full JSON block Claude generated."></textarea>
-            <button class="btn-outline" onclick="importThemeJsonFromPaste()" style="font-size:12px;margin-top:8px;">Import from paste</button>
-          </div>
-        </div>
-      </div>
-      <div id="theme-questions-preview" style="display:none;margin:0 16px 16px;max-height:240px;overflow-y:auto;border-top:1px solid var(--surface-3);padding-top:12px;"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-outline" onclick="hideThemeModal()">Cancel</button>
-      <button class="btn-primary" id="theme-save-btn" onclick="saveTheme()">Save theme</button>
-    </div>
-  </div>
-</div>
-
-</body>
+</script></body>
 </html>
