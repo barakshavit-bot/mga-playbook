@@ -985,12 +985,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
       </div>
       <div id="users-list"></div>
     </div>
-    <!-- Recent temp credentials -->
-    <div class="admin-section">
-      <div class="admin-section-title">Recent temporary credentials</div>
-      <div class="admin-section-sub" style="margin-bottom:16px;">Temporary credentials you have created. They expire 5 minutes after creation.</div>
-      <div id="invites-list"></div>
-    </div>
+    <!-- Recent temp credentials — rendered inside Team Members section via loadUsersList -->
   </div>
 </div>
 
@@ -4485,10 +4480,23 @@ async function loadUsersList(){
         row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border:1px solid #f5d080;border-radius:8px;margin-bottom:8px;background:#fffdf0;gap:12px;flex-wrap:wrap;';
         const left=document.createElement('div');
         left.style.cssText='display:flex;align-items:center;gap:12px;';
-        const mins = Math.max(0, Math.round((new Date(c.expires_at)-now)/60000));
+        const countdownId = 'countdown-'+c.id;
         left.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:#f5d080;color:#b85c00;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">⏳</div>'
           +'<div><div style="font-size:13px;font-weight:500;color:var(--ink);">'+c.username+'</div>'
-          +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Invited by '+c.created_by+' · expires in '+mins+' min</div></div>';
+          +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Invited by '+c.created_by+' · expires in <span id="'+countdownId+'">...</span></div></div>';
+        // Start live countdown
+        (function(expiry, elId){
+          function tick(){
+            const el = document.getElementById(elId);
+            if(!el) return;
+            const secs = Math.max(0, Math.round((new Date(expiry)-new Date())/1000));
+            if(secs===0){ el.textContent='expired'; loadUsersList(); return; }
+            const m = Math.floor(secs/60), s = secs%60;
+            el.textContent = m+'m '+String(s).padStart(2,'0')+'s';
+            setTimeout(tick, 1000);
+          }
+          setTimeout(tick, 100);
+        })(c.expires_at, countdownId);
         const right=document.createElement('div');
         right.style.cssText='display:flex;align-items:center;gap:8px;flex-shrink:0;';
         const pendBadge=document.createElement('span');
@@ -4621,9 +4629,10 @@ async function loadInvitesList(){
       const invLeft = document.createElement('div');
       invLeft.style.cssText='min-width:0;';
       const isExp = inv.used || new Date(inv.expires_at) < new Date();
+      const cdId = 'inv-cd-'+inv.id;
       const usedBadge = isExp
         ? '<span style="margin-left:8px;font-size:10px;color:var(--ink-faint);">Expired</span>'
-        : '<span style="margin-left:8px;font-size:10px;background:#f0fff4;color:#2d6a2d;border:1px solid #b8d8b8;padding:1px 6px;border-radius:8px;">Active — expires '+new Date(inv.expires_at).toLocaleTimeString()+'</span>';
+        : '<span style="margin-left:8px;font-size:10px;background:#f0fff4;color:#2d6a2d;border:1px solid #b8d8b8;padding:1px 6px;border-radius:8px;">Active — <span id="'+cdId+'">...</span></span>';
       invLeft.innerHTML='<div style="font-size:12px;font-weight:500;color:var(--ink);">'+'@'+inv.username+' ('+inv.role.charAt(0).toUpperCase()+inv.role.slice(1)+')'+usedBadge+'</div>'
         +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Created by '+inv.created_by+' · '+new Date(inv.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</div>';
       row.appendChild(invLeft);
@@ -4639,6 +4648,21 @@ async function loadInvitesList(){
         row.appendChild(delBtn);
       }
       el.appendChild(row);
+      // Start countdown for active temp creds
+      if(!isExp){
+        (function(expiry, elId){
+          function tick(){
+            const el = document.getElementById(elId);
+            if(!el) return;
+            const secs = Math.max(0, Math.round((new Date(expiry)-new Date())/1000));
+            if(secs===0){ el.parentElement.textContent='Expired'; return; }
+            const m = Math.floor(secs/60), s = secs%60;
+            el.textContent = m+'m '+String(s).padStart(2,'0')+'s';
+            setTimeout(tick, 1000);
+          }
+          setTimeout(tick, 100);
+        })(inv.expires_at, cdId);
+      }
       // Wire copy buttons
       const copyBtns = row.querySelectorAll('.inv-copy-row');
       copyBtns.forEach(function(btn){
@@ -4719,6 +4743,9 @@ async function createTempCredential(){
       +'<div style="margin-bottom:10px;">Password: <strong>'+password+'</strong></div>'
       +'<div style="font-size:11px;color:var(--ink-soft);">Share these details with '+username+'. They will be asked to set a permanent username and password on first login. Credentials expire at '+new Date(expiresAt).toLocaleTimeString()+'.</div>';
     btn.textContent='Create another'; btn.disabled=false;
+    // Clear form for next entry
+    document.getElementById('temp-username-input').value='';
+    document.getElementById('temp-password-input').value='';
     loadUsersList();
     loadInvitesList();
   } catch(e){
