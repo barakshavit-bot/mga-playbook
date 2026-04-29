@@ -48,6 +48,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .sessions-hero h2{font-family:'DM Serif Display',serif;font-size:32px;letter-spacing:-0.8px;margin-bottom:8px}
 .sessions-hero p{font-size:14px;color:var(--ink-mid);line-height:1.6;max-width:520px}
 .sessions-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.home-themes-bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.home-theme-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--surface-3);color:var(--ink-soft);background:var(--surface);}
+.home-theme-pill-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.session-theme-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-faint);background:var(--surface-2);border:1px solid var(--surface-3);border-radius:10px;padding:2px 7px;margin-top:4px;}
 .session-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--r-xl);padding:18px 20px;cursor:pointer;transition:all .2s;position:relative}
 .session-card:hover{border-color:var(--ink-faint);box-shadow:0 4px 16px rgba(0,0,0,0.06);transform:translateY(-1px)}
 .sc-type{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:100px}
@@ -330,6 +334,32 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .admin-hero{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--surface-3);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .admin-hero-text h2{font-family:'DM Serif Display',serif;font-size:28px;letter-spacing:-0.6px;margin-bottom:6px}
 .admin-hero-text p{font-size:13px;color:var(--ink-mid);line-height:1.6;max-width:500px}
+.api-required-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;background:#fff8e6;color:#b85c00;border:1px solid #f5d080;cursor:help;vertical-align:middle;margin-left:6px;position:relative;}
+.api-required-badge:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;font-size:11px;font-weight:400;padding:6px 10px;border-radius:6px;white-space:nowrap;max-width:260px;white-space:normal;text-align:center;z-index:9999;pointer-events:none;line-height:1.4;}
+.api-required-badge:hover::before{content:'';position:absolute;bottom:calc(100% + 1px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1a1a2e;z-index:9999;}
+.theme-q-tab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;font-size:12px;font-weight:500;color:var(--ink-soft);cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s;}
+.theme-q-tab:hover{color:var(--ink);}
+.theme-q-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+/* Hebrew / RTL support */
+[dir="rtl"] .playbook-header { flex-direction: row-reverse; }
+[dir="rtl"] .sidebar-nav { text-align: right; }
+[dir="rtl"] .question-card { text-align: right; }
+[dir="rtl"] .question-text { direction: rtl; }
+[dir="rtl"] .pain-signal { text-align: right; }
+[dir="rtl"] .score-buttons { flex-direction: row-reverse; }
+[dir="rtl"] .track-bar { flex-direction: row-reverse; }
+[dir="rtl"] .ph-header { flex-direction: row-reverse; }
+[dir="rtl"] .stat-block { text-align: right; }
+[dir="rtl"] textarea, [dir="rtl"] input[type="text"] { direction: rtl; text-align: right; }
+.manual-phase-block{border:1px solid var(--surface-3);border-radius:8px;margin-bottom:10px;overflow:hidden;}
+.manual-phase-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface-2);cursor:pointer;}
+.manual-phase-title{font-size:13px;font-weight:500;color:var(--ink);}
+.manual-phase-qs{padding:8px 14px;}
+.manual-q-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--surface-2);font-size:12px;color:var(--ink-soft);}
+.manual-q-item:last-child{border-bottom:none;}
+.admin-tab{background:none;border:none;border-bottom:3px solid transparent;padding:10px 20px;font-size:13px;font-weight:500;color:var(--ink-soft);cursor:pointer;margin-bottom:-2px;transition:color .15s,border-color .15s;}
+.admin-tab:hover{color:var(--ink);}
+.admin-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .admin-logout-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:var(--r-md);border:1px solid var(--purple-border);background:var(--purple-bg);color:var(--purple-text);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
 .admin-logout-btn:hover{background:#e0d8ff}
 .admin-section{margin-bottom:36px}
@@ -597,10 +627,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
   <div class="header-nav">
     <button class="hnav-btn active" id="nav-sessions" onclick="showPage('sessions')">Sessions</button>
     <button class="hnav-btn" id="nav-summary" onclick="showPage('summary')">Summary & insights</button>
-    <button class="hnav-btn" id="nav-deleted" onclick="showPage('deleted')">Deleted <span id="deleted-count-badge" style="display:none;font-size:10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);padding:1px 6px;border-radius:100px;margin-left:3px"></span></button>
-    <button class="hnav-btn admin-nav" id="nav-admin" onclick="handleAdminNav()">Admin</button>
+    <button class="hnav-btn role-manager" id="nav-deleted" onclick="showPage('deleted')" style="display:none">Deleted <span id="deleted-count-badge" style="display:none;font-size:10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);padding:1px 6px;border-radius:100px;margin-left:3px"></span></button>
+    <button class="hnav-btn role-manager" id="nav-playbook-mgmt" onclick="showPage('playbook-mgmt')" style="display:none">Playbook</button>
+    <button class="hnav-btn role-admin" id="nav-admin" onclick="showPage('admin')" style="display:none">Admin</button>
   </div>
   <div class="header-actions">
+    <div id="current-user-badge" style="display:none;align-items:center;gap:8px;padding:4px 12px;background:var(--surface-2);border:1px solid var(--surface-3);border-radius:20px;font-size:12px;color:var(--ink);">
+      <span id="current-user-avatar" style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;"></span>
+      <span id="current-user-name" style="font-weight:500;"></span>
+      <span id="current-user-role-badge" style="font-size:10px;padding:1px 7px;border-radius:10px;font-weight:500;"></span>
+      <button onclick="logoutUser()" style="background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:11px;padding:2px 4px;border-radius:4px;" title="Sign out">✕</button>
+    </div>
     <button class="btn-icon export" onclick="openExportModal()" title="Export all sessions">
       <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v7M4 6l3 3 3-3M2 10v1.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Export
@@ -613,12 +650,65 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
   </div>
 </header>
 
+<!-- LOGIN PAGE -->
+<div id="login-screen" style="display:none;position:fixed;inset:0;background:var(--surface);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--surface-3);border-radius:16px;padding:40px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.08);">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink);margin-bottom:4px;">Novidea<span style="color:var(--accent)">.</span>Playbook</div>
+      <div style="font-size:13px;color:var(--ink-soft);">Sign in to continue</div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:500;color:var(--ink-soft);display:block;margin-bottom:5px;">Username</label>
+      <input id="login-username" class="modal-input" type="text" placeholder="Your username" autocomplete="username" style="width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:500;color:var(--ink-soft);display:block;margin-bottom:5px;">Password</label>
+      <input id="login-password" class="modal-input" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="login-error" style="display:none;font-size:12px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-border);border-radius:6px;padding:8px 12px;margin-bottom:14px;"></div>
+    <button onclick="doLogin()" id="login-btn" style="width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;">Sign in</button>
+    <div style="text-align:center;margin-top:16px;">
+      <a href="#" onclick="event.preventDefault();showInviteJoin()" style="font-size:12px;color:var(--accent);text-decoration:none;">Join with invite link →</a>
+    </div>
+  </div>
+</div>
+
+<!-- INVITE REGISTRATION PAGE -->
+<div id="invite-screen" style="display:none;position:fixed;inset:0;background:var(--surface);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--surface-3);border-radius:16px;padding:40px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.08);">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:28px;margin-bottom:8px;">👋</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink);margin-bottom:4px;">Create your account</div>
+      <div id="invite-role-note" style="font-size:12px;color:var(--ink-soft);">Complete your registration below</div>
+    </div>
+    <input type="hidden" id="invite-token-input">
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:500;color:var(--ink-soft);display:block;margin-bottom:5px;">Username <span style="color:var(--red)">*</span></label>
+      <input id="invite-username" class="modal-input" type="text" placeholder="Choose a username" style="width:100%;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:500;color:var(--ink-soft);display:block;margin-bottom:5px;">Password <span style="color:var(--red)">*</span></label>
+      <input id="invite-password" class="modal-input" type="password" placeholder="Min 6 characters" style="width:100%;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:500;color:var(--ink-soft);display:block;margin-bottom:5px;">Confirm password <span style="color:var(--red)">*</span></label>
+      <input id="invite-password2" class="modal-input" type="password" placeholder="Repeat password" style="width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter')doRegister()">
+    </div>
+    <div id="invite-error" style="display:none;font-size:12px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-border);border-radius:6px;padding:8px 12px;margin-bottom:14px;"></div>
+    <button onclick="doRegister()" style="width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;">Create account & sign in</button>
+    <div style="text-align:center;margin-top:14px;">
+      <a href="#" onclick="event.preventDefault();showLoginScreen()" style="font-size:12px;color:var(--ink-soft);">← Back to sign in</a>
+    </div>
+  </div>
+</div>
+
 <!-- SESSIONS PAGE -->
 <div class="page active" id="page-sessions">
   <div class="sessions-wrap">
     <div class="sessions-hero">
-      <h2>Novidea MGA Discovery Playbook</h2>
-      <p>Each session captures a full discovery conversation. Score answers in real time, save the session, and review patterns across all interviews in the summary.</p>
+      <h2 id="home-theme-title">Discovery Playbook</h2>
+      <div id="home-theme-intro" style="display:none;"></div>
+      <div id="home-themes-bar" style="display:none;margin-top:16px;"></div>
     </div>
     <div class="sessions-grid" id="sessions-grid"></div>
   </div>
@@ -637,6 +727,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
       <div class="ph-company" id="ph-company">—</div>
     </div>
     <span class="ph-type" id="ph-type"></span>
+    <span id="ph-theme-badge" style="display:none;font-size:11px;background:var(--surface-2);border:1px solid var(--surface-3);color:var(--ink-soft);padding:3px 8px;border-radius:20px;margin-left:6px;"></span>
     <button class="ph-save-btn" id="ph-save-btn" onclick="saveCurrentSession()">Save session</button>
   </div>
   <!-- TRACK BAR -->
@@ -695,14 +786,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 <!-- SUMMARY PAGE -->
 <div class="page" id="page-summary">
   <div class="summary-wrap">
+    <!-- Theme filter bar -->
+    <div id="summary-theme-bar" style="margin-bottom:24px;display:none;">
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;font-weight:500;">Select theme to view:</div>
+      <div id="summary-theme-pills" class="home-themes-bar"></div>
+    </div>
     <div class="summary-section">
-      <div class="summary-section-title">All sessions</div>
-      <div class="summary-section-sub">Full matrix of scores across every interview. Click a row to review or edit that session.</div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px;">
+        <div class="summary-section-title" id="summary-table-title">All sessions</div>
+      </div>
+      <div class="summary-section-sub" id="summary-table-sub">Full matrix of scores across every interview. Click a row to review or edit that session.</div>
       <div id="summary-table-wrap"></div>
     </div>
     <div class="summary-section">
-      <div class="summary-section-title">Pain heat map</div>
-      <div class="summary-section-sub">Average pain score per question across all completed sessions. Darker = more acute.</div>
+      <div class="summary-section-title" id="summary-heatmap-title">Pain heat map</div>
+      <div class="summary-section-sub" id="summary-heatmap-sub">Average pain score per question across all completed sessions. Darker = more acute.</div>
       <div id="heatmap-wrap"></div>
     </div>
     <div class="summary-section">
@@ -713,7 +811,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
             <div class="ai-panel-title">AI insights</div>
             <div class="ai-panel-sub">Patterns, priorities, and recommendations across all sessions</div>
           </div>
-          <button class="ai-run-btn" id="ai-run-btn" onclick="runAIAnalysis()">Run analysis</button>
+          <button class="ai-run-btn" id="ai-run-btn" onclick="runAIAnalysis()">Run analysis</button> <span class="api-required-badge" data-tip="AI feature — not available in this beta version.">🔑 API key required</span>
         </div>
         <div id="ai-output" class="ai-output empty">Run the analysis to generate strategic insights from your interview data.</div>
       </div>
@@ -742,6 +840,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
         <option value="mixed">Mixed / TBD</option>
       </select>
     </div>
+    <div class="modal-field" id="modal-theme-field">
+      <label class="modal-label">Discovery theme</label>
+      <div id="modal-theme-cards" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+    </div>
     <div class="modal-actions">
       <button class="btn-outline" onclick="hideModal()">Cancel</button>
       <button class="btn-primary" id="modal-confirm-btn" onclick="confirmModal()">Start session</button>
@@ -749,73 +851,109 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
   </div>
 </div>
 
-<!-- ADMIN PAGE -->
-<div class="page" id="page-admin">
+<!-- PLAYBOOK MANAGEMENT PAGE (Manager+) -->
+<div class="page" id="page-playbook-mgmt">
   <div class="admin-wrap">
     <div class="admin-hero">
       <div class="admin-hero-text">
-        <h2>Admin — playbook editor</h2>
-        <p>Use the AI prompt below to draft new questions or phases. Review generated suggestions, approve what you like, and they'll be saved as pending additions ready to ship in the next update.</p>
+        <h2>Playbook Management</h2>
+        <p>Manage discovery themes and the built-in MGA playbook questions.</p>
       </div>
-      <button class="admin-logout-btn" onclick="adminLogout()">Sign out</button>
     </div>
-
-    <div class="admin-section">
-      <div class="admin-prompt-area">
-        <div class="prompt-header">
-          <div class="prompt-header-icon"><svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="#88aaff" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="#88aaff" stroke-width="1.2" stroke-linecap="round"/></svg></div>
+    <div id="admin-tabs" style="display:flex;gap:0;border-bottom:2px solid var(--surface-3);margin-bottom:28px;">
+      <button class="admin-tab active" id="tab-themes" onclick="switchAdminTab('themes')">🎨 Discovery Themes</button>
+      <button class="admin-tab" id="tab-mga" onclick="switchAdminTab('mga')">🏢 MGA Playbook (Built-in)</button>
+    </div>
+    <!-- Themes panel -->
+    <div id="admin-panel-themes">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px;">Discovery Themes</div>
+          <div style="font-size:13px;color:var(--ink-soft);max-width:520px;">Each theme is a self-contained playbook. Users pick a theme when starting a new session — it stays locked to that session forever.</div>
+        </div>
+        <button class="btn-primary" onclick="openNewThemeModal()" style="flex-shrink:0;white-space:nowrap;">+ New theme</button>
+      </div>
+      <div id="themes-list"></div>
+    </div>
+    <!-- MGA panel -->
+    <div id="admin-panel-mga" style="display:none;">
+      <div class="admin-section">
+        <div class="admin-section-header" style="margin-bottom:12px;">
           <div>
-            <div class="prompt-header-text">AI question generator</div>
-            <div class="prompt-header-sub">Describe your idea — Claude will draft a structured question</div>
+            <div class="admin-section-title">AI question generator</div>
+            <div class="admin-section-sub">Describe a question idea — Claude will draft it with both tones, pain signals and a probe.</div>
           </div>
         </div>
-        <div class="prompt-body">
-          <div class="prompt-hint">
-            <strong>How to use:</strong> Describe the friction point or topic you want to explore. Be specific about the phase (intake, appetite, back office, etc.) and what you're trying to uncover. Claude will generate a fully structured question with both tones of voice, pain signals, no-pain signals, and a follow-up probe.
-            <br><br>
-            <strong>Examples:</strong> "Add a question about broker portal adoption in Phase 1" · "Create a question exploring how MGAs handle reinsurance arrangements" · "Add a phase 5 about technology vendor switching costs"
-          </div>
-          <textarea class="admin-textarea" id="admin-prompt" placeholder="Describe the question or phase idea you want to add..."></textarea>
-          <div class="prompt-actions">
-            <button class="prompt-generate-btn" id="admin-gen-btn" onclick="generateQuestion()">Generate with AI</button>
-            <button class="prompt-clear-btn" onclick="clearAdminPrompt()">Clear</button>
-            <div class="ai-gen-status" id="admin-gen-status" style="display:none"><div class="ai-gen-spinner"></div>Generating...</div>
-          </div>
-          <div id="gen-preview-wrap" style="display:none">
-            <div class="gen-preview">
-              <div class="gen-preview-header">
-                <span class="gen-preview-title">Generated question — review before saving</span>
-              </div>
-              <div class="gen-preview-body" id="gen-preview-body"></div>
-              <div class="gen-preview-actions">
-                <button class="btn-primary" onclick="approveGenerated()">Save as draft</button>
-                <button class="btn-outline" onclick="document.getElementById('gen-preview-wrap').style.display='none'">Discard</button>
+        <div class="admin-prompt-area">
+          <div class="prompt-body">
+            <div class="prompt-hint"><strong>Examples:</strong> "Add a question about broker portal adoption in Phase 1" · "Create a question exploring how MGAs handle reinsurance arrangements"</div>
+            <textarea class="admin-textarea" id="admin-prompt" placeholder="Describe the question or phase idea you want to add..."></textarea>
+            <div class="prompt-actions">
+              <button class="prompt-generate-btn" id="admin-gen-btn" onclick="generateQuestion()">Generate with AI</button> <span class="api-required-badge" data-tip="AI feature — not available in this beta version.">🔑 API key required</span>
+              <button class="prompt-clear-btn" onclick="clearAdminPrompt()">Clear</button>
+              <div class="ai-gen-status" id="admin-gen-status" style="display:none"><div class="ai-gen-spinner"></div>Generating...</div>
+            </div>
+            <div id="gen-preview-wrap" style="display:none">
+              <div class="gen-preview">
+                <div class="gen-preview-header"><span class="gen-preview-title">Generated question — review before saving</span></div>
+                <div class="gen-preview-body" id="gen-preview-body"></div>
+                <div class="gen-preview-actions">
+                  <button class="btn-primary" onclick="approveGenerated()">Save as draft</button>
+                  <button class="btn-outline" onclick="document.getElementById('gen-preview-wrap').style.display='none'">Discard</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="admin-section">
-      <div class="admin-section-header">
-        <div>
-          <div class="admin-section-title">Saved question drafts</div>
-          <div class="admin-section-sub">Questions you've generated and saved. Approved items will be included in the next playbook update.</div>
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <div class="admin-section-title">Saved question drafts</div>
+            <div class="admin-section-sub">Questions you have generated and saved.</div>
+          </div>
+          <button class="btn-outline" id="export-drafts-btn" onclick="exportDrafts()" style="display:none">Export drafts</button>
         </div>
-        <button class="btn-outline" id="export-drafts-btn" onclick="exportDrafts()" style="display:none">Export drafts</button>
+        <div class="custom-questions-list" id="custom-questions-list"></div>
       </div>
-      <div class="custom-questions-list" id="custom-questions-list"></div>
-    </div>
-
-    <div class="admin-section">
-      <div class="admin-section-header">
-        <div>
-          <div class="admin-section-title">Manage existing questions</div>
-          <div class="admin-section-sub">Edit any current question using AI or manually. Disable questions to hide them from sessions without deleting. Changes apply immediately.</div>
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <div class="admin-section-title">Manage existing questions</div>
+            <div class="admin-section-sub">Edit or disable questions in the built-in MGA playbook.</div>
+          </div>
         </div>
+        <div id="eq-list"></div>
       </div>
-      <div id="eq-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE (Admin only) -->
+<div class="page" id="page-admin">
+  <div class="admin-wrap">
+    <div class="admin-hero">
+      <div class="admin-hero-text">
+        <h2>Admin</h2>
+        <p>Manage users, roles, and access. Generate invite links to onboard new team members.</p>
+      </div>
+    </div>
+    <!-- User Management -->
+    <div class="admin-section">
+      <div class="admin-section-header" style="margin-bottom:16px;">
+        <div>
+          <div class="admin-section-title">Team members</div>
+          <div class="admin-section-sub">All users with access to this playbook. You can change roles or deactivate accounts.</div>
+        </div>
+        <button class="btn-primary" onclick="openInviteModal()">+ Invite user</button>
+      </div>
+      <div id="users-list"></div>
+    </div>
+    <!-- Invite Link Generator -->
+    <div class="admin-section">
+      <div class="admin-section-title">Invite links</div>
+      <div class="admin-section-sub" style="margin-bottom:16px;">Generate a one-time invite link. The recipient opens it, sets their username and password, and joins with the role you choose.</div>
+      <div id="invites-list"></div>
     </div>
   </div>
 </div>
@@ -952,6 +1090,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
           <svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Analyse with AI
         </button>
+        <span class="api-required-badge" data-tip="AI feature — not available in this beta version.">🔑 API key required</span>
         <span class="tm-status" id="tm-status"></span>
       </div>
     </div>
@@ -1052,7 +1191,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 // ══════════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════════
-const PHASES=[
+// ══════════════════════════════════════════════
+// THEMES ENGINE
+// ══════════════════════════════════════════════
+
+// Built-in Theme 1: US MGA Discovery (original questions)
+const MGA_PHASES=[
 {id:0,num:"Phase 1",title:"Intake, triage & clearance",desc:"How submissions arrive, get routed, and cleared for market. Pain here multiplies across every submission — the highest-leverage territory.",questions:[
 {id:"q1",n:1,title:"Manual data entry",existing:"Walk me through what happens the moment a submission hits your team. How does it get from email/anywhere else into the system?",prospect:"Roughly how much time does your team spend manually re-keying data from emails and others sources that include ACORD forms before evaluating risk?",probe_existing:"If smooth: 'At what point does someone first enter data into a system? How long does that step take per submission?'",probe_prospect:"Follow up: 'Even roughly — closer to 5 minutes or 30 per submission? At what monthly volume?'",pain:["15+ minutes per submission on re-keying","No structured intake or API feed","Multiple staff doing manual data entry","Errors from re-entering unstructured data"],nopain:["API or EDI feeds already live","Structured submission portal in use","Under 5 min per submission","ACORD XML or similar adopted"]},
 {id:"q2",n:2,title:"Clearance chaos & duplicates",existing:"How often do you find out a broker already submitted the same risk through someone else? How far in does it get before you catch it?",prospect:"In E&S, duplicates are a major problem. How do you currently detect if a broker has already blocked the market?",probe_existing:"'When that happens late — after a full review — what does the internal fallout look like?'",probe_prospect:"'How far into the underwriting process does that typically surface? What share of submissions does it affect?'",pain:["Late detection after full or partial review","No automated fuzzy-match clearance","Manual checking across email threads","5%+ of volume estimated as duplicates"],nopain:["Real-time market block detection","Automated clearance system in place","Very low duplicate submission rate","Single-channel submission flow"]},
@@ -1114,7 +1258,53 @@ nopain:["Rules-based routing already configured","Manual entry process exists fo
 ]}
 ];
 
-let ALL_QUESTIONS=PHASES.flatMap(p=>p.questions);
+// Theme registry
+let THEMES = [];
+let activeThemeId = null;
+let activeThemeFilter = null; // null = show all
+let summaryThemeFilter = null; // null = show all themes in summary
+
+// Runtime references — always point to the active theme
+let PHASES = [];
+let ALL_QUESTIONS = [];
+
+function getThemeById(id){ return THEMES.find(t=>t.id===id)||null; }
+
+function activateTheme(themeId){
+  const t = getThemeById(themeId);
+  if(!t) return;
+  activeThemeId = themeId;
+  PHASES.length = 0;
+  t.phases.forEach(p=>PHASES.push(p));
+  ALL_QUESTIONS.length = 0;
+  PHASES.flatMap(p=>p.questions).forEach(q=>ALL_QUESTIONS.push(q));
+}
+
+function initThemes(savedCustomThemes){
+  const mgaTheme = {
+    id: 'theme-mga',
+    name: 'US MGA Discovery',
+    description: 'User interviews playbook for Managing General Agents — covers submission handling, underwriting, reporting and tech stack.',
+    intro: 'Discovery interviews for Managing General Agents — uncovering operational friction across submission handling, underwriting, reporting and tech stack. Score answers 0–3 as you go; the summary surfaces patterns across all sessions.',
+    icon: '🏢',
+    color: '#1a4fff',
+    lang: 'en',
+    builtIn: true,
+    phases: MGA_PHASES
+  };
+  THEMES = [mgaTheme, ...(savedCustomThemes||[])];
+  activateTheme('theme-mga');
+}
+
+// Returns questions for a session — uses snapshot if available, else active theme
+function getSessionQuestions(session){
+  if(session && session.questions && session.questions.length > 0) return session.questions;
+  return ALL_QUESTIONS;
+}
+function getSessionPhases(session){
+  if(session && session.phases && session.phases.length > 0) return session.phases;
+  return PHASES;
+}
 
 // ══════════════════════════════════════════════
 // STATE
@@ -1151,14 +1341,83 @@ function _showPage(name){
   document.getElementById('page-'+name).classList.add('active');
   const navBtn=document.getElementById('nav-'+name);
   if(navBtn)navBtn.classList.add('active');
+  if(name!=='playbook'){
+    const pb = document.getElementById('page-playbook');
+    if(pb){ pb.removeAttribute('dir'); pb.style.fontFamily=''; }
+  }
+  // Role guards
+  if(name==='playbook-mgmt' && !hasRole('manager')){ showToast('Access denied'); return; }
+  if(name==='admin' && !hasRole('admin')){ showToast('Access denied'); return; }
   if(name==='sessions')renderSessionsGrid();
-  if(name==='summary')renderSummary();
+  if(name==='summary'){
+    if(!summaryThemeFilter && THEMES.length>0) summaryThemeFilter = THEMES[0].id;
+    renderSummary();
+  }
+  if(name==='playbook-mgmt'){ switchAdminTab('themes'); }
+  if(name==='admin'){ loadUsersList(); loadInvitesList(); }
   if(name==='deleted')renderDeletedList();
   if(name==='admin'&&typeof renderCustomQuestions==='function')renderCustomQuestions();
   window.scrollTo(0,0);
 }
 // ══════════════════════════════════════════════
+function setThemeFilter(themeId){
+  activeThemeFilter = themeId;
+  renderSessionsGrid();
+}
+
 function renderSessionsGrid(){
+  // Update theme title and intro
+  const titleEl = document.getElementById('home-theme-title');
+  const introEl = document.getElementById('home-theme-intro');
+  const activeT = activeThemeFilter ? THEMES.find(function(t){ return t.id===activeThemeFilter; }) : null;
+  if(titleEl) titleEl.textContent = activeT ? (activeT.icon||'📋')+' '+activeT.name : 'Discovery Playbook';
+  if(introEl){
+    // Only show intro when a specific theme is selected, not on "all sessions" view
+    const introText = activeT && activeT.intro ? activeT.intro : '';
+    if(introText){
+      introEl.style.display = '';
+      introEl.innerHTML = '<p style="font-size:13px;color:var(--ink-mid);line-height:1.6;max-width:680px;margin-top:6px;">'+introText+'</p>';
+    } else {
+      introEl.style.display = 'none';
+      introEl.innerHTML = '';
+    }
+  }
+
+  // Update home theme bar
+  const bar = document.getElementById('home-themes-bar');
+  if(bar){
+    if(THEMES.length >= 1){
+      bar.style.display = '';
+      const allActive = activeThemeFilter === null;
+      bar.innerHTML = '';
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:12px;color:var(--ink-soft);margin-bottom:8px;font-weight:500;';
+      label.textContent = 'Discovery themes — click to filter sessions:';
+      bar.appendChild(label);
+      const pillRow = document.createElement('div');
+      pillRow.className = 'home-themes-bar';
+      // All pill
+      const allPill = document.createElement('div');
+      allPill.className = 'home-theme-pill';
+      allPill.style.cssText = 'cursor:pointer;'+(allActive?'border-color:var(--accent);color:var(--accent);background:var(--surface-2);font-weight:600;':'');
+      allPill.innerHTML = 'All sessions <span style="color:var(--ink-faint);font-size:10px;">('+sessions.length+')</span>';
+      allPill.addEventListener('click', function(){ setThemeFilter(null); });
+      pillRow.appendChild(allPill);
+      THEMES.forEach(function(t){
+        const count = sessions.filter(function(s){ return (s.themeId||'theme-mga')===t.id; }).length;
+        const isActive = activeThemeFilter === t.id;
+        const pill = document.createElement('div');
+        pill.className = 'home-theme-pill';
+        pill.style.cssText = 'cursor:pointer;'+(isActive?'border-color:'+(t.color||'#1a4fff')+';color:'+(t.color||'#1a4fff')+';background:var(--surface-2);font-weight:600;':'');
+        pill.innerHTML = '<span class="home-theme-pill-dot" style="background:'+(t.color||'#1a4fff')+'"></span>'+(t.icon||'📋')+' '+t.name+' <span style="color:var(--ink-faint);font-size:10px;">('+count+')</span>';
+        pill.addEventListener('click', (function(id){ return function(){ setThemeFilter(id); }; })(t.id));
+        pillRow.appendChild(pill);
+      });
+      bar.appendChild(pillRow);
+    } else {
+      bar.style.display = 'none';
+    }
+  }
   const grid=document.getElementById('sessions-grid');
   grid.innerHTML='';
   const newCard=document.createElement('div');
@@ -1166,8 +1425,22 @@ function renderSessionsGrid(){
   newCard.innerHTML=`<div class="nsc-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div class="nsc-text">New session</div><div class="nsc-sub">Start a fresh interview</div></div>`;
   newCard.onclick=openNewSessionModal;
   grid.appendChild(newCard);
-  [...sessions].reverse().forEach(s=>{
-    const vals=ALL_QUESTIONS.map(q=>resolveScore(s,q.id)).filter(v=>v!==undefined);
+  const filteredSessions = activeThemeFilter
+    ? sessions.filter(s=>(s.themeId||'theme-mga')===activeThemeFilter)
+    : sessions;
+  if(activeThemeFilter && filteredSessions.length===0){
+    const filterTheme = THEMES.find(t=>t.id===activeThemeFilter)||{};
+    const empty = document.createElement('div');
+    empty.style.cssText = 'grid-column:1/-1;padding:48px 32px;text-align:center;';
+    empty.innerHTML = '<div style="font-size:36px;margin-bottom:12px;">'+(filterTheme.icon||'📋')+'</div>'
+      +'<div style="font-size:16px;font-weight:600;color:var(--ink);margin-bottom:8px;">No sessions yet for '+filterTheme.name+'</div>'
+      +'<div style="font-size:13px;color:var(--ink-soft);max-width:360px;margin:0 auto 20px;">Start a new session and select the <strong>'+(filterTheme.name||'')+'</strong> theme to begin capturing discovery interviews here.</div>'
+      +'<button class="btn-primary" onclick="openNewSessionModal()" style="font-size:13px;">+ New session</button>';
+    grid.appendChild(empty);
+  }
+  [...filteredSessions].reverse().forEach(s=>{
+    const sessionQs = getSessionQuestions(s);
+    const vals=sessionQs.map(q=>resolveScore(s,q.id)).filter(v=>v!==undefined);
     const ans=vals.length;
     const total=vals.reduce((a,b)=>a+b,0);
     const hot=vals.filter(v=>v===3).length;
@@ -1180,6 +1453,10 @@ function renderSessionsGrid(){
     const hasTranscript=!!(s.transcript&&s.transcript.trim());
     const card=document.createElement('div');
     card.className='session-card';
+    const sessionThemeObj = getThemeById(s.themeId||'theme-mga')||{};
+    const isHebrewSession = sessionThemeObj.lang === 'he';
+    const langFlag = isHebrewSession ? ' 🇮🇱' : '';
+    const themeTag = '<div class="session-theme-tag">'+(s.themeIcon||'📋')+' '+(s.themeName||'US MGA Discovery')+langFlag+'</div>';
     card.innerHTML=`
       <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
         <div class="sc-type ${s.type}">${typeLabel}</div>
@@ -1190,9 +1467,10 @@ function renderSessionsGrid(){
       </div>
       <div class="sc-name">${esc(s.name)}</div>
       <div class="sc-company">${esc(s.company)||'No company'}</div>
-      <div class="sc-meta">
+      ${themeTag}
+      <div class="sc-meta" style="margin-top:6px;">
         <div class="sc-score"><span class="sc-score-dot" style="background:${qual==='hot'?'#c93535':qual==='warm'?'#b85c00':qual==='cold'?'#1a4fff':'#b8bccb'}"></span><span class="sc-score-label">${qualLabel}</span></div>
-        <span class="sc-answered">${ans}/${ALL_QUESTIONS.length}</span>
+        <span class="sc-answered">${ans}/${sessionQs.length}</span>
         <span class="sc-date">${formatDate(s.createdAt)}</span>
       </div>
       <div class="sc-actions">
@@ -1222,8 +1500,34 @@ function openNewSessionModal(){
   document.getElementById('modal-name').value='';
   document.getElementById('modal-company').value='';
   document.getElementById('modal-type').value='existing';
+  // Populate theme selector
+  const themeField = document.getElementById('modal-theme-field');
+  const themeCards = document.getElementById('modal-theme-cards');
+  if(THEMES.length <= 1){
+    themeField.style.display = 'none'; // Hide if only one theme
+  } else {
+    themeField.style.display = '';
+    themeCards.innerHTML = THEMES.map((t,i)=>`
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;border:2px solid ${i===0?'var(--accent)':'var(--surface-3)'};cursor:pointer;transition:border .15s;" id="theme-card-${t.id}" onclick="selectThemeCard('${t.id}')">
+        <input type="radio" name="modal-theme" value="${t.id}" ${i===0?'checked':''} style="margin-top:3px;accent-color:var(--accent)">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--ink)">${t.icon||'📋'} ${t.name}</div>
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.4">${t.description||''}</div>
+          <div style="font-size:11px;color:var(--ink-faint);margin-top:3px">${t.phases.flatMap(p=>p.questions).length} questions · ${t.phases.length} phases</div>
+        </div>
+      </label>`).join('');
+  }
   document.getElementById('modal-overlay').classList.remove('hidden');
   setTimeout(()=>document.getElementById('modal-name').focus(),50);
+}
+
+function selectThemeCard(themeId){
+  THEMES.forEach(t=>{
+    const card = document.getElementById('theme-card-'+t.id);
+    if(card) card.style.border = t.id===themeId ? '2px solid var(--accent)' : '2px solid var(--surface-3)';
+  });
+  const radio = document.querySelector('input[name="modal-theme"][value="'+themeId+'"]');
+  if(radio) radio.checked = true;
 }
 function openEditModal(id){
   const s=getSession(id);if(!s)return;
@@ -1248,7 +1552,23 @@ function confirmModal(){
     s.name=name;s.company=company;s.type=type;
     saveSessions();hideModal();renderSessionsGrid();showToast('Session updated');
   }else{
-    const s={id:'s'+Date.now(),name,company,type,scores:{},notes:{},tones:{},createdAt:Date.now(),savedAt:null};
+    // Get selected theme (default to first/only theme)
+    const themeRadio = document.querySelector('input[name="modal-theme"]:checked');
+    const themeId = themeRadio ? themeRadio.value : (THEMES[0]&&THEMES[0].id||'theme-mga');
+    const theme = getThemeById(themeId) || THEMES[0];
+    // Snapshot questions and phases at creation time
+    const s={
+      id:'s'+Date.now(),name,company,type,
+      themeId: theme.id,
+      themeName: theme.name,
+      themeIcon: theme.icon||'📋',
+      questions: JSON.parse(JSON.stringify(theme.phases.flatMap(p=>p.questions))),
+      phases: JSON.parse(JSON.stringify(theme.phases)),
+      scores:{},notes:{},tones:{},
+      autoScores:{},autoQuotes:{},autoReasons:{},
+      scoreSources:{},
+      createdAt:Date.now(),savedAt:null
+    };
     sessions.unshift(s);saveSessions();hideModal();openSession(s.id);
   }
 }
@@ -1260,13 +1580,39 @@ var _mn=document.getElementById('modal-name');if(_mn)_mn.addEventListener('keydo
 function openSession(id){
   currentSessionId=id;activePhase=0;
   const s=getSession(id);if(!s)return;
+  // Load session's theme context into runtime PHASES/ALL_QUESTIONS
+  if(s.phases && s.phases.length>0){
+    PHASES.length=0; s.phases.forEach(p=>PHASES.push(p));
+    ALL_QUESTIONS.length=0; PHASES.flatMap(p=>p.questions).forEach(q=>ALL_QUESTIONS.push(q));
+  } else if(s.themeId){
+    activateTheme(s.themeId);
+  }
   document.getElementById('ph-name').textContent=s.name;
   document.getElementById('ph-company').textContent=s.company||'—';
   const typeLabel={'existing':'Existing partner','prospect':'New prospect','mixed':'Mixed / TBD'}[s.type]||'';
   const phType=document.getElementById('ph-type');
   phType.textContent=typeLabel;phType.className='ph-type '+s.type;
+  // Show theme badge if not default MGA
+  const themeId = s.themeId||'theme-mga';
+  const themeBadgeEl = document.getElementById('ph-theme-badge');
+  if(themeBadgeEl){
+    if(themeId !== 'theme-mga'){
+      themeBadgeEl.textContent=(s.themeIcon||'📋')+' '+(s.themeName||'');
+      themeBadgeEl.style.display='inline-block';
+    } else {
+      themeBadgeEl.style.display='none';
+    }
+  }
   document.getElementById('ph-save-btn').textContent='Save session';
   document.getElementById('ph-save-btn').className='ph-save-btn';
+  // Apply RTL if Hebrew theme
+  const sessionTheme = getThemeById(s.themeId||'theme-mga');
+  const isHebrew = sessionTheme && sessionTheme.lang === 'he';
+  const playbookPage = document.getElementById('page-playbook');
+  if(playbookPage){
+    playbookPage.setAttribute('dir', isHebrew ? 'rtl' : 'ltr');
+    playbookPage.style.fontFamily = isHebrew ? "'Segoe UI','Arial Hebrew',Arial,sans-serif" : '';
+  }
   showPage('playbook');
   renderTrackBar();
   renderSidebarNav();
@@ -1547,9 +1893,8 @@ function dismissConfirm(){document.getElementById('confirm-overlay').classList.a
 function executeConfirm(){document.getElementById('confirm-overlay').classList.add('hidden');if(_confirmCb){const cb=_confirmCb;_confirmCb=null;cb();}}
 
 function deleteSession(id,fromSummary){
-  if(!adminAuthed){
-    showToast('Admin sign-in required to delete sessions');
-    openAdminLogin();
+  if(!hasRole('manager')){
+    showToast('Manager or admin access required to delete sessions');
     return;
   }
   const s=getSession(id);
@@ -1645,29 +1990,92 @@ function renderDeletedList(){
 // ══════════════════════════════════════════════
 // SUMMARY & HEATMAP
 // ══════════════════════════════════════════════
+function getSummaryFilteredSessions(){
+  // Summary is always scoped to one theme — never mixes themes
+  if(!summaryThemeFilter) return sessions; // fallback only if themes not yet loaded
+  return sessions.filter(function(s){ return (s.themeId||'theme-mga')===summaryThemeFilter; });
+}
+
+function setSummaryThemeFilter(themeId){
+  summaryThemeFilter = themeId;
+  renderSummary();
+}
+
+function renderSummaryThemeBar(){
+  const bar = document.getElementById('summary-theme-bar');
+  const pillsEl = document.getElementById('summary-theme-pills');
+  if(!bar || !pillsEl) return;
+  // Always show bar — even with one theme it provides context
+  bar.style.display = '';
+  pillsEl.innerHTML = '';
+
+  THEMES.forEach(function(t){
+    const count = sessions.filter(function(s){ return (s.themeId||'theme-mga')===t.id; }).length;
+    const isActive = summaryThemeFilter===t.id;
+    const pill = document.createElement('div');
+    pill.className = 'home-theme-pill';
+    pill.style.cssText = 'cursor:pointer;transition:all .15s;'+(isActive
+      ? 'border-color:'+(t.color||'#1a4fff')+';color:'+(t.color||'#1a4fff')+';background:var(--surface-2);font-weight:600;box-shadow:0 0 0 2px '+(t.color||'#1a4fff')+'22;'
+      : '');
+    pill.innerHTML = '<span class="home-theme-pill-dot" style="background:'+(t.color||'#1a4fff')+'"></span>'
+      +(t.icon||'📋')+' '+t.name
+      +' <span style="color:var(--ink-faint);font-size:10px;">('+count+' session'+(count!==1?'s':'')+')</span>';
+    pill.addEventListener('click', (function(id){ return function(){ setSummaryThemeFilter(id); }; })(t.id));
+    pillsEl.appendChild(pill);
+  });
+}
+
 function renderSummary(){
+  renderSummaryThemeBar();
+
+  // Update section titles/subs based on filter
+  const activeT = summaryThemeFilter ? THEMES.find(function(t){ return t.id===summaryThemeFilter; }) : null;
+  const themeLabel = activeT ? (activeT.icon||'📋')+' '+activeT.name : 'Sessions';
+  const tableTitle = document.getElementById('summary-table-title');
+  const tableSub = document.getElementById('summary-table-sub');
+  const heatTitle = document.getElementById('summary-heatmap-title');
+  const heatSub = document.getElementById('summary-heatmap-sub');
+  if(tableTitle) tableTitle.textContent = themeLabel+' — sessions';
+  if(tableSub) tableSub.textContent = 'Score matrix for '+(activeT?activeT.name:'this theme')+' sessions. Click a row to review.';
+  if(heatTitle) heatTitle.textContent = themeLabel+' — pain heat map';
+  if(heatSub) heatSub.textContent = 'Average pain score per question for '+(activeT?activeT.name:'this theme')+' sessions. Darker = more acute.';
+  const aiSub = document.querySelector('.ai-panel-sub');
+  if(aiSub) aiSub.textContent = 'Patterns, priorities, and recommendations for '+(activeT?activeT.name:'this theme')+' sessions';
+
   renderSummaryTable();
   renderHeatmap();
-  // Restore persisted AI insight
-  const saved = localStorage.getItem('mga_ai_insight');
-  const savedAt = localStorage.getItem('mga_ai_insight_at');
+
+  // Restore persisted AI insight (per-theme key)
+  const insightKey = 'mga_ai_insight'+(summaryThemeFilter ? '_'+summaryThemeFilter : '');
+  const insightAtKey = 'mga_ai_insight_at'+(summaryThemeFilter ? '_'+summaryThemeFilter : '');
+  const saved = localStorage.getItem(insightKey);
+  const savedAt = localStorage.getItem(insightAtKey);
   const out = document.getElementById('ai-output');
   if(saved && out){
     out.className='ai-output';
-    const ts = savedAt ? ' (generated '+new Date(savedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+')' : '';
     out.textContent = saved;
     const btn = document.getElementById('ai-run-btn');
     if(btn) btn.textContent = 'Re-run analysis';
+  } else if(out){
+    out.className='ai-output empty';
+    out.textContent = 'Run the analysis to generate strategic insights'+(activeT?' for '+activeT.name+' sessions':' from your interview data')+'.';
+    const btn = document.getElementById('ai-run-btn');
+    if(btn) btn.textContent = 'Run analysis';
   }
 }
 
 function renderSummaryTable(){
   const wrap=document.getElementById('summary-table-wrap');
-  if(sessions.length===0){wrap.innerHTML='<div class="empty-state"><h3>No sessions yet</h3><p>Start your first interview to see data here.</p></div>';return;}
+  const filteredSessions = getSummaryFilteredSessions();
+  if(filteredSessions.length===0){
+    const activeT = summaryThemeFilter ? THEMES.find(function(t){return t.id===summaryThemeFilter;})||{} : null;
+    wrap.innerHTML = activeT
+      ? '<div class="empty-state"><h3>No sessions for '+activeT.name+'</h3><p>Start a new session with this theme to see data here.</p></div>'
+      : '<div class="empty-state"><h3>No sessions yet</h3><p>Start your first interview to see data here.</p></div>';return;}
   let html='<div style="overflow-x:auto"><table class="matrix-table"><thead><tr><th>Interviewee</th>';
   ALL_QUESTIONS.forEach(q=>{html+=`<th title="${q.title}">Q${q.n}</th>`;});
   html+='<th>Total</th><th>Qualification</th><th>Actions</th></tr></thead><tbody>';
-  sessions.forEach(s=>{
+  filteredSessions.forEach(s=>{
     const vals=ALL_QUESTIONS.map(q=>resolveScore(s,q.id));
     const scored=vals.filter(v=>v!==undefined);
     const ans=scored.length;
@@ -1697,7 +2105,8 @@ function renderSummaryTable(){
 
 function renderHeatmap(){
   const wrap=document.getElementById('heatmap-wrap');
-  if(sessions.length===0){wrap.innerHTML='';return;}
+  const _filteredForHeat = getSummaryFilteredSessions();
+  if(_filteredForHeat.length===0){wrap.innerHTML='';return;}
   const scoredSessions=sessions.filter(s=>hasAnyScore(s));
   if(scoredSessions.length===0){wrap.innerHTML='<p style="font-size:13px;color:var(--ink-soft)">No scored sessions yet.</p>';return;}
   let html='<div class="hg-legend"><div class="hg-legend-item"><div class="hg-legend-dot" style="background:#eef7f2;border:1px solid #9fd4b6"></div>0 — No pain</div><div class="hg-legend-item"><div class="hg-legend-dot" style="background:#fef6ec;border:1px solid #f5cf99"></div>1–2 — Moderate</div><div class="hg-legend-item"><div class="hg-legend-dot" style="background:#fdf1f1;border:1px solid #f0b8b8"></div>3 — Critical</div></div><div class="heat-grid">';
@@ -1725,7 +2134,7 @@ function renderHeatmap(){
 // AI ANALYSIS
 // ══════════════════════════════════════════════
 async function runAIAnalysis(){
-  const scoredSessions=sessions.filter(s=>hasAnyScore(s));
+  const scoredSessions=getSummaryFilteredSessions().filter(s=>hasAnyScore(s));
   if(scoredSessions.length===0){showToast('No scored sessions to analyse yet');return;}
   const btn=document.getElementById('ai-run-btn');
   const out=document.getElementById('ai-output');
@@ -1755,7 +2164,13 @@ async function runAIAnalysis(){
     return `Q${q.n} "${q.title}": avg ${avg.toFixed(2)}/3 across ${vals.length} sessions`;
   }).filter(Boolean).join('\n');
 
+  const summaryTheme = THEMES.find(function(t){ return t.id===summaryThemeFilter; }) || THEMES[0] || {};
+  const summaryLang = summaryTheme.lang || 'en';
+  const summaryLangNote = summaryLang === 'he'
+    ? 'NOTE: These interviews were conducted in Hebrew. Some quotes and notes may be in Hebrew — handle them correctly. Write your analysis in English but preserve Hebrew quotes as-is.'
+    : '';
   const prompt=`You are a senior B2B sales strategist analysing discovery interview data from MGA (Managing General Agent) insurance prospects and partners. The interviews used a structured 14-question playbook across 4 operational phases.
+${summaryLangNote}
 
 Here is the raw interview data (scores are 0=no pain, 1=mild, 2=moderate, 3=critical):
 
@@ -1781,9 +2196,13 @@ Be specific, direct, and grounded in the data. Do not pad. Use the interviewee n
     if(text){
       out.className='ai-output';out.textContent=text;
       // Persist the insight text
-      localStorage.setItem('mga_ai_insight', text);
-      localStorage.setItem('mga_ai_insight_at', new Date().toISOString());
-      if(sb) sb.from('settings').upsert({key:'ai_insight',value:text,updated_at:new Date().toISOString()}).then(({error})=>{if(error)console.warn('Supabase insight save error:',error.message);});
+      const insightKey = 'mga_ai_insight'+(summaryThemeFilter ? '_'+summaryThemeFilter : '');
+      const insightAtKey = 'mga_ai_insight_at'+(summaryThemeFilter ? '_'+summaryThemeFilter : '');
+      localStorage.setItem(insightKey, text);
+      localStorage.setItem(insightAtKey, new Date().toISOString());
+      if(sb && SUPABASE_URL && SUPABASE_KEY){
+      fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/settings',{method:'POST',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify({key:'ai_insight',value:text,updated_at:new Date().toISOString()})}).catch(e=>console.warn('Insight sync:',e.message));
+    }
       if(sb) sb.from('settings').upsert({key:'ai_insight_at',value:new Date().toISOString(),updated_at:new Date().toISOString()}).then(()=>{});
     }
     else{out.className='ai-output empty';out.textContent='Analysis returned empty. Please try again.';}
@@ -2086,7 +2505,6 @@ function doImport(){
 // ══════════════════════════════════════════════
 const ADMIN_EMAIL='barak.shavit@novidea.com';
 const ADMIN_PASS='NovideaMGA123';
-let adminAuthed=false;
 let customQuestions=JSON.parse(localStorage.getItem('mga_custom_questions')||'[]');
 let pendingGenerated=null;
 
@@ -2096,8 +2514,8 @@ function saveCustomQuestions(){
 }
 
 function handleAdminNav(){
-  if(adminAuthed){showPage('admin');}
-  else{openAdminLogin();}
+  if(hasRole('admin')) showPage('admin');
+  else showToast('Admin access required');
 }
 
 function openAdminLogin(){
@@ -2130,17 +2548,9 @@ document.addEventListener('keydown',e=>{
   if(!document.getElementById('admin-login-overlay').classList.contains('hidden')&&e.key==='Enter')attemptAdminLogin();
 });
 
-function adminLogout(){
-  adminAuthed=false;
-  _showPage('sessions');
-  showToast('Signed out of admin');
-}
+function adminLogout(){ logoutUser(); }
 
-// Override showPage to guard admin route
-showPage=function(name){
-  if(name==='admin'&&!adminAuthed){openAdminLogin();return;}
-  _showPage(name);
-}
+showPage=function(name){ _showPage(name); }
 
 function clearAdminPrompt(){
   document.getElementById('admin-prompt').value='';
@@ -2704,7 +3114,13 @@ async function analyseTranscript(){
     `Q${q.n} "${q.title}": existing_ask="${q.existing}" prospect_ask="${q.prospect}" pain_signals=${JSON.stringify(q.pain)} nopain_signals=${JSON.stringify(q.nopain)}`
   ).join('\n');
 
+  const sessionThemeForTranscript = getThemeById((getCurrentSession()||{}).themeId||'theme-mga')||{};
+  const transcriptLang = sessionThemeForTranscript.lang || 'en';
+  const langInstruction = transcriptLang === 'he'
+    ? 'IMPORTANT: The transcript is in Hebrew. Analyse it in Hebrew context. Quotes should be in Hebrew as they appear in the transcript. Reasoning can be in English.'
+    : '';
   const sys=`You are analysing a sales discovery call transcript for Novidea, an insurance technology company. Your job is to score how strongly each discovery question's pain point was confirmed in the transcript.
+${langInstruction}
 
 CRITICAL RULES:
 1. Only score a question if the topic was ACTUALLY discussed in the transcript — even indirectly or using different words than the question itself.
@@ -2910,7 +3326,7 @@ async function initSupabase(){
     return true;
   }catch(e){
     // Fetch blocked (sandbox) — keep sb client alive anyway so downloaded file works
-    console.warn('Supabase connection test failed:', e.message);
+    console.log('Supabase: running offline (network blocked in preview). Open file locally to connect.');
     return true;
   }
 }
@@ -2947,6 +3363,14 @@ async function loadFromSupabase(){
           }
           if(key==='ai_insight_at'){
             localStorage.setItem('mga_ai_insight_at',value);
+          }
+          if(key==='custom_themes'){
+            try{
+              const themes=JSON.parse(value);
+              localStorage.setItem('mga_custom_themes',value);
+              // Merge into runtime THEMES (keep built-in, replace custom)
+              THEMES = THEMES.filter(t=>t.builtIn).concat(themes);
+            }catch(e){}
           }
         }catch(e){}
       });
@@ -3094,7 +3518,959 @@ function renderConnectionStatus(){
 }
 
 // INIT — runs after DOM is ready (handles both early and late script execution)
+
+// ══════════════════════════════════════════════
+// THEME MANAGER
+// ══════════════════════════════════════════════
+
+let editingThemeId = null;
+let pendingThemeQuestions = null; // parsed from AI JSON import
+
+function saveCustomThemes(){
+  const custom = THEMES.filter(t=>!t.builtIn);
+  const val = JSON.stringify(custom);
+  localStorage.setItem('mga_custom_themes', val);
+  if(sb && SUPABASE_URL && SUPABASE_KEY){
+    fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/settings', {
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({key:'custom_themes',value:val,updated_at:new Date().toISOString()})
+    }).catch(e=>console.warn('Theme sync error:',e.message));
+  }
+}
+
+function renderThemesList(){
+  const list = document.getElementById('themes-list');
+  if(!list) return;
+  list.innerHTML = '';
+
+  if(!THEMES.length){
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-soft);font-size:13px;">No themes yet — click "+ New theme" to create one.</div>';
+    return;
+  }
+
+  THEMES.forEach(function(t){
+    const qCount = t.phases.flatMap(function(p){ return p.questions; }).length;
+    const phCount = t.phases.length;
+    const sessionCount = sessions.filter(function(s){ return (s.themeId||'theme-mga')===t.id; }).length;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid var(--surface-3);border-radius:8px;margin-bottom:8px;background:var(--surface);';
+
+    // Left: icon + info
+    const left = document.createElement('div');
+    left.style.cssText = 'display:flex;align-items:center;gap:12px;';
+    const iconEl = document.createElement('div');
+    iconEl.style.cssText = 'font-size:28px;line-height:1;flex-shrink:0;';
+    iconEl.textContent = t.icon||'📋';
+    const info = document.createElement('div');
+    const langBadge = t.lang === 'he'
+      ? '<span style="font-size:10px;background:#f0f5e8;color:#2d6a2d;border:1px solid #b8d8b8;padding:1px 6px;border-radius:10px;margin-left:6px;">🇮🇱 Hebrew</span>'
+      : '<span style="font-size:10px;background:#f0f5ff;color:#1a4fff;border:1px solid #c8d8ff;padding:1px 6px;border-radius:10px;margin-left:6px;">🇺🇸 English</span>';
+    info.innerHTML =
+      '<div style="font-size:14px;font-weight:600;color:var(--ink)">'
+        + t.name
+        + (t.builtIn ? '<span style="font-size:10px;color:var(--ink-faint);margin-left:6px;border:1px solid var(--surface-3);padding:1px 6px;border-radius:10px;">built-in</span>' : '')
+        + langBadge
+      + '</div>'
+      + '<div style="font-size:12px;color:var(--ink-soft);margin-top:2px">'+(t.description||'')+'</div>'
+      + '<div style="font-size:11px;color:var(--ink-faint);margin-top:3px">'
+        + qCount+' questions · '+phCount+' phases · '+sessionCount+' session'+(sessionCount!==1?'s':'')
+      + '</div>';
+    left.appendChild(iconEl);
+    left.appendChild(info);
+
+    // Right: buttons
+    const right = document.createElement('div');
+    right.style.cssText = 'display:flex;gap:8px;flex-shrink:0;align-items:center;';
+
+    if(t.builtIn){
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:11px;color:var(--ink-faint);';
+      badge.textContent = 'read-only';
+      right.appendChild(badge);
+    } else {
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-outline';
+      editBtn.style.cssText = 'font-size:12px;padding:5px 12px;';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', (function(id){ return function(){ openEditThemeModal(id); }; })(t.id));
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-outline';
+      delBtn.style.cssText = 'font-size:12px;padding:5px 12px;color:var(--red,#c93535);border-color:var(--red-border,#f0b8b8);';
+      delBtn.textContent = 'Delete';
+      delBtn.addEventListener('click', (function(themeId, themeName, sessCount, rowEl){
+        return function(){
+          // Remove any existing confirm row first
+          const existing = document.getElementById('del-confirm-'+themeId);
+          if(existing){ existing.remove(); return; }
+
+          const confirmRow = document.createElement('div');
+          confirmRow.id = 'del-confirm-'+themeId;
+          confirmRow.style.cssText = 'padding:12px 14px;background:#fff5f5;border:1px solid #f5c0c0;border-radius:6px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+
+          const msg = document.createElement('div');
+          msg.style.cssText = 'font-size:13px;color:var(--ink);';
+          msg.innerHTML = '⚠️ Delete <strong>'+themeName+'</strong>? '
+            + (sessCount > 0
+              ? '<span style="color:#c93535;">'+sessCount+' session'+(sessCount!==1?'s':'')+' use this theme — they will still work (questions are snapshotted) but this theme will not be available for new sessions.</span>'
+              : 'This theme has no sessions. This cannot be undone.');
+
+          const btnRow = document.createElement('div');
+          btnRow.style.cssText = 'display:flex;gap:8px;flex-shrink:0;';
+
+          const yesBtn = document.createElement('button');
+          yesBtn.style.cssText = 'background:#c93535;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;';
+          yesBtn.textContent = 'Yes, delete';
+          yesBtn.addEventListener('click', function(){
+            THEMES = THEMES.filter(function(x){ return x.id!==themeId; });
+            saveCustomThemes();
+            if(activeThemeFilter===themeId) activeThemeFilter=null;
+            renderThemesList();
+            renderSessionsGrid();
+            showToast('Theme deleted');
+          });
+
+          const noBtn = document.createElement('button');
+          noBtn.className = 'btn-outline';
+          noBtn.style.cssText = 'font-size:12px;padding:6px 14px;';
+          noBtn.textContent = 'Cancel';
+          noBtn.addEventListener('click', function(){ confirmRow.remove(); });
+
+          btnRow.appendChild(yesBtn);
+          btnRow.appendChild(noBtn);
+          confirmRow.appendChild(msg);
+          confirmRow.appendChild(btnRow);
+          rowEl.after(confirmRow);
+        };
+      })(t.id, t.name, sessionCount, row));
+
+      right.appendChild(editBtn);
+      right.appendChild(delBtn);
+    }
+
+    row.appendChild(left);
+    row.appendChild(right);
+    list.appendChild(row);
+  });
+}
+
+function openNewThemeModal(){
+  editingThemeId = null;
+  pendingThemeQuestions = [];
+  document.getElementById('theme-modal-title').textContent = 'New discovery theme';
+  document.getElementById('theme-name-input').value = '';
+  document.getElementById('theme-desc-input').value = '';
+  document.getElementById('theme-intro-input').value = '';
+  document.getElementById('theme-icon-input').value = '📋';
+  document.getElementById('theme-color-input').value = '#1a4fff';
+  document.getElementById('theme-lang-input').value = 'en';
+  document.getElementById('theme-lang-note').style.display = 'none';
+  document.getElementById('theme-questions-count').textContent = 'No questions yet.';
+  document.getElementById('theme-questions-preview').style.display = 'none';
+  document.getElementById('theme-questions-preview').innerHTML = '';
+  const mqForm = document.getElementById('manual-add-q-form');
+  if(mqForm) mqForm.style.display = 'none';
+  const phForm = document.getElementById('manual-add-phase-form');
+  if(phForm) phForm.style.display = 'none';
+  switchThemeQTab('manual');
+  renderManualPhasesList();
+  document.getElementById('theme-modal-overlay').classList.remove('hidden');
+}
+
+function openEditThemeModal(themeId){
+  const t = getThemeById(themeId);
+  if(!t || t.builtIn) return;
+  editingThemeId = themeId;
+  pendingThemeQuestions = JSON.parse(JSON.stringify(t.phases));
+  document.getElementById('theme-modal-title').textContent = 'Edit theme: '+t.name;
+  document.getElementById('theme-name-input').value = t.name;
+  document.getElementById('theme-desc-input').value = t.description||'';
+  document.getElementById('theme-intro-input').value = t.intro||'';
+  document.getElementById('theme-icon-input').value = t.icon||'📋';
+  document.getElementById('theme-color-input').value = t.color||'#1a4fff';
+  document.getElementById('theme-lang-input').value = t.lang||'en';
+  document.getElementById('theme-lang-note').style.display = (t.lang==='he') ? '' : 'none';
+  document.getElementById('manual-add-q-form').style.display = 'none';
+  switchThemeQTab('manual');
+  renderManualPhasesList();
+  updateThemeQCount();
+  document.getElementById('theme-modal-overlay').classList.remove('hidden');
+}
+
+function closeThemeModal(e){ if(!e||e.target===document.getElementById('theme-modal-overlay')) hideThemeModal(); }
+function hideThemeModal(){ document.getElementById('theme-modal-overlay').classList.add('hidden'); }
+
+function renderThemeQuestionsPreview(phases){
+  const el = document.getElementById('theme-questions-preview');
+  if(!phases||!phases.length){ el.style.display='none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = phases.map(p=>`
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">${p.num||p.title}: ${p.title}</div>
+      ${(p.questions||[]).map(q=>`<div style="font-size:12px;color:var(--ink-soft);padding:3px 0;border-bottom:1px solid var(--surface-2);">Q${q.n||''} ${q.title}</div>`).join('')}
+    </div>`).join('');
+}
+
+function saveTheme(){
+  const name = document.getElementById('theme-name-input').value.trim();
+  const desc = document.getElementById('theme-desc-input').value.trim();
+  const icon = document.getElementById('theme-icon-input').value.trim()||'📋';
+  const color = document.getElementById('theme-color-input').value;
+  if(!name){ showToast('Theme name is required'); document.getElementById('theme-name-input').focus(); return; }
+  const totalQs = (pendingThemeQuestions||[]).flatMap(p=>p.questions||[]).length;
+  if(!pendingThemeQuestions || !pendingThemeQuestions.length){ showToast('Please add at least one phase with questions'); return; }
+  if(totalQs === 0){ showToast('Please add at least one question'); return; }
+
+  const intro = (document.getElementById('theme-intro-input').value||'').trim();
+  const lang = document.getElementById('theme-lang-input').value || 'en';
+  if(editingThemeId){
+    const t = getThemeById(editingThemeId);
+    if(t){ t.name=name; t.description=desc; t.intro=intro; t.lang=lang; t.icon=icon; t.color=color; t.phases=pendingThemeQuestions; }
+  } else {
+    const newTheme = {
+      id: 'theme-'+Date.now(),
+      name, description:desc, intro, lang, icon, color,
+      builtIn: false,
+      phases: pendingThemeQuestions
+    };
+    THEMES.push(newTheme);
+  }
+  saveCustomThemes();
+  hideThemeModal();
+  renderThemesList();
+  showToast(editingThemeId ? 'Theme updated' : 'Theme created ✓');
+}
+
+function deleteTheme(themeId){ /* handled inline in renderThemesList */ }
+
+function handleThemeJsonImport(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      let raw = e.target.result.trim();
+      // Strip markdown code fences if Claude wrapped in ```json
+      raw = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+      const data = JSON.parse(raw);
+      // Accept either {phases:[...]} or {theme:{phases:[...]}} or just [phases array]
+      const phases = data.phases || (data.theme && data.theme.phases) || (Array.isArray(data) ? data : null);
+      if(!phases || !Array.isArray(phases)) throw new Error('Could not find phases array in JSON');
+      // Renumber questions
+      let counter = 1;
+      phases.forEach(p=>{ (p.questions||[]).forEach(q=>{ q.n=counter++; if(!q.id) q.id='q'+q.n; }); });
+      pendingThemeQuestions = phases;
+      const qTotal = phases.flatMap(p=>p.questions||[]).length;
+      document.getElementById('theme-questions-count').textContent = qTotal+' questions across '+phases.length+' phases imported ✓';
+      renderThemeQuestionsPreview(phases);
+      // Pre-fill theme name from JSON if empty
+      const nameInput = document.getElementById('theme-name-input');
+      if(!nameInput.value && (data.name || (data.theme && data.theme.name))){
+        nameInput.value = data.name || data.theme.name;
+      }
+      if(!document.getElementById('theme-desc-input').value && (data.description||(data.theme&&data.theme.description))){
+        document.getElementById('theme-desc-input').value = data.description||data.theme.description;
+      }
+      showToast('Questions imported ✓');
+    }catch(err){
+      showToast('Could not parse JSON: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+  evt.target.value=''; // reset so same file can be re-imported
+}
+
+// ── PROMPT GENERATOR ──
+
+function openPromptGenerator(){
+  // Now embedded in theme modal — just switch to the AI tab
+  switchThemeQTab('ai');
+}
+function hidePromptGen(){ /* no-op — now embedded */ }
+function closePromptGen(e){ /* no-op — now embedded */ }
+
+function downloadGeneratedPrompt(){
+  const domain   = document.getElementById('pg-domain').value.trim();
+  const audience = document.getElementById('pg-audience').value.trim();
+  const areas    = document.getElementById('pg-areas').value.trim();
+  const pains    = document.getElementById('pg-pains').value.trim();
+  const qcount   = document.getElementById('pg-qcount').value||'12';
+  const phases   = document.getElementById('pg-phases').value||'4';
+  const context  = document.getElementById('pg-context').value.trim();
+
+  if(!domain||!audience){ showToast('Domain and target audience are required'); return; }
+
+  const langVal = document.getElementById('theme-lang-input') ? document.getElementById('theme-lang-input').value : 'en';
+  const prompt = buildDiscoveryPrompt({domain, audience, areas, pains, qcount, phases, context, lang: langVal});
+  const blob = new Blob([prompt], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'discovery-prompt-'+domain.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,30)+'.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  hidePromptGen();
+  showToast('Prompt downloaded ✓ — paste it in a new Claude chat');
+}
+
+function buildDiscoveryPrompt({domain, audience, areas, pains, qcount, phases, context, lang}){
+  const isHebrew = lang === 'he';
+  const langInstruction = isHebrew
+    ? 'CRITICAL: Generate ALL content in Hebrew (עברית). This includes phase titles, phase descriptions, question titles, question text (both versions), good answers, and bad answers. Use natural, professional Hebrew. Keep JSON keys in English (they are technical field names).'
+    : '';
+  const lines = [
+    isHebrew
+      ? 'אתה אסטרטג מכירות B2B בכיר ומומחה לדיסקברי. עליך ליצור playbook לראיונות דיסקברי מובנים עבור ההקשר הבא.'
+      : 'You are a senior B2B sales strategist and discovery expert. I need you to create a structured discovery interview playbook for the following context.',
+    langInstruction ? '' : '',
+    langInstruction,
+    '',
+    'DOMAIN: ' + domain,
+    'TARGET AUDIENCE: ' + audience,
+    'KEY OPERATIONAL AREAS TO PROBE: ' + (areas||'(not specified)'),
+    'EXPECTED PAIN AREAS: ' + (pains||'(not specified)'),
+    'NUMBER OF QUESTIONS: ' + qcount,
+    'NUMBER OF PHASES: ' + phases,
+    'ADDITIONAL CONTEXT: ' + (context||'None'),
+    '',
+    'Create a discovery playbook with exactly '+phases+' phases and exactly '+qcount+' questions total, distributed logically across the phases.',
+    '',
+    'Each phase should:',
+    '- Have a clear operational theme relevant to the domain',
+    '- Group related questions together',
+    '- Build naturally from one phase to the next',
+    '',
+    'Each question must have:',
+    '- A SHORT title (3-5 words, descriptive)',
+    '- An "existing" variant: phrased for an existing customer/partner (consultative tone, assumes some familiarity)',
+    '- A "prospect" variant: phrased for a new prospect (insight-led, exploring their current situation)',
+    '- A "goodAnswer": what a strong positive/pain signal sounds like (what you WANT to hear — signals fit)',
+    '- A "badAnswer": what a weak/no-pain signal sounds like (what suggests low urgency or fit)',
+    '',
+    'OUTPUT FORMAT — return ONLY the following JSON, nothing else, no markdown fences, no commentary:',
+    '',
+    '{',
+    '  "name": "<theme name>",',
+    '  "description": "<one sentence description>",',
+    '  "icon": "<single relevant emoji>",',
+    '  "phases": [',
+    '    {',
+    '      "id": 0,',
+    '      "num": "Phase 1",',
+    '      "title": "<phase title>",',
+    '      "desc": "<1-2 sentences describing what this phase explores and why it matters>",',
+    '      "questions": [',
+    '        {',
+    '          "id": "q1",',
+    '          "n": 1,',
+    '          "title": "<short title>",',
+    '          "existing": "<question for existing customer>",',
+    '          "prospect": "<question for new prospect>",',
+    '          "goodAnswer": "<what a strong pain/fit signal sounds like>",',
+    '          "badAnswer": "<what a weak signal or no-pain sounds like>"',
+    '        }',
+    '      ]',
+    '    }',
+    '  ]',
+    '}',
+    '',
+    'IMPORTANT RULES:',
+    '1. Question IDs must be sequential: q1, q2, q3... across ALL phases',
+    '2. The "n" field must also be sequential: 1, 2, 3... across ALL phases',
+    '3. Make questions open-ended and conversational — avoid yes/no questions',
+    '4. Good/bad answers should be realistic paraphrases of what someone would actually say, not abstract descriptions',
+    '5. Questions should uncover operational pain, not just gather information',
+    '6. Return ONLY valid JSON — no preamble, no explanation, no markdown'
+  ];
+  return lines.join('\n');
+}
+
+// Hook renderThemesList into showPage for admin
+const _origShowPage = typeof showPage === 'function' ? showPage : null;
+
+// ══════════════════════════════════════════════
+// ADMIN TAB SWITCHING
+// ══════════════════════════════════════════════
+
+function switchAdminTab(tab){
+  document.getElementById('admin-panel-themes').style.display = tab==='themes' ? '' : 'none';
+  document.getElementById('admin-panel-mga').style.display   = tab==='mga'    ? '' : 'none';
+  document.getElementById('tab-themes').classList.toggle('active', tab==='themes');
+  document.getElementById('tab-mga').classList.toggle('active', tab==='mga');
+  if(tab==='themes') renderThemesList();
+}
+
+// ── THEME QUESTION TABS ──
+function switchThemeQTab(tab){
+  ['manual','import'].forEach(t=>{
+    const panel = document.getElementById('tqpanel-'+t);
+    const tabEl = document.getElementById('tqtab-'+t);
+    if(panel) panel.style.display = t===tab ? '' : 'none';
+    if(tabEl) tabEl.classList.toggle('active', t===tab);
+  });
+}
+
+// ── IMPORT JSON FROM PASTE ──
+function onThemeLangChange(){
+  const lang = document.getElementById('theme-lang-input').value;
+  const note = document.getElementById('theme-lang-note');
+  if(note) note.style.display = lang === 'he' ? '' : 'none';
+  // Update manual question placeholders for Hebrew
+  const mq_existing = document.getElementById('mq-existing');
+  const mq_prospect = document.getElementById('mq-prospect');
+  if(lang === 'he'){
+    if(mq_existing) mq_existing.placeholder = 'ניסוח לשיחה עם לקוח קיים — שאלה בעברית';
+    if(mq_prospect) mq_prospect.placeholder = 'ניסוח לשיחה עם פרוספקט חדש — שאלה בעברית';
+  } else {
+    if(mq_existing) mq_existing.placeholder = 'Consultative phrasing for existing customers — assumes familiarity with their setup';
+    if(mq_prospect) mq_prospect.placeholder = 'Insight-led phrasing for prospects — exploring their current situation from scratch';
+  }
+}
+
+function togglePromptForm(){
+  const form = document.getElementById('prompt-gen-form');
+  const icon = document.getElementById('prompt-form-toggle-icon');
+  const isHidden = form.style.display === 'none';
+  form.style.display = isHidden ? '' : 'none';
+  icon.textContent = isHidden ? '▲ collapse' : '▼ expand';
+}
+
+function importThemeJsonFromPaste(){
+  const raw = (document.getElementById('theme-json-paste').value||'').trim()
+    .replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+  if(!raw){ showToast('Nothing to import'); return; }
+  try{
+    const data = JSON.parse(raw);
+    const phases = data.phases || (data.theme && data.theme.phases) || (Array.isArray(data)?data:null);
+    if(!phases||!Array.isArray(phases)) throw new Error('Could not find phases array');
+    let counter=1;
+    phases.forEach(p=>{ (p.questions||[]).forEach(q=>{ q.n=counter++; if(!q.id) q.id='q'+q.n; }); });
+    pendingThemeQuestions = phases;
+    const qTotal = phases.flatMap(p=>p.questions||[]).length;
+    document.getElementById('theme-questions-count').textContent = qTotal+' questions across '+phases.length+' phases imported ✓';
+    renderThemeQuestionsPreview(phases);
+    const nameInput = document.getElementById('theme-name-input');
+    if(!nameInput.value && (data.name||(data.theme&&data.theme.name))) nameInput.value = data.name||data.theme.name;
+    if(!document.getElementById('theme-desc-input').value && (data.description||(data.theme&&data.theme.description)))
+      document.getElementById('theme-desc-input').value = data.description||data.theme.description;
+    showToast('Questions imported ✓');
+  }catch(err){ showToast('Could not parse JSON: '+err.message); }
+}
+
+// ── MANUAL PHASE & QUESTION BUILDER ──
+
+function addManualPhase(){
+  if(!pendingThemeQuestions) pendingThemeQuestions = [];
+  // Show inline phase-add form instead of prompt()
+  const form = document.getElementById('manual-add-phase-form');
+  document.getElementById('new-phase-title').value = '';
+  document.getElementById('new-phase-desc').value = '';
+  form.style.display = '';
+  document.getElementById('new-phase-title').focus();
+}
+
+function confirmAddPhase(){
+  const title = document.getElementById('new-phase-title').value.trim();
+  if(!title){ showToast('Phase title is required'); document.getElementById('new-phase-title').focus(); return; }
+  const desc = document.getElementById('new-phase-desc').value.trim();
+  const num = pendingThemeQuestions.length + 1;
+  pendingThemeQuestions.push({ id: pendingThemeQuestions.length, num: 'Phase '+num, title, desc, questions:[] });
+  document.getElementById('manual-add-phase-form').style.display = 'none';
+  renderManualPhasesList();
+  updateThemeQCount();
+}
+
+function renderManualPhasesList(){
+  const list = document.getElementById('manual-phases-list');
+  if(!list) return;
+  if(!pendingThemeQuestions || !pendingThemeQuestions.length){
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink-faint);padding:8px 0;">No phases yet — click "+ Add phase" to start.</div>';
+    return;
+  }
+  list.innerHTML = pendingThemeQuestions.map((p,pi)=>{
+    const qs = p.questions||[];
+    return '<div class="manual-phase-block">' +
+      '<div class="manual-phase-header">' +
+        '<span class="manual-phase-title">'+(p.num||'Phase '+(pi+1))+': '+p.title+'</span>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button class="btn-outline" style="font-size:11px;padding:3px 8px;" onclick="openAddQuestionForm('+pi+')">+ Question</button>' +
+          '<button class="btn-outline" style="font-size:11px;padding:3px 8px;color:var(--red);border-color:var(--red-border);" onclick="deleteManualPhase('+pi+')">Remove</button>' +
+        '</div>' +
+      '</div>' +
+      (qs.length ?
+        '<div class="manual-phase-qs">' +
+        qs.map((q,qi)=>
+          '<div class="manual-q-item">' +
+            '<span>Q'+(q.n||qi+1)+' — '+q.title+'</span>' +
+            '<button onclick="deleteManualQuestion('+pi+','+qi+')" style="background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;">×</button>' +
+          '</div>'
+        ).join('') +
+        '</div>'
+      : '<div style="font-size:11px;color:var(--ink-faint);padding:8px 14px;">No questions yet — click "+ Question"</div>') +
+    '</div>';
+  }).join('');
+}
+
+function deleteManualPhase(pi){
+  pendingThemeQuestions.splice(pi, 1);
+  renumberManualQuestions();
+  renderManualPhasesList();
+  updateThemeQCount();
+  showToast('Phase removed');
+}
+
+function deleteManualQuestion(pi, qi){
+  pendingThemeQuestions[pi].questions.splice(qi, 1);
+  renumberManualQuestions();
+  renderManualPhasesList();
+  updateThemeQCount();
+}
+
+function openAddQuestionForm(phaseIdx){
+  const phase = pendingThemeQuestions[phaseIdx];
+  document.getElementById('manual-q-phase-idx').value = phaseIdx;
+  document.getElementById('manual-q-phase-name').textContent = phase.title;
+  ['mq-title','mq-existing','mq-prospect','mq-good','mq-bad'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('manual-add-q-form').style.display = '';
+  document.getElementById('mq-title').focus();
+}
+
+function addManualQuestion(){
+  const phaseIdx = parseInt(document.getElementById('manual-q-phase-idx').value);
+  const title    = document.getElementById('mq-title').value.trim();
+  const existing = document.getElementById('mq-existing').value.trim();
+  const prospect = document.getElementById('mq-prospect').value.trim();
+  const good     = document.getElementById('mq-good').value.trim();
+  const bad      = document.getElementById('mq-bad').value.trim();
+
+  if(!title)    { showToast('Short title is required'); document.getElementById('mq-title').focus(); return; }
+  if(!existing) { showToast('Existing partner question is required'); document.getElementById('mq-existing').focus(); return; }
+  if(!prospect) { showToast('New prospect question is required'); document.getElementById('mq-prospect').focus(); return; }
+  if(!good)     { showToast('Good answer (pain signal) is required'); document.getElementById('mq-good').focus(); return; }
+  if(!bad)      { showToast('Bad answer (no-pain signal) is required'); document.getElementById('mq-bad').focus(); return; }
+
+  const q = { id:'', n:0, title, existing, prospect, goodAnswer:good, badAnswer:bad };
+  pendingThemeQuestions[phaseIdx].questions.push(q);
+  renumberManualQuestions();
+  renderManualPhasesList();
+  updateThemeQCount();
+  document.getElementById('manual-add-q-form').style.display = 'none';
+  showToast('Question added ✓');
+}
+
+function renumberManualQuestions(){
+  let counter = 1;
+  (pendingThemeQuestions||[]).forEach(p=>{
+    p.id = (pendingThemeQuestions.indexOf(p));
+    (p.questions||[]).forEach(q=>{ q.n=counter; q.id='q'+counter; counter++; });
+  });
+}
+
+function updateThemeQCount(){
+  if(!pendingThemeQuestions) return;
+  const total = pendingThemeQuestions.flatMap(p=>p.questions||[]).length;
+  const phCount = pendingThemeQuestions.length;
+  const el = document.getElementById('theme-questions-count');
+  if(el) el.textContent = total ? total+' question'+(total!==1?'s':'')+' across '+phCount+' phase'+(phCount!==1?'s':'')+'.' : 'No questions yet.';
+  renderThemeQuestionsPreview(pendingThemeQuestions);
+}
+
+
+// ══════════════════════════════════════════════
+// USER AUTH & ROLE MANAGEMENT
+// ══════════════════════════════════════════════
+
+let currentUser = null; // {id, username, role}
+
+const ROLE_WEIGHTS = {user:1, manager:2, admin:3};
+function hasRole(min){ return currentUser && ROLE_WEIGHTS[currentUser.role] >= ROLE_WEIGHTS[min]; }
+
+function hashPassword(pw){
+  // Simple deterministic hash using SubtleCrypto
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw))
+    .then(buf => Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''));
+}
+
+function showLoginScreen(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('invite-screen').style.display='none';
+  document.getElementById('login-error').style.display='none';
+  setTimeout(()=>document.getElementById('login-username').focus(),100);
+}
+
+function hideLoginScreen(){
+  document.getElementById('login-screen').style.display='none';
+}
+
+function showInviteJoin(){
+  // Check URL for token
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('invite');
+  if(token) document.getElementById('invite-token-input').value = token;
+  document.getElementById('invite-screen').style.display='flex';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('invite-error').style.display='none';
+}
+
+// Fallback credentials for offline/preview use (when Supabase is unreachable)
+const OFFLINE_USERS = [
+  {id:'local-1', username:'Baraksha', password_hash:'1cf8d23e5bd7acae2b0aa0d38ce5bbd9e909b1cfd793cbc01ded20840a08dbab', role:'admin', active:true}
+];
+
+async function doLogin(){
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  if(!username||!password){ errEl.style.display=''; errEl.textContent='Please enter username and password.'; return; }
+  btn.textContent='Signing in...'; btn.disabled=true;
+  const hash = await hashPassword(password);
+
+  // Try Supabase first; fall back to offline users if network blocked
+  try{
+    const url = SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?username=eq.'+encodeURIComponent(username)+'&select=id,username,role,active';
+    const res = await fetch(url,{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
+    const users = await res.json();
+    if(!users||!users.length){ errEl.style.display=''; errEl.textContent='Invalid username or password.'; btn.textContent='Sign in'; btn.disabled=false; return; }
+    const user = users[0];
+    if(!user.active){ errEl.style.display=''; errEl.textContent='Your account has been deactivated. Contact an admin.'; btn.textContent='Sign in'; btn.disabled=false; return; }
+    const pwUrl = SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?id=eq.'+user.id+'&select=password_hash';
+    const pwRes = await fetch(pwUrl,{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
+    const pwData = await pwRes.json();
+    if(!pwData||!pwData[0]||pwData[0].password_hash!==hash){ errEl.style.display=''; errEl.textContent='Invalid username or password.'; btn.textContent='Sign in'; btn.disabled=false; return; }
+    fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?id=eq.'+user.id,{method:'PATCH',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({last_login:new Date().toISOString()})}).catch(()=>{});
+    completeLogin({id:user.id, username:user.username, role:user.role});
+  }catch(e){
+    // Network blocked (preview/offline) — try offline fallback
+    const offlineUser = OFFLINE_USERS.find(function(u){ return u.username.toLowerCase()===username.toLowerCase() && u.active; });
+    if(offlineUser && offlineUser.password_hash===hash){
+      completeLogin({id:offlineUser.id, username:offlineUser.username, role:offlineUser.role, offline:true});
+      showToast('Signed in (offline mode — Supabase unreachable)');
+    } else {
+      errEl.style.display=''; errEl.textContent='Invalid username or password.';
+      btn.textContent='Sign in'; btn.disabled=false;
+    }
+  }
+}
+
+async function doRegister(){
+  const token = document.getElementById('invite-token-input').value.trim();
+  const username = document.getElementById('invite-username').value.trim();
+  const password = document.getElementById('invite-password').value;
+  const password2 = document.getElementById('invite-password2').value;
+  const errEl = document.getElementById('invite-error');
+  if(!username){ errEl.style.display=''; errEl.textContent='Username is required.'; return; }
+  if(password.length<6){ errEl.style.display=''; errEl.textContent='Password must be at least 6 characters.'; return; }
+  if(password!==password2){ errEl.style.display=''; errEl.textContent='Passwords do not match.'; return; }
+  if(!token){ errEl.style.display=''; errEl.textContent='No invite token found. Please use your invite link.'; return; }
+  try{
+    // Validate invite token
+    const invUrl = SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/invites?token=eq.'+encodeURIComponent(token)+'&used=eq.false&select=id,role';
+    const invRes = await fetch(invUrl,{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
+    const invites = await invRes.json();
+    if(!invites||!invites.length){ errEl.style.display=''; errEl.textContent='Invite link is invalid or has already been used.'; return; }
+    const invite = invites[0];
+    // Check username not taken
+    const checkUrl = SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?username=eq.'+encodeURIComponent(username)+'&select=id';
+    const checkRes = await fetch(checkUrl,{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
+    const existing = await checkRes.json();
+    if(existing&&existing.length){ errEl.style.display=''; errEl.textContent='Username already taken. Choose another.'; return; }
+    // Create user
+    const hash = await hashPassword(password);
+    const createRes = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users',{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({username, password_hash:hash, role:invite.role, active:true, created_at:new Date().toISOString()})
+    });
+    const newUsers = await createRes.json();
+    // Mark invite used
+    fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/invites?id=eq.'+invite.id,{method:'PATCH',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({used:true,used_by:username,used_at:new Date().toISOString()})}).catch(()=>{});
+    if(newUsers&&newUsers[0]){
+      completeLogin({id:newUsers[0].id, username:newUsers[0].username, role:newUsers[0].role});
+    } else {
+      errEl.style.display=''; errEl.textContent='Account created — please sign in.';
+      showLoginScreen();
+    }
+  }catch(e){
+    errEl.style.display=''; errEl.textContent='Registration failed: '+e.message;
+  }
+}
+
+function completeLogin(user){
+  currentUser = user;
+  sessionStorage.setItem('playbook_user', JSON.stringify(user));
+  hideLoginScreen();
+  document.getElementById('invite-screen').style.display='none';
+  applyRoleUI();
+  showToast('Welcome, '+user.username+' 👋');
+}
+
+function logoutUser(){
+  currentUser = null;
+  sessionStorage.removeItem('playbook_user');
+  showLoginScreen();
+}
+
+function applyRoleUI(){
+  if(!currentUser) return;
+  const role = currentUser.role;
+  const isManager = hasRole('manager');
+  const isAdmin = hasRole('admin');
+
+  // Header user badge
+  const badge = document.getElementById('current-user-badge');
+  if(badge){
+    badge.style.display='flex';
+    document.getElementById('current-user-name').textContent = currentUser.username;
+    document.getElementById('current-user-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+    const roleBadge = document.getElementById('current-user-role-badge');
+    const roleColors = {user:'background:#f0f5ff;color:#1a4fff;', manager:'background:#eef7ee;color:#2d6a2d;', admin:'background:#fff5e6;color:#b85c00;'};
+    roleBadge.style.cssText = roleColors[role]||'';
+    roleBadge.textContent = role.charAt(0).toUpperCase()+role.slice(1);
+  }
+
+  // Nav visibility
+  document.querySelectorAll('.role-manager').forEach(el=>el.style.display=isManager?'':'none');
+  document.querySelectorAll('.role-admin').forEach(el=>el.style.display=isAdmin?'':'none');
+
+  // Hide delete buttons for regular users
+  document.querySelectorAll('.sc-action-btn.del').forEach(el=>el.style.display=isManager?'':'none');
+}
+
+// ── INVITE MODAL ──
+let inviteModal = null;
+
+function openInviteModal(){
+  if(document.getElementById('invite-gen-modal')) return;
+  const modal = document.createElement('div');
+  modal.id = 'invite-gen-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:5000;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:14px;padding:28px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,.15);">
+      <h3 style="margin-bottom:6px;">Invite a team member</h3>
+      <p style="font-size:13px;color:var(--ink-soft);margin-bottom:20px;">Choose a role and generate a one-time invite link. Share it with the new user — they'll set their own username and password.</p>
+      <div class="modal-field" style="margin-bottom:14px;">
+        <label class="modal-label">Role</label>
+        <select class="modal-input" id="invite-role-select">
+          <option value="user">User — view sessions, add sessions, use AI features</option>
+          <option value="manager">Manager — plus delete, manage themes & questions</option>
+          <option value="admin">Admin — full access including user management</option>
+        </select>
+      </div>
+      <div class="modal-field" style="margin-bottom:16px;">
+        <label class="modal-label">Send invite by email <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">optional — leave blank to just copy the link</span></label>
+        <input class="modal-input" id="invite-email-input" type="email" placeholder="colleague@company.com">
+      </div>
+      <div id="invite-link-result" style="display:none;margin-bottom:16px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--surface-3);border-radius:8px;font-size:12px;color:var(--ink);"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary" onclick="generateInviteLink()" id="gen-invite-btn" style="flex:1;">Generate & send</button>
+        <button class="btn-outline" onclick="document.getElementById('invite-gen-modal').remove()">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target===modal) modal.remove(); });
+}
+
+async function generateInviteLink(){
+  const role = document.getElementById('invite-role-select').value;
+  const btn = document.getElementById('gen-invite-btn');
+  btn.textContent='Generating...'; btn.disabled=true;
+  try{
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b=>b.toString(16).padStart(2,'0')).join('');
+    const res = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/invites',{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({token, role, used:false, created_by:currentUser.username, created_at:new Date().toISOString()})
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const base = window.location.href.split('?')[0];
+    const link = base+'?invite='+token;
+    const email = (document.getElementById('invite-email-input').value||'').trim();
+    const result = document.getElementById('invite-link-result');
+    result.style.display='';
+    // Build result UI with DOM
+    result.innerHTML='';
+    const roleNote=document.createElement('div');
+    roleNote.style.cssText='margin-bottom:8px;font-size:11px;color:var(--ink-soft);';
+    roleNote.innerHTML='One-time invite link for <strong>'+role+'</strong> role:';
+    const linkText=document.createElement('div');
+    linkText.style.cssText='margin-bottom:10px;word-break:break-all;font-family:monospace;font-size:11px;background:var(--surface);padding:6px 8px;border-radius:4px;border:1px solid var(--surface-3);';
+    linkText.textContent=link;
+    const btnRow=document.createElement('div');
+    btnRow.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';
+    const copyBtn=document.createElement('button');
+    copyBtn.style.cssText='background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;';
+    copyBtn.textContent='Copy link';
+    copyBtn.addEventListener('click',function(){ navigator.clipboard.writeText(link).then(function(){ showToast('Link copied ✓'); copyBtn.textContent='Copied ✓'; }); });
+    btnRow.appendChild(copyBtn);
+    if(email){
+      const mailBtn=document.createElement('button');
+      mailBtn.style.cssText='background:none;border:1px solid var(--surface-3);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;color:var(--ink);';
+      mailBtn.textContent='Open in email client';
+      const subject=encodeURIComponent('You have been invited to Novidea Discovery Playbook');
+      const emailBody = 'Hi,\n\nYou have been invited to join the Novidea Discovery Playbook as a '+role+'.\n\nClick the link below to set up your account:\n'+link+'\n\nThis link can only be used once.\n\nBest,\nNovidea Team';
+      const body=encodeURIComponent(emailBody);
+      mailBtn.addEventListener('click',function(){ window.location.href='mailto:'+email+'?subject='+subject+'&body='+body; });
+      btnRow.appendChild(mailBtn);
+      const sentNote=document.createElement('div');
+      sentNote.style.cssText='font-size:11px;color:var(--green,#2d6a2d);margin-top:6px;';
+      sentNote.textContent='✓ Ready to send to '+email;
+      result.appendChild(roleNote); result.appendChild(linkText); result.appendChild(btnRow); result.appendChild(sentNote);
+    } else {
+      result.appendChild(roleNote); result.appendChild(linkText); result.appendChild(btnRow);
+    }
+    btn.textContent='Generate another'; btn.disabled=false;
+    loadUsersList(); loadInvitesList();
+  }catch(e){
+    const result = document.getElementById('invite-link-result');
+    if(result){
+      result.style.display='';
+      result.innerHTML='<div style="font-size:12px;color:var(--ink-soft);">Invite generation requires a live Supabase connection. This will work on GitHub Pages — not in the preview.</div>';
+    }
+    btn.textContent='Generate link'; btn.disabled=false;
+  }
+}
+
+// ── USERS LIST ──
+async function loadUsersList(){
+  const el = document.getElementById('users-list');
+  if(!el) return;
+  el.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0;">Loading...</div>';
+  let usersList = null;
+  try{
+    const res = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?select=id,username,role,active,created_at,last_login&order=created_at.asc',{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+    });
+    usersList = await res.json();
+  }catch(e){
+    // Offline fallback
+    usersList = OFFLINE_USERS.map(function(u){ return Object.assign({},u,{created_at:new Date().toISOString(),last_login:null}); });
+  }
+  try{
+    const users = usersList;
+    if(!users||!users.length){ el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);padding:16px 0;">No users yet. Generate an invite link to add team members.</div>'; return; }
+    el.innerHTML='';
+    users.forEach(function(u){
+      const row = document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid var(--surface-3);border-radius:8px;margin-bottom:8px;background:var(--surface);gap:12px;flex-wrap:wrap;';
+      const roleColors={user:'background:#f0f5ff;color:#1a4fff;',manager:'background:#eef7ee;color:#2d6a2d;',admin:'background:#fff5e6;color:#b85c00;'};
+      const isSelf = currentUser && u.id===currentUser.id;
+      const lastLogin = u.last_login ? new Date(u.last_login).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : 'Never';
+      // Left
+      const left = document.createElement('div');
+      left.style.cssText='display:flex;align-items:center;gap:12px;min-width:0;';
+      left.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;">'+u.username.charAt(0).toUpperCase()+'</div>'
+        +'<div><div style="font-size:13px;font-weight:500;color:var(--ink);">'+u.username+(isSelf?' <span style="font-size:11px;color:var(--ink-faint);">(you)</span>':'')+'</div>'
+        +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Last login: '+lastLogin+'</div></div>';
+      // Right
+      const right = document.createElement('div');
+      right.style.cssText='display:flex;align-items:center;gap:8px;flex-shrink:0;';
+      const roleBadge=document.createElement('span');
+      roleBadge.style.cssText='font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;'+(roleColors[u.role]||'');
+      roleBadge.textContent=u.role.charAt(0).toUpperCase()+u.role.slice(1);
+      right.appendChild(roleBadge);
+      if(!u.active){const db=document.createElement('span');db.style.cssText='font-size:11px;color:var(--red);background:var(--red-bg);padding:2px 8px;border-radius:10px;';db.textContent='Deactivated';right.appendChild(db);}
+      if(!isSelf){
+        const sel=document.createElement('select');
+        sel.style.cssText='font-size:12px;padding:4px 8px;border:1px solid var(--surface-3);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;';
+        sel.innerHTML='<option value="">Change role...</option><option value="user">User</option><option value="manager">Manager</option><option value="admin">Admin</option>';
+        sel.addEventListener('change',function(){ changeUserRole(u.id, sel.value, sel); });
+        right.appendChild(sel);
+        const toggleBtn=document.createElement('button');
+        toggleBtn.style.cssText='font-size:11px;padding:4px 10px;border:1px solid '+(u.active?'var(--red-border)':'var(--surface-3)')+';border-radius:6px;color:'+(u.active?'var(--red)':'var(--ink-soft)')+';background:none;cursor:pointer;';
+        toggleBtn.textContent=u.active?'Deactivate':'Reactivate';
+        toggleBtn.addEventListener('click',(function(uid,act,uname){return function(){toggleUserActive(uid,act,uname);};})(u.id,u.active,u.username));
+        right.appendChild(toggleBtn);
+      }
+      row.appendChild(left); row.appendChild(right);
+      el.appendChild(row);
+    });
+  }catch(e){
+    el.innerHTML='<div style="font-size:12px;color:var(--red);">Failed to load users: '+e.message+'</div>';
+  }
+}
+
+
+
+async function changeUserRole(userId, newRole, selectEl){
+  if(!newRole) return;
+  try{
+    await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?id=eq.'+userId,{
+      method:'PATCH',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({role:newRole})
+    });
+    showToast('Role updated to '+newRole+' ✓');
+    loadUsersList();
+  }catch(e){ showToast('Failed: '+e.message); }
+  selectEl.value='';
+}
+
+async function toggleUserActive(userId, currentActive, username){
+  try{
+    await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?id=eq.'+userId,{
+      method:'PATCH',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({active:!currentActive})
+    });
+    showToast(username+(currentActive?' deactivated':' reactivated')+' ✓');
+    loadUsersList();
+  }catch(e){ showToast('Failed: '+e.message); }
+}
+
+async function loadInvitesList(){
+  const el = document.getElementById('invites-list');
+  if(!el) return;
+  try{
+    const res = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/invites?select=id,token,role,used,used_by,created_by,created_at&order=created_at.desc&limit=20',{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+    });
+    const invites = await res.json();
+    if(!invites||!invites.length){ el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);">No invite links generated yet.</div>'; return; }
+    el.innerHTML='';
+    invites.forEach(function(inv){
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--surface-3);border-radius:8px;margin-bottom:6px;background:var(--surface);gap:12px;';
+      const base=window.location.href.split('?')[0];
+      const link=base+'?invite='+inv.token;
+      const roleColors={user:'color:#1a4fff;',manager:'color:#2d6a2d;',admin:'color:#b85c00;'};
+      const invLeft = document.createElement('div');
+      invLeft.style.cssText='min-width:0;';
+      const usedBadge = inv.used
+        ? '<span style="margin-left:8px;font-size:10px;color:var(--ink-faint);">Used by '+inv.used_by+'</span>'
+        : '<span style="margin-left:8px;font-size:10px;background:#f0fff4;color:#2d6a2d;border:1px solid #b8d8b8;padding:1px 6px;border-radius:8px;">Active</span>';
+      invLeft.innerHTML='<div style="font-size:12px;font-weight:500;color:var(--ink);">'+inv.role.charAt(0).toUpperCase()+inv.role.slice(1)+' invite'+usedBadge+'</div>'
+        +'<div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">Created by '+inv.created_by+' · '+new Date(inv.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</div>';
+      row.appendChild(invLeft);
+      if(!inv.used){
+        const copyBtn=document.createElement('button');
+        copyBtn.style.cssText='font-size:11px;padding:4px 10px;background:var(--surface-2);border:1px solid var(--surface-3);border-radius:6px;cursor:pointer;flex-shrink:0;';
+        copyBtn.textContent='Copy link';
+        (function(l){ copyBtn.addEventListener('click',function(){ navigator.clipboard.writeText(l).then(function(){ showToast('Link copied ✓'); }); }); })(link);
+        row.appendChild(copyBtn);
+      } else {
+        const exp=document.createElement('span');
+        exp.style.cssText='font-size:11px;color:var(--ink-faint);';
+        exp.textContent='Expired';
+        row.appendChild(exp);
+      }
+      el.appendChild(row);
+      // Wire copy buttons
+      const copyBtns = row.querySelectorAll('.inv-copy-row');
+      copyBtns.forEach(function(btn){
+        btn.addEventListener('click', function(){
+          navigator.clipboard.writeText(btn.getAttribute('data-link')).then(function(){ showToast('Link copied ✓'); });
+        });
+      });
+    });
+  }catch(e){
+    el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);padding:8px 0;">Invite links are unavailable in offline/preview mode. They will work on GitHub Pages with a live Supabase connection.</div>';
+  }
+}
+
 async function _init(){
+  const savedThemes = JSON.parse(localStorage.getItem('mga_custom_themes')||'[]');
+  initThemes(savedThemes);
   applyOverrides();
   applyCustomQuestions();
 
@@ -3102,6 +4478,28 @@ async function _init(){
     await initSupabase();
   }catch(e){
     console.warn('initSupabase error:', e.message);
+  }
+
+  // Check for invite token in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteToken = urlParams.get('invite');
+  if(inviteToken){
+    document.getElementById('invite-token-input').value = inviteToken;
+    document.getElementById('invite-screen').style.display = 'flex';
+    return;
+  }
+
+  // Check session storage for existing login
+  const stored = sessionStorage.getItem('playbook_user');
+  if(stored){
+    try{
+      currentUser = JSON.parse(stored);
+      applyRoleUI();
+    }catch(e){ currentUser=null; }
+  }
+  if(!currentUser){
+    showLoginScreen();
+    return;
   }
 
   if(sb){
@@ -3124,5 +4522,167 @@ if(document.readyState==='loading'){
   _init();
 }
 </script>
+
+<!-- NEW / EDIT THEME MODAL -->
+<div class="modal-overlay hidden" id="theme-modal-overlay" onclick="closeThemeModal(event)">
+  <div class="modal" style="max-width:680px;max-height:92vh;overflow-y:auto;">
+    <h3 id="theme-modal-title">New discovery theme</h3>
+    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:20px;">Create a self-contained discovery playbook for a specific domain. Users will select this theme when starting a new session.</p>
+    <div style="border:1px solid var(--surface-3);border-radius:10px;margin-bottom:16px;overflow:hidden;">
+      <div style="background:var(--surface-2);padding:10px 16px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;gap:8px;">
+        <span style="font-size:15px;">🏷️</span>
+        <span style="font-size:13px;font-weight:600;color:var(--ink);">Theme identity</span>
+      </div>
+      <div style="padding:16px;">
+        <div class="modal-field" style="margin-bottom:10px;">
+          <label class="modal-label">Theme name <span style="color:var(--red)">*</span></label>
+          <input class="modal-input" id="theme-name-input" placeholder="e.g. SaaS Operations Discovery, Healthcare Provider Playbook">
+        </div>
+        <div class="modal-field" style="margin-bottom:10px;">
+          <label class="modal-label">Description <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">— shown to users when selecting a theme</span></label>
+          <input class="modal-input" id="theme-desc-input" placeholder="e.g. Discovery playbook for mid-market SaaS ops teams">
+        </div>
+        <div class="modal-field" style="margin-bottom:10px;">
+          <label class="modal-label">Session page intro <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">— context shown above sessions on the home screen</span></label>
+          <textarea class="modal-input" id="theme-intro-input" rows="3" style="resize:vertical;" placeholder="Brief context for interviewers — what to focus on, who the audience is."></textarea>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="modal-field" style="flex:0 0 auto;margin-bottom:0;">
+            <label class="modal-label">Icon <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">emoji</span></label>
+            <input class="modal-input" id="theme-icon-input" placeholder="📋" maxlength="4" style="width:72px;">
+          </div>
+          <div class="modal-field" style="flex:0 0 auto;margin-bottom:0;">
+            <label class="modal-label">Accent color</label>
+            <input type="color" id="theme-color-input" value="#1a4fff" style="height:38px;width:72px;border:1px solid var(--surface-3);border-radius:6px;cursor:pointer;padding:2px 4px;background:var(--surface);">
+          </div>
+          <div class="modal-field" style="flex:0 0 auto;margin-bottom:0;">
+            <label class="modal-label">Interview language</label>
+            <select class="modal-input" id="theme-lang-input" style="width:140px;" onchange="onThemeLangChange()">
+              <option value="en">🇺🇸 English</option>
+              <option value="he">🇮🇱 Hebrew (עברית)</option>
+            </select>
+          </div>
+        </div>
+        <div id="theme-lang-note" style="display:none;margin-top:10px;padding:10px 12px;background:#f0f5ff;border:1px solid #c8d8ff;border-radius:8px;font-size:12px;color:#1a4fff;line-height:1.5;">
+          <strong>Hebrew mode:</strong> Questions and phases will be in Hebrew (RTL). The UI stays in English. AI features will be prompted in Hebrew context.
+        </div>
+      </div>
+    </div>
+    <!-- Questions section -->
+    <div style="border:1px solid var(--surface-3);border-radius:10px;margin-bottom:16px;overflow:hidden;">
+      <div style="background:var(--surface-2);padding:10px 16px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:15px;">❓</span>
+          <span style="font-size:13px;font-weight:600;color:var(--ink);">Questions</span>
+        </div>
+        <span id="theme-questions-count" style="font-size:12px;color:var(--ink-soft);">No questions yet</span>
+      </div>
+      <div style="display:flex;border-bottom:1px solid var(--surface-3);background:var(--surface);">
+        <button class="theme-q-tab active" id="tqtab-manual" onclick="switchThemeQTab('manual')"><span style="font-size:14px;">✏️</span> Option 1 — Build manually</button>
+        <button class="theme-q-tab" id="tqtab-import" onclick="switchThemeQTab('import')"><span style="font-size:14px;">📂</span> Option 2 — Import JSON</button>
+      </div>
+      <!-- Manual panel -->
+      <div id="tqpanel-manual" style="padding:16px;">
+        <div style="background:var(--surface-2);border:1px solid var(--surface-3);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--ink-soft);line-height:1.6;">
+          <strong style="color:var(--ink);">How it works:</strong> Create phases (logical groupings), then add questions to each phase. Each question needs two versions — one for existing partners, one for prospects — plus good/bad answer signals.
+        </div>
+        <div id="manual-phases-list"></div>
+        <div id="manual-add-phase-form" style="display:none;border:1px solid var(--accent);border-radius:8px;padding:14px;margin-bottom:12px;background:var(--surface);">
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;">New phase</div>
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">Phase title <span style="color:var(--red)">*</span></label>
+            <input class="modal-input" id="new-phase-title" placeholder="e.g. Intake & Triage, Tech Stack, Reporting">
+          </div>
+          <div class="modal-field" style="margin-bottom:10px;">
+            <label class="modal-label">Description <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">optional</span></label>
+            <input class="modal-input" id="new-phase-desc" placeholder="What this phase explores">
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary" onclick="confirmAddPhase()" style="font-size:12px;">Add phase</button>
+            <button class="btn-outline" onclick="document.getElementById('manual-add-phase-form').style.display='none'" style="font-size:12px;">Cancel</button>
+          </div>
+        </div>
+        <button class="btn-outline" onclick="addManualPhase()" style="font-size:12px;width:100%;justify-content:center;display:flex;align-items:center;gap:6px;padding:10px;">
+          <span style="font-size:16px;line-height:1">+</span> Add phase
+        </button>
+        <div id="manual-add-q-form" style="display:none;border:1px solid var(--accent);border-radius:8px;padding:14px;margin-top:14px;background:var(--surface);">
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;">Add question to: <span id="manual-q-phase-name"></span></div>
+          <input type="hidden" id="manual-q-phase-idx">
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">Short title <span style="color:var(--red)">*</span> <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">3–5 words · shown in score grid</span></label>
+            <input class="modal-input" id="mq-title" placeholder="e.g. Manual data entry">
+          </div>
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">Question — existing partner version <span style="color:var(--red)">*</span></label>
+            <textarea class="modal-input" id="mq-existing" rows="2" style="resize:vertical;" placeholder="Consultative tone for existing customers"></textarea>
+          </div>
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">Question — new prospect version <span style="color:var(--red)">*</span></label>
+            <textarea class="modal-input" id="mq-prospect" rows="2" style="resize:vertical;" placeholder="Insight-led tone for new prospects"></textarea>
+          </div>
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">✅ Good answer — pain signal <span style="color:var(--red)">*</span></label>
+            <textarea class="modal-input" id="mq-good" rows="2" style="resize:vertical;" placeholder="What you want to hear — signals real pain"></textarea>
+          </div>
+          <div class="modal-field" style="margin-bottom:14px;">
+            <label class="modal-label">❌ Bad answer — no-pain signal <span style="color:var(--red)">*</span></label>
+            <textarea class="modal-input" id="mq-bad" rows="2" style="resize:vertical;" placeholder="What suggests low urgency or poor fit"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary" onclick="addManualQuestion()" style="font-size:12px;">Add question</button>
+            <button class="btn-outline" onclick="document.getElementById('manual-add-q-form').style.display='none'" style="font-size:12px;">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <!-- Import panel -->
+      <div id="tqpanel-import" style="display:none;padding:16px;">
+        <div style="background:var(--surface-2);border:1px solid var(--surface-3);border-radius:8px;padding:14px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;">How Import JSON works</div>
+          <div style="font-size:12px;color:var(--ink-soft);line-height:1.7;">
+            <strong style="color:var(--ink);">Step 1</strong> — Fill in your domain details and download a ready-to-paste prompt.<br>
+            <strong style="color:var(--ink);">Step 2</strong> — Open a new Claude chat, paste the prompt, copy the JSON it returns.<br>
+            <strong style="color:var(--ink);">Step 3</strong> — Come back here and paste or upload the JSON.
+          </div>
+        </div>
+        <div style="border:1px solid var(--surface-3);border-radius:8px;margin-bottom:14px;overflow:hidden;">
+          <div style="background:var(--surface-2);padding:10px 14px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="togglePromptForm()">
+            <span style="font-size:12px;font-weight:600;color:var(--ink);">Step 1 — Generate your Claude prompt</span>
+            <span id="prompt-form-toggle-icon" style="font-size:12px;color:var(--ink-soft);">▼ expand</span>
+          </div>
+          <div id="prompt-gen-form" style="display:none;padding:14px;">
+            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Domain / industry <span style="color:var(--red)">*</span></label><input class="modal-input" id="pg-domain" placeholder="e.g. B2B SaaS, Healthcare, Insurance"></div>
+            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Target audience <span style="color:var(--red)">*</span></label><input class="modal-input" id="pg-audience" placeholder="e.g. VP Operations at mid-market logistics companies"></div>
+            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Key operational areas to probe</label><textarea class="modal-input" id="pg-areas" rows="2" style="resize:vertical;" placeholder="e.g. Data management, reporting, integrations"></textarea></div>
+            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Expected pain areas</label><textarea class="modal-input" id="pg-pains" rows="2" style="resize:vertical;" placeholder="e.g. Manual processes, lack of visibility"></textarea></div>
+            <div style="display:flex;gap:12px;">
+              <div class="modal-field" style="flex:1;margin-bottom:8px;"><label class="modal-label">Questions</label><input class="modal-input" id="pg-qcount" type="number" value="12" min="5" max="30"></div>
+              <div class="modal-field" style="flex:1;margin-bottom:8px;"><label class="modal-label">Phases</label><input class="modal-input" id="pg-phases" type="number" value="4" min="2" max="8"></div>
+            </div>
+            <div class="modal-field" style="margin-bottom:12px;"><label class="modal-label">Additional context</label><textarea class="modal-input" id="pg-context" rows="2" style="resize:vertical;" placeholder="Anything else Claude should know"></textarea></div>
+            <button class="btn-primary" onclick="downloadGeneratedPrompt()" style="font-size:13px;">⬇ Download prompt for Claude</button> <span class="api-required-badge" data-tip="Requires Claude access — not available in this beta version.">🔑 Requires Claude access</span>
+          </div>
+        </div>
+        <div style="border:1px solid var(--surface-3);border-radius:8px;overflow:hidden;">
+          <div style="background:var(--surface-2);padding:10px 14px;border-bottom:1px solid var(--surface-3);">
+            <span style="font-size:12px;font-weight:600;color:var(--ink);">Step 3 — Import Claude's JSON output</span>
+          </div>
+          <div style="padding:14px;">
+            <button class="btn-outline" onclick="document.getElementById('theme-json-file').click()" style="font-size:12px;margin-bottom:10px;">📂 Upload .json file</button>
+            <input type="file" id="theme-json-file" accept=".json,.txt" style="display:none" onchange="handleThemeJsonImport(event)">
+            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Or paste JSON here:</div>
+            <textarea class="modal-input" id="theme-json-paste" rows="5" style="resize:vertical;font-family:monospace;font-size:11px;" placeholder="Paste the full JSON block Claude generated."></textarea>
+            <button class="btn-outline" onclick="importThemeJsonFromPaste()" style="font-size:12px;margin-top:8px;">Import from paste</button>
+          </div>
+        </div>
+      </div>
+      <div id="theme-questions-preview" style="display:none;margin:0 16px 16px;max-height:240px;overflow-y:auto;border-top:1px solid var(--surface-3);padding-top:12px;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="hideThemeModal()">Cancel</button>
+      <button class="btn-primary" id="theme-save-btn" onclick="saveTheme()">Save theme</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
