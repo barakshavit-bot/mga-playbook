@@ -4961,5 +4961,164 @@ if(document.readyState==='loading'){
 }else{
   _init();
 }
-</script></body>
+</script>
+<!-- NEW / EDIT THEME MODAL -->
+<div class="modal-overlay hidden" id="theme-modal-overlay" onclick="closeThemeModal(event)">
+  <div class="modal" style="max-width:680px;max-height:92vh;overflow-y:auto;">
+    <h3 id="theme-modal-title">New discovery theme</h3>
+    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:20px;">Create a self-contained discovery playbook for a specific domain.</p>
+    <div style="border:1px solid var(--surface-3);border-radius:10px;margin-bottom:16px;overflow:hidden;">
+      <div style="background:var(--surface-2);padding:10px 16px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;gap:8px;">
+        <span style="font-size:15px;">🏷️</span>
+        <span style="font-size:13px;font-weight:600;color:var(--ink);">Theme identity</span>
+      </div>
+      <div style="padding:16px;">
+        <div class="modal-field" style="margin-bottom:10px;">
+          <label class="modal-label">Theme name <span style="color:var(--red)">*</span></label>
+          <input class="modal-input" id="theme-name-input" placeholder="e.g. SaaS Operations Discovery">
+        </div>
+        <div class="modal-field" style="margin-bottom:10px;">
+          <label class="modal-label">Description</label>
+          <input class="modal-input" id="theme-desc-input" placeholder="e.g. Discovery playbook for mid-market SaaS ops teams">
+        </div>
+        <div class="modal-field" style="margin-bottom:10px;">
+          <label class="modal-label">Session page intro <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">— shown above sessions when this theme is selected</span></label>
+          <textarea class="modal-input" id="theme-intro-input" rows="3" style="resize:vertical;" placeholder="Brief context for interviewers — what to focus on, who the audience is."></textarea>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="modal-field" style="flex:0 0 auto;margin-bottom:0;">
+            <label class="modal-label">Icon</label>
+            <input class="modal-input" id="theme-icon-input" placeholder="📋" maxlength="4" style="width:72px;">
+          </div>
+          <div class="modal-field" style="flex:0 0 auto;margin-bottom:0;">
+            <label class="modal-label">Accent color</label>
+            <input type="color" id="theme-color-input" value="#1a4fff" style="height:38px;width:72px;border:1px solid var(--surface-3);border-radius:6px;cursor:pointer;padding:2px 4px;background:var(--surface);">
+          </div>
+          <div class="modal-field" style="flex:0 0 auto;margin-bottom:0;">
+            <label class="modal-label">Interview language</label>
+            <select class="modal-input" id="theme-lang-input" style="width:140px;" onchange="onThemeLangChange()">
+              <option value="en">🇺🇸 English</option>
+              <option value="he">🇮🇱 Hebrew (עברית)</option>
+            </select>
+          </div>
+        </div>
+        <div id="theme-lang-note" style="display:none;margin-top:10px;padding:10px 12px;background:#f0f5ff;border:1px solid #c8d8ff;border-radius:8px;font-size:12px;color:#1a4fff;line-height:1.5;">
+          <strong>Hebrew mode:</strong> Questions and phases will be in Hebrew (RTL). The UI stays in English.
+        </div>
+      </div>
+    </div>
+    <div style="border:1px solid var(--surface-3);border-radius:10px;margin-bottom:16px;overflow:hidden;">
+      <div style="background:var(--surface-2);padding:10px 16px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:15px;">❓</span>
+          <span style="font-size:13px;font-weight:600;color:var(--ink);">Questions</span>
+        </div>
+        <span id="theme-questions-count" style="font-size:12px;color:var(--ink-soft);">No questions yet</span>
+      </div>
+      <div style="display:flex;border-bottom:1px solid var(--surface-3);background:var(--surface);">
+        <button class="theme-q-tab active" id="tqtab-manual" onclick="switchThemeQTab('manual')">✏️ Option 1 — Build manually</button>
+        <button class="theme-q-tab" id="tqtab-import" onclick="switchThemeQTab('import')">📂 Option 2 — Import JSON</button>
+      </div>
+      <div id="tqpanel-manual" style="padding:16px;">
+        <div style="background:var(--surface-2);border:1px solid var(--surface-3);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--ink-soft);line-height:1.6;">
+          <strong style="color:var(--ink);">How it works:</strong> Create phases first, then add questions to each phase. Each question needs two versions — one for existing partners, one for new prospects — plus good/bad answer signals.
+        </div>
+        <div id="manual-phases-list"></div>
+        <div id="manual-add-phase-form" style="display:none;border:1px solid var(--accent);border-radius:8px;padding:14px;margin-bottom:12px;background:var(--surface);">
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;">New phase</div>
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">Phase title <span style="color:var(--red)">*</span></label>
+            <input class="modal-input" id="new-phase-title" placeholder="e.g. Intake & Triage, Tech Stack, Reporting">
+          </div>
+          <div class="modal-field" style="margin-bottom:10px;">
+            <label class="modal-label">Description <span style="color:var(--ink-faint);font-weight:400;font-size:11px;">optional</span></label>
+            <input class="modal-input" id="new-phase-desc" placeholder="What this phase explores">
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary" onclick="confirmAddPhase()" style="font-size:12px;">Add phase</button>
+            <button class="btn-outline" onclick="document.getElementById('manual-add-phase-form').style.display='none'" style="font-size:12px;">Cancel</button>
+          </div>
+        </div>
+        <button class="btn-outline" onclick="addManualPhase()" style="font-size:12px;width:100%;justify-content:center;display:flex;align-items:center;gap:6px;padding:10px;">
+          <span style="font-size:16px;line-height:1">+</span> Add phase
+        </button>
+        <div id="manual-add-q-form" style="display:none;border:1px solid var(--accent);border-radius:8px;padding:14px;margin-top:14px;background:var(--surface);">
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;">Add question to: <span id="manual-q-phase-name"></span></div>
+          <input type="hidden" id="manual-q-phase-idx">
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">Short title <span style="color:var(--red)">*</span></label>
+            <input class="modal-input" id="mq-title" placeholder="e.g. Manual data entry">
+          </div>
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">Question — existing partner version <span style="color:var(--red)">*</span></label>
+            <textarea class="modal-input" id="mq-existing" rows="2" style="resize:vertical;" placeholder="Consultative tone for existing customers"></textarea>
+          </div>
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">Question — new prospect version <span style="color:var(--red)">*</span></label>
+            <textarea class="modal-input" id="mq-prospect" rows="2" style="resize:vertical;" placeholder="Insight-led tone for new prospects"></textarea>
+          </div>
+          <div class="modal-field" style="margin-bottom:8px;">
+            <label class="modal-label">✅ Good answer — pain signal <span style="color:var(--red)">*</span></label>
+            <textarea class="modal-input" id="mq-good" rows="2" style="resize:vertical;" placeholder="What you want to hear — signals real pain"></textarea>
+          </div>
+          <div class="modal-field" style="margin-bottom:14px;">
+            <label class="modal-label">❌ Bad answer — no-pain signal <span style="color:var(--red)">*</span></label>
+            <textarea class="modal-input" id="mq-bad" rows="2" style="resize:vertical;" placeholder="What suggests low urgency or poor fit"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary" onclick="addManualQuestion()" style="font-size:12px;">Add question</button>
+            <button class="btn-outline" onclick="document.getElementById('manual-add-q-form').style.display='none'" style="font-size:12px;">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div id="tqpanel-import" style="display:none;padding:16px;">
+        <div style="background:var(--surface-2);border:1px solid var(--surface-3);border-radius:8px;padding:14px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;">How Import JSON works</div>
+          <div style="font-size:12px;color:var(--ink-soft);line-height:1.7;">
+            <strong style="color:var(--ink);">Step 1</strong> — Fill in your domain details and download a ready-to-paste prompt.<br>
+            <strong style="color:var(--ink);">Step 2</strong> — Open a new Claude chat, paste the prompt, copy the JSON it returns.<br>
+            <strong style="color:var(--ink);">Step 3</strong> — Come back here and paste or upload the JSON.
+          </div>
+        </div>
+        <div style="border:1px solid var(--surface-3);border-radius:8px;margin-bottom:14px;overflow:hidden;">
+          <div style="background:var(--surface-2);padding:10px 14px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="togglePromptForm()">
+            <span style="font-size:12px;font-weight:600;color:var(--ink);">Step 1 — Generate your Claude prompt</span>
+            <span id="prompt-form-toggle-icon" style="font-size:12px;color:var(--ink-soft);">▼ expand</span>
+          </div>
+          <div id="prompt-gen-form" style="display:none;padding:14px;">
+            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Domain / industry <span style="color:var(--red)">*</span></label><input class="modal-input" id="pg-domain" placeholder="e.g. B2B SaaS, Healthcare, Insurance"></div>
+            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Target audience <span style="color:var(--red)">*</span></label><input class="modal-input" id="pg-audience" placeholder="e.g. VP Operations at mid-market logistics companies"></div>
+            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Key operational areas</label><textarea class="modal-input" id="pg-areas" rows="2" style="resize:vertical;" placeholder="e.g. Data management, reporting, integrations"></textarea></div>
+            <div class="modal-field" style="margin-bottom:8px;"><label class="modal-label">Expected pain areas</label><textarea class="modal-input" id="pg-pains" rows="2" style="resize:vertical;" placeholder="e.g. Manual processes, lack of visibility"></textarea></div>
+            <div style="display:flex;gap:12px;">
+              <div class="modal-field" style="flex:1;margin-bottom:8px;"><label class="modal-label">Questions</label><input class="modal-input" id="pg-qcount" type="number" value="12" min="5" max="30"></div>
+              <div class="modal-field" style="flex:1;margin-bottom:8px;"><label class="modal-label">Phases</label><input class="modal-input" id="pg-phases" type="number" value="4" min="2" max="8"></div>
+            </div>
+            <div class="modal-field" style="margin-bottom:12px;"><label class="modal-label">Additional context</label><textarea class="modal-input" id="pg-context" rows="2" style="resize:vertical;"></textarea></div>
+            <button class="btn-primary" onclick="downloadGeneratedPrompt()" style="font-size:13px;">⬇ Download prompt for Claude</button>
+            <span class="api-required-badge" data-tip="Requires Claude access — not available in this beta version.">🔑 Requires Claude access</span>
+          </div>
+        </div>
+        <div style="border:1px solid var(--surface-3);border-radius:8px;overflow:hidden;">
+          <div style="background:var(--surface-2);padding:10px 14px;border-bottom:1px solid var(--surface-3);">
+            <span style="font-size:12px;font-weight:600;color:var(--ink);">Step 3 — Import Claude's JSON output</span>
+          </div>
+          <div style="padding:14px;">
+            <button class="btn-outline" onclick="document.getElementById('theme-json-file').click()" style="font-size:12px;margin-bottom:10px;">📂 Upload .json file</button>
+            <input type="file" id="theme-json-file" accept=".json,.txt" style="display:none" onchange="handleThemeJsonImport(event)">
+            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">Or paste JSON here:</div>
+            <textarea class="modal-input" id="theme-json-paste" rows="5" style="resize:vertical;font-family:monospace;font-size:11px;" placeholder="Paste the full JSON block Claude generated."></textarea>
+            <button class="btn-outline" onclick="importThemeJsonFromPaste()" style="font-size:12px;margin-top:8px;">Import from paste</button>
+          </div>
+        </div>
+      </div>
+      <div id="theme-questions-preview" style="display:none;margin:0 16px 16px;max-height:240px;overflow-y:auto;border-top:1px solid var(--surface-3);padding-top:12px;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="hideThemeModal()">Cancel</button>
+      <button class="btn-primary" id="theme-save-btn" onclick="saveTheme()">Save theme</button>
+    </div>
+  </div>
+</div>
+</body>
 </html>
