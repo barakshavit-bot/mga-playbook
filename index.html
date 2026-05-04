@@ -1355,6 +1355,13 @@ function initThemes(savedCustomThemes){
 }
 
 // Returns questions for a session — uses snapshot if available, else active theme
+function canEditSession(session){
+  if(!session) return false;
+  if(!currentUser) return false;
+  if(hasRole('admin')) return true; // admins can always edit/delete
+  return session.createdBy === currentUser.id || session.createdByUsername === currentUser.username;
+}
+
 function getSessionQuestions(session){
   if(session && session.questions && session.questions.length > 0) return session.questions;
   return ALL_QUESTIONS;
@@ -1541,10 +1548,25 @@ function renderSessionsGrid(){
         <span class="sc-answered">${ans}/${sessionQs.length}</span>
         <span class="sc-date">${formatDate(s.createdAt)}</span>
       </div>
-      <div class="sc-actions">
-        <button class="sc-action-btn" title="Edit name" onclick="event.stopPropagation();openEditModal('${s.id}')"><svg viewBox="0 0 12 12" fill="none"><path d="M2 9l1.5-1.5 5-5L10 4 5 9H2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button class="sc-action-btn del" title="Delete session (admin only)" onclick="event.stopPropagation();deleteSession('${s.id}',false)"><svg viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V2h2v1M4 3l.5 7h3L8 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      </div>`;
+      <div class="sc-actions"></div>`;
+    // Wire action buttons separately to avoid quote escaping issues
+    const actionsDiv = card.querySelector('.sc-actions');
+    if(canEditSession(s)){
+      const editBtn=document.createElement('button');
+      editBtn.className='sc-action-btn';
+      editBtn.title='Edit name';
+      editBtn.innerHTML='<svg viewBox="0 0 12 12" fill="none"><path d="M2 9l1.5-1.5 5-5L10 4 5 9H2z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      editBtn.addEventListener('click',function(e){e.stopPropagation();openEditModal(s.id);});
+      actionsDiv.appendChild(editBtn);
+    }
+    if(canEditSession(s) && hasRole('manager')){
+      const delBtn=document.createElement('button');
+      delBtn.className='sc-action-btn del';
+      delBtn.title='Delete session';
+      delBtn.innerHTML='<svg viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V2h2v1M4 3l.5 7h3L8 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      delBtn.addEventListener('click',function(e){e.stopPropagation();deleteSession(s.id,false);});
+      actionsDiv.appendChild(delBtn);
+    }
     card.onclick=()=>openSession(s.id);
     grid.appendChild(card);
   });
@@ -1598,7 +1620,12 @@ function selectThemeCard(themeId){
   if(radio) radio.checked = true;
 }
 function openEditModal(id){
-  const s=getSession(id);if(!s)return;
+  const s = getSession(id);
+  if(!s) return;
+  if(!canEditSession(s)){
+    showToast('You can only edit sessions you created');
+    return;
+  }
   modalMode='edit';editSessionId=id;
   document.getElementById('modal-title').textContent='Edit session';
   document.getElementById('modal-desc').textContent='Update the name, company, or relationship type for this session.';
@@ -1635,6 +1662,8 @@ function confirmModal(){
       scores:{},notes:{},tones:{},
       autoScores:{},autoQuotes:{},autoReasons:{},
       scoreSources:{},
+      createdBy: currentUser ? currentUser.id : null,
+      createdByUsername: currentUser ? currentUser.username : null,
       createdAt:Date.now(),savedAt:null
     };
     sessions.unshift(s);saveSessions();hideModal();openSession(s.id);
@@ -1690,6 +1719,10 @@ function openSession(id){
 
 function saveCurrentSession(){
   const s=getCurrentSession();if(!s)return;
+  if(!canEditSession(s)){
+    showToast('You can only edit sessions you created');
+    return;
+  }
   s.savedAt=Date.now();saveSessions();
   const btn=document.getElementById('ph-save-btn');
   btn.textContent='Saved';btn.className='ph-save-btn saved';
@@ -1973,6 +2006,10 @@ function deleteSession(id,fromSummary){
   }
   const s=getSession(id);
   if(!s)return;
+  if(!canEditSession(s)){
+    showToast('You can only delete sessions you created');
+    return;
+  }
   showConfirm(
     'Delete "'+s.name+'"?',
     'This session will be moved to the Deleted tab. You can restore it within 30 days.',
@@ -4517,6 +4554,42 @@ async function loadUsersList(){
           toggleBtn.textContent=u.active?'Deactivate':'Reactivate';
           toggleBtn.addEventListener('click',(function(uid,act,uname){return function(){toggleUserActive(uid,act,uname);};})(u.id,u.active,u.username));
           right.appendChild(toggleBtn);
+          // Delete button — only shown for deactivated users
+          if(!u.active){
+            const delUserBtn=document.createElement('button');
+            delUserBtn.style.cssText='font-size:11px;padding:4px 10px;border:1px solid var(--red-border,#f0b8b8);border-radius:6px;color:var(--red,#c93535);background:none;cursor:pointer;';
+            delUserBtn.textContent='Delete';
+            delUserBtn.addEventListener('click',(function(uid,uname,rowEl){return function(){
+              const existing=document.getElementById('del-user-confirm-'+uid);
+              if(existing){existing.remove();return;}
+              const confirmRow=document.createElement('div');
+              confirmRow.id='del-user-confirm-'+uid;
+              confirmRow.style.cssText='padding:10px 14px;background:#fff5f5;border:1px solid #f5c0c0;border-radius:6px;margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+              const msg=document.createElement('span');
+              msg.style.cssText='font-size:12px;color:var(--ink);';
+              msg.innerHTML='Permanently delete <strong>'+uname+'</strong>? This cannot be undone.';
+              const btnRow=document.createElement('div');
+              btnRow.style.cssText='display:flex;gap:6px;flex-shrink:0;';
+              const yesBtn=document.createElement('button');
+              yesBtn.style.cssText='background:#c93535;color:#fff;border:none;border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer;';
+              yesBtn.textContent='Yes, delete';
+              yesBtn.addEventListener('click',async function(){
+                await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?id=eq.'+uid,{
+                  method:'DELETE',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+                }).catch(()=>{});
+                showToast(uname+' permanently deleted');
+                loadUsersList();
+              });
+              const noBtn=document.createElement('button');
+              noBtn.style.cssText='background:none;border:1px solid var(--surface-3);border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer;';
+              noBtn.textContent='Cancel';
+              noBtn.addEventListener('click',function(){confirmRow.remove();});
+              btnRow.appendChild(yesBtn);btnRow.appendChild(noBtn);
+              confirmRow.appendChild(msg);confirmRow.appendChild(btnRow);
+              rowEl.after(confirmRow);
+            };})(u.id,u.username,row));
+            right.appendChild(delUserBtn);
+          }
         }
         row.appendChild(left); row.appendChild(right);
         el.appendChild(row);
