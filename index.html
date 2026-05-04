@@ -5296,12 +5296,14 @@ async function _init(){
   if(stored){
     try{
       currentUser = JSON.parse(stored);
-      // Hide login immediately — user is already authenticated
+      // Reveal app shell and hide login immediately
+      const shell = document.getElementById('app-shell');
+      if(shell) shell.style.visibility='visible';
       document.getElementById('login-screen').style.display='none';
       applyRoleUI();
       // Restore last visited page
       const lastPage = sessionStorage.getItem('playbook_page');
-      if(lastPage) setTimeout(function(){ _showPage(lastPage); }, 0);
+      if(lastPage) _showPage(lastPage);
     }catch(e){ currentUser=null; }
   }
   if(!currentUser){
