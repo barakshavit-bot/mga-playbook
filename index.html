@@ -4617,12 +4617,20 @@ async function loadUsersList(){
                 yesBtn.textContent = 'Deleting...'; yesBtn.disabled = true;
                 try{
                   const res = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?id=eq.'+uid,{
-                    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+                    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'}
                   });
-                  if(!res.ok && res.status !== 404) throw new Error('HTTP '+res.status);
-                }catch(e){ console.warn('Delete user error:',e.message); }
-                showToast(uname+' permanently deleted');
-                loadUsersList();
+                  if(!res.ok){
+                    const body = await res.json().catch(()=>({}));
+                    throw new Error((body.message||body.error||'HTTP '+res.status));
+                  }
+                  showToast(uname+' permanently deleted');
+                  loadUsersList();
+                }catch(e){
+                  yesBtn.textContent = 'Yes, delete';
+                  yesBtn.disabled = false;
+                  showToast('Delete failed: '+e.message);
+                  console.error('Delete user error:', e.message);
+                }
               });
               const noBtn = document.createElement('button');
               noBtn.style.cssText = 'background:none;border:1px solid var(--surface-3);border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer;';
