@@ -26,6 +26,7 @@
   --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+#app-shell{visibility:hidden;}
 body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
 
 /* HEADER */
@@ -630,6 +631,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 </head>
 <body>
 
+<div id="app-shell" style="visibility:hidden;">
 <header class="site-header">
   <div class="logo">Novidea<span>.</span>Playbook</div>
   <div class="header-nav">
@@ -1418,9 +1420,13 @@ function showPage(name){_showPage(name)}
 function _showPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.hnav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
+  const pageEl = document.getElementById('page-'+name);
+  if(!pageEl) return;
+  pageEl.classList.add('active');
   const navBtn=document.getElementById('nav-'+name);
   if(navBtn)navBtn.classList.add('active');
+  // Save current page so refresh restores it
+  if(currentUser) sessionStorage.setItem('playbook_page', name);
   if(name!=='playbook'){
     const pb = document.getElementById('page-playbook');
     if(pb){ pb.removeAttribute('dir'); pb.style.fontFamily=''; }
@@ -4249,6 +4255,8 @@ function hashPassword(pw){
 }
 
 function showLoginScreen(){
+  const shell = document.getElementById('app-shell');
+  if(shell) shell.style.visibility='visible';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('invite-screen').style.display='none';
   document.getElementById('login-error').style.display='none';
@@ -4256,6 +4264,9 @@ function showLoginScreen(){
 }
 
 function hideLoginScreen(){
+  // Reveal app shell — user is authenticated
+  const shell = document.getElementById('app-shell');
+  if(shell) shell.style.visibility='visible';
   document.getElementById('login-screen').style.display='none';
   const ras = document.getElementById('request-access-screen');
   if(ras) ras.style.display='none';
@@ -4375,7 +4386,7 @@ function completeLogin(user){
   document.getElementById('account-setup-screen').style.display='none';
   // Apply role BEFORE showing any page
   applyRoleUI();
-  // Always land on sessions — never leave a restricted page visible
+  // Fresh login always starts at sessions — page restore only happens on refresh
   _showPage('sessions');
   showToast('Welcome, '+user.username+' 👋');
 }
@@ -4383,6 +4394,7 @@ function completeLogin(user){
 function logoutUser(){
   currentUser = null;
   sessionStorage.removeItem('playbook_user');
+  sessionStorage.removeItem('playbook_page');
   showLoginScreen();
 }
 
@@ -4581,35 +4593,45 @@ async function loadUsersList(){
             const delUserBtn=document.createElement('button');
             delUserBtn.style.cssText='font-size:11px;padding:4px 10px;border:1px solid var(--red-border,#f0b8b8);border-radius:6px;color:var(--red,#c93535);background:none;cursor:pointer;';
             delUserBtn.textContent='Delete';
-            delUserBtn.addEventListener('click',(function(uid,uname,rowEl){return function(){
-              const existing=document.getElementById('del-user-confirm-'+uid);
-              if(existing){existing.remove();return;}
-              const confirmRow=document.createElement('div');
-              confirmRow.id='del-user-confirm-'+uid;
-              confirmRow.style.cssText='padding:10px 14px;background:#fff5f5;border:1px solid #f5c0c0;border-radius:6px;margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
-              const msg=document.createElement('span');
-              msg.style.cssText='font-size:12px;color:var(--ink);';
-              msg.innerHTML='Permanently delete <strong>'+uname+'</strong>? This cannot be undone.';
-              const btnRow=document.createElement('div');
-              btnRow.style.cssText='display:flex;gap:6px;flex-shrink:0;';
-              const yesBtn=document.createElement('button');
-              yesBtn.style.cssText='background:#c93535;color:#fff;border:none;border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer;';
-              yesBtn.textContent='Yes, delete';
-              yesBtn.addEventListener('click',async function(){
-                await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?id=eq.'+uid,{
-                  method:'DELETE',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
-                }).catch(()=>{});
+            delUserBtn.dataset.uid = u.id;
+            delUserBtn.dataset.uname = u.username;
+            delUserBtn.addEventListener('click', async function(){
+              const uid = this.dataset.uid;
+              const uname = this.dataset.uname;
+              const confirmId = 'del-user-confirm-'+uid;
+              const existing = document.getElementById(confirmId);
+              if(existing){ existing.remove(); return; }
+              const parentRow = this.closest('div[style]') || this.parentElement.parentElement;
+              const confirmRow = document.createElement('div');
+              confirmRow.id = confirmId;
+              confirmRow.style.cssText = 'padding:10px 14px;background:#fff5f5;border:1px solid #f5c0c0;border-radius:6px;margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+              const msg = document.createElement('span');
+              msg.style.cssText = 'font-size:12px;color:var(--ink);';
+              msg.innerHTML = 'Permanently delete <strong>'+uname+'</strong>? This cannot be undone.';
+              const btnRow = document.createElement('div');
+              btnRow.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+              const yesBtn = document.createElement('button');
+              yesBtn.style.cssText = 'background:#c93535;color:#fff;border:none;border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer;';
+              yesBtn.textContent = 'Yes, delete';
+              yesBtn.addEventListener('click', async function(){
+                yesBtn.textContent = 'Deleting...'; yesBtn.disabled = true;
+                try{
+                  const res = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/users?id=eq.'+uid,{
+                    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+                  });
+                  if(!res.ok && res.status !== 404) throw new Error('HTTP '+res.status);
+                }catch(e){ console.warn('Delete user error:',e.message); }
                 showToast(uname+' permanently deleted');
                 loadUsersList();
               });
-              const noBtn=document.createElement('button');
-              noBtn.style.cssText='background:none;border:1px solid var(--surface-3);border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer;';
-              noBtn.textContent='Cancel';
-              noBtn.addEventListener('click',function(){confirmRow.remove();});
-              btnRow.appendChild(yesBtn);btnRow.appendChild(noBtn);
-              confirmRow.appendChild(msg);confirmRow.appendChild(btnRow);
-              rowEl.after(confirmRow);
-            };})(u.id,u.username,row));
+              const noBtn = document.createElement('button');
+              noBtn.style.cssText = 'background:none;border:1px solid var(--surface-3);border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer;';
+              noBtn.textContent = 'Cancel';
+              noBtn.addEventListener('click', function(){ confirmRow.remove(); });
+              btnRow.appendChild(yesBtn); btnRow.appendChild(noBtn);
+              confirmRow.appendChild(msg); confirmRow.appendChild(btnRow);
+              parentRow.after(confirmRow);
+            });
             right.appendChild(delUserBtn);
           }
         }
@@ -5132,8 +5154,15 @@ async function loadAccessRequests(){
     else { badge.style.display='none'; }
   }
 
-  if(!requests.length){
-    el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);padding:8px 0;">No access requests yet.</div>';
+  // Enable/disable controls based on resolved count
+  const resolved = requests.filter(function(r){ return r.status!=='pending'; });
+  const showResolvedCb = document.getElementById('show-resolved-requests');
+  const clearResolvedBtn = document.querySelector('button[onclick="clearResolvedRequests()"]');
+  if(showResolvedCb){ showResolvedCb.disabled = resolved.length === 0; showResolvedCb.parentElement.style.opacity = resolved.length===0?'0.4':'1'; }
+  if(clearResolvedBtn){ clearResolvedBtn.disabled = resolved.length === 0; clearResolvedBtn.style.opacity = resolved.length===0?'0.4':'1'; clearResolvedBtn.style.cursor = resolved.length===0?'default':'pointer'; }
+
+  if(!displayRequests.length){
+    el.innerHTML='<div style="font-size:13px;color:var(--ink-soft);padding:8px 0;">'+(pending.length===0?'No access requests yet.':'No pending requests.')+'</div>';
     return;
   }
 
@@ -5270,6 +5299,9 @@ async function _init(){
       // Hide login immediately — user is already authenticated
       document.getElementById('login-screen').style.display='none';
       applyRoleUI();
+      // Restore last visited page
+      const lastPage = sessionStorage.getItem('playbook_page');
+      if(lastPage) setTimeout(function(){ _showPage(lastPage); }, 0);
     }catch(e){ currentUser=null; }
   }
   if(!currentUser){
@@ -5455,5 +5487,6 @@ if(document.readyState==='loading'){
     </div>
   </div>
 </div>
+</div><!-- /app-shell -->
 </body>
 </html>
