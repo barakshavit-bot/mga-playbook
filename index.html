@@ -181,6 +181,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .qt-none{background:var(--surface-2);color:var(--ink-soft)}
 .qt-nd{background:#fff0f0;color:var(--red,#c93535);border:1px solid #f5c0c0;}
 .not-discussed-block{opacity:0.75;}
+.manual-override-block{background:var(--surface-2);border:1px solid var(--surface-3);border-radius:8px;padding:12px 14px;margin-top:10px;}
 .qt-0{background:var(--gray-bg);color:#444;border:1px solid var(--gray-border)}
 .qt-1{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .qt-2{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
@@ -1894,7 +1895,8 @@ function buildCard(q){
   // Auto result block (shown in auto/both tracks when results exist)
   const scoreDots=(v)=>[0,1,2,3].map(i=>`<span class="auto-score-dot${i<=v?' filled':''}"></span>`).join('');
   const notDiscussed = isNotDiscussed(q.id);
-  const autoBlock=(track==='auto'||track==='both')&&(hasAutoResult||notDiscussed)?`
+  const showAutoBlock = (track==='auto'||track==='both') && (hasAutoResult || notDiscussed);
+  const autoBlock=showAutoBlock?`
     <div class="auto-result-block${notDiscussed?' not-discussed-block':''}">
       <div class="auto-result-head">
         <span class="auto-result-label">AI from transcript</span>
@@ -1965,10 +1967,22 @@ function buildCard(q){
       </div>
     </div>`:'';
 
-  // In auto-only track with no manual scoring UI, show a note
-  const autoOnlyNote=track==='auto'&&hasAutoResult?`
-    <div style="font-size:12px;color:var(--ink-soft);text-align:center;padding:8px 0">
-      Scores are from AI transcript analysis. Switch to <strong>Manual</strong> or <strong>Both</strong> to score manually.
+  // Manual override block for auto track — shown when AI did NOT score this question
+  const manualOverrideScore = sess&&sess.manualOverrides&&sess.manualOverrides[q.id]!==undefined ? sess.manualOverrides[q.id] : -1;
+  const manualOverrideQuote = (sess&&sess.manualOverrideQuotes&&sess.manualOverrideQuotes[q.id]) || '';
+  const autoOnlyNote=track==='auto'?`
+    <div class="manual-override-block" id="override-${q.id}">
+      <div style="font-size:11px;font-weight:600;color:var(--ink-soft);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em;">
+        ${hasAutoResult ? 'Override AI score' : 'AI did not score this — add manually'}
+      </div>
+      <div class="score-grid" style="margin-bottom:8px;">
+        ${[0,1,2,3].map(v=>`<button class="sbtn s${v}${manualOverrideScore===v?' active':manualOverrideScore>=0?' inactive':''}" onclick="setManualOverride('${q.id}',${v})"><span class="sbtn-num">${v}</span><span class="sbtn-title">${['No pain','Mild','Moderate','Critical'][v]}</span></button>`).join('')}
+      </div>
+      ${manualOverrideScore>=0?`<button style="font-size:11px;color:var(--ink-soft);background:none;border:none;cursor:pointer;padding:0;margin-bottom:8px;" onclick="clearManualOverride('${q.id}')">✕ Clear override</button>`:''}
+      <div style="margin-top:6px;">
+        <label style="font-size:11px;color:var(--ink-soft);display:block;margin-bottom:4px;">Quote / evidence from transcript</label>
+        <textarea class="notes-field" style="font-size:12px;" placeholder="Paste a relevant quote from the call..." onchange="setManualOverrideQuote('${q.id}',this.value)" oninput="setManualOverrideQuote('${q.id}',this.value)">${esc(manualOverrideQuote)}</textarea>
+      </div>
     </div>`:'';
 
   return `<div class="qcard${scoreClass}" id="card-${q.id}">
@@ -3306,26 +3320,32 @@ async function analyseTranscript(){
   const langInstruction = transcriptLang === 'he'
     ? 'IMPORTANT: The transcript is in Hebrew. Analyse it in Hebrew context. Quotes should be in Hebrew as they appear in the transcript. Reasoning can be in English.'
     : '';
-  const sys=`You are analysing a sales discovery call transcript for Novidea, an insurance technology company. Your job is to score how strongly each discovery question's pain point was confirmed in the transcript.
+  const sys=`You are an expert sales analyst reviewing a discovery call transcript for Novidea, an insurance technology company. Your job is to detect evidence of each pain area across the entire transcript — even when the prospect uses different words, raises the topic indirectly, or only implies it through context.
+
 ${langInstruction}
 
-CRITICAL RULES:
-1. Only score a question if the topic was ACTUALLY discussed in the transcript — even indirectly or using different words than the question itself.
-2. If a topic was NOT discussed at all, OMIT that question ID from your response entirely. Do NOT return score 0 for undiscussed topics — simply leave them out.
-3. Be LIBERAL in recognising discussion — if the prospect mentions something semantically related to the pain area, even tangentially or with different terminology, score it.
-4. Score meanings: 0=topic came up but NO pain expressed, 1=mild or potential pain hinted, 2=clear pain confirmed, 3=critical or urgent pain with strong signals.
+DETECTION RULES — be a detective, not a keyword matcher:
+1. Search for the CONCEPT behind each question, not the exact words. A question about "manual data entry" should trigger if the prospect mentions spreadsheets, copy-paste work, rekeying data, human errors, or "we do it manually" — even if they never say "data entry".
+2. Consider the full conversation arc. A pain mentioned once early and then built upon later counts strongly.
+3. Treat denial as signal too. If a prospect says "we don't have that problem" about a pain area — that is score 0, not omitted.
+4. If a topic was never touched on — not even indirectly — OMIT that question ID entirely.
+5. Indirect signals count. Frustration, workarounds, complaints about time/effort, mentions of "too much work", "we had issues with", "it's painful" all count as pain signals.
 
-For each question that WAS discussed, return:
-- score: 0, 1, 2, or 3
-- quote: most relevant verbatim excerpt from the transcript (max 120 chars, or "" if none)
-- reasoning: 1 sentence explaining the score and how it relates to the question topic
+SCORING SCALE:
+0 = Topic came up but NO pain expressed — satisfied or unaffected
+1 = Mild signal — awareness of friction but low urgency, or a passing mention
+2 = Clear pain confirmed — real problem acknowledged, affects their work
+3 = Critical/urgent pain — strong language, repeated mentions, active business impact, or urgent desire to solve
 
-Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and values are {score, quote, reasoning}. Omit IDs not discussed at all. No markdown, no commentary.`;
+Return ONLY a valid JSON object. Keys are question IDs (q1, q2, etc.). Values are:
+{ "score": 0-3, "quote": "most impactful verbatim excerpt max 150 chars", "reasoning": "1-2 sentences: what was said or implied and why this score" }
 
-  const userMsg=`TRANSCRIPT:\n${text.slice(0,12000)}\n\nQUESTIONS TO SCORE:\n${qList}`;
+Omit question IDs with zero evidence. No markdown, no commentary outside the JSON.`
+
+  const userMsg=`TRANSCRIPT:\n${text.slice(0,18000)}\n\nQUESTIONS TO SCORE:\n${qList}\n\nRemember: detect concepts and semantic meaning, not just keywords. Look for indirect evidence, workarounds, and implied frustrations.`;
 
   try{
-    const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:2000,system:sys,messages:[{role:'user',content:userMsg}]});
+    const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:3000,system:sys,messages:[{role:'user',content:userMsg}]});
     // Support both Claude format (content[].text) and normalized Gemini format
     const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     if(!raw) throw new Error('Empty response from AI — provider: '+getAIProvider());
@@ -3382,13 +3402,18 @@ Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and v
 // ── Score resolution: returns the score that counts for summary ──
 function getActiveScore(qid){
   const s=getCurrentSession();if(!s)return -1;
+  if(isNotDiscussed(qid)) return -1;
   const track=getSessionTrack();
   const src=getScoreSource(qid);
-  if(track==='manual'){return s.scores[qid]!==undefined?s.scores[qid]:-1;}
-  if(track==='auto'){return s.autoScores&&s.autoScores[qid]!==undefined?s.autoScores[qid]:-1;}
+  if(track==='manual'){return s.scores&&s.scores[qid]!==undefined?s.scores[qid]:-1;}
+  if(track==='auto'){
+    // Manual override takes priority over AI score
+    if(s.manualOverrides&&s.manualOverrides[qid]!==undefined) return s.manualOverrides[qid];
+    return s.autoScores&&s.autoScores[qid]!==undefined?s.autoScores[qid]:-1;
+  }
   // both: use the scoreSources per question
   if(src==='auto')return s.autoScores&&s.autoScores[qid]!==undefined?s.autoScores[qid]:-1;
-  return s.scores[qid]!==undefined?s.scores[qid]:-1;
+  return s.scores&&s.scores[qid]!==undefined?s.scores[qid]:-1;
 }
 
 // Resolve effective score for any session (used in summary/heatmap)
@@ -5522,6 +5547,37 @@ function editAutoScore(qid, newScore){
   saveSessions();
   renderPhase(activePhase);
   updateStats();
+}
+
+
+// ── MANUAL OVERRIDE SCORING (for auto track) ──
+function setManualOverride(qid, score){
+  const s = getCurrentSession();
+  if(!s) return;
+  if(!s.manualOverrides) s.manualOverrides = {};
+  s.manualOverrides[qid] = score;
+  if(!s.notDiscussed) s.notDiscussed = {};
+  delete s.notDiscussed[qid];
+  saveSessions();
+  renderPhase(activePhase);
+  updateStats();
+}
+
+function clearManualOverride(qid){
+  const s = getCurrentSession();
+  if(!s || !s.manualOverrides) return;
+  delete s.manualOverrides[qid];
+  saveSessions();
+  renderPhase(activePhase);
+  updateStats();
+}
+
+function setManualOverrideQuote(qid, quote){
+  const s = getCurrentSession();
+  if(!s) return;
+  if(!s.manualOverrideQuotes) s.manualOverrideQuotes = {};
+  s.manualOverrideQuotes[qid] = quote;
+  saveSessions();
 }
 
 async function _init(){
