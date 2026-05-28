@@ -179,6 +179,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .qtitle-text{font-size:14px;font-weight:500;color:var(--ink);flex:1}
 .qscore-tag{font-size:11px;font-weight:500;padding:3px 9px;border-radius:100px;flex-shrink:0}
 .qt-none{background:var(--surface-2);color:var(--ink-soft)}
+.qt-nd{background:#fff0f0;color:var(--red,#c93535);border:1px solid #f5c0c0;}
+.not-discussed-block{opacity:0.75;}
 .qt-0{background:var(--gray-bg);color:#444;border:1px solid var(--gray-border)}
 .qt-1{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .qt-2{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
@@ -579,7 +581,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .tm-status.running{color:var(--accent)}
 .tm-foot{padding:14px 24px;border-top:1px solid var(--surface-3);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
 /* Auto-track results per card */
-.auto-result-block{background:var(--purple-bg);border:1px solid var(--purple-border);border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px}
+.auto-result-block{background:var(--purple-tint);border:1px solid var(--purple-border);border-radius:8px;padding:12px 14px;margin-bottom:14px;}
+.auto-edit-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.auto-edit-btn{font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--purple-border);background:none;cursor:pointer;color:var(--purple-text);transition:background .15s;}
+.auto-edit-btn:hover{background:var(--purple-border);}
+.auto-edit-btn.not-discussed{border-color:#f0b8b8;color:var(--red,#c93535);}
+.auto-edit-btn.not-discussed:hover{background:#fff0f0;}
+.auto-score-select{font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--purple-border);background:var(--surface);color:var(--ink);cursor:pointer;}
+background:var(--purple-bg);border:1px solid var(--purple-border);border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px}
 .auto-result-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .auto-result-label{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--purple)}
 .auto-result-score{display:flex;gap:4px}
@@ -1801,6 +1810,7 @@ function updateStats(){
   const total_qs=ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).length;
   let total=0,hot=0,ans=0;
   if(s)ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).forEach(q=>{
+    if(isNotDiscussed(q.id)) return; // skip not-discussed questions entirely
     const v=getActiveScore(q.id);
     if(v>=0){ans++;total+=v;if(v===3)hot++;}
   });
@@ -1863,10 +1873,11 @@ function buildCard(q){
   const t=tone(q.id);
   const note=getNote(q.id);
 
-  const scoreClass=s>=0?(' scored-'+s):'';
-  const tagClass=s<0?'qt-none':('qt-'+s);
+  const notDiscussedCard = isNotDiscussed(q.id);
+  const scoreClass=notDiscussedCard?' not-discussed-card':s>=0?(' scored-'+s):'';
+  const tagClass=notDiscussedCard?'qt-nd':s<0?'qt-none':('qt-'+s);
   const scoreLabel=['No pain','Mild pain','Moderate pain','Critical pain'];
-  const tagText=s<0?'Not scored':scoreLabel[s];
+  const tagText=notDiscussedCard?'Not discussed':s<0?'Not scored':scoreLabel[s];
   const pain=q.pain.map(x=>'<li><span class="sig-bullet"></span><span>'+x+'</span></li>').join('');
   const nopain=q.nopain.map(x=>'<li><span class="sig-bullet"></span><span>'+x+'</span></li>').join('');
   const probe=t==='existing'?q.probe_existing:q.probe_prospect;
@@ -1882,15 +1893,32 @@ function buildCard(q){
 
   // Auto result block (shown in auto/both tracks when results exist)
   const scoreDots=(v)=>[0,1,2,3].map(i=>`<span class="auto-score-dot${i<=v?' filled':''}"></span>`).join('');
-  const autoBlock=(track==='auto'||track==='both')&&hasAutoResult?`
-    <div class="auto-result-block">
+  const notDiscussed = isNotDiscussed(q.id);
+  const autoBlock=(track==='auto'||track==='both')&&(hasAutoResult||notDiscussed)?`
+    <div class="auto-result-block${notDiscussed?' not-discussed-block':''}">
       <div class="auto-result-head">
         <span class="auto-result-label">AI from transcript</span>
-        <div class="auto-result-score">${scoreDots(autoScore)}</div>
-        <span style="font-size:11px;font-weight:500;color:var(--purple-text);margin-left:4px">${scoreLabel[autoScore]}</span>
+        ${notDiscussed
+          ? '<span style="font-size:11px;font-weight:500;color:var(--red,#c93535);margin-left:4px">Not discussed — excluded from score</span>'
+          : `<div class="auto-result-score">${scoreDots(autoScore)}</div>
+             <span style="font-size:11px;font-weight:500;color:var(--purple-text);margin-left:4px">${scoreLabel[autoScore]}</span>`
+        }
       </div>
-      ${autoQuote?`<div class="auto-result-quote">"${esc(autoQuote)}"</div>`:''}
-      ${autoReason?`<div class="auto-result-reasoning">${esc(autoReason)}</div>`:''}
+      ${!notDiscussed&&autoQuote?`<div class="auto-result-quote">"${esc(autoQuote)}"</div>`:''}
+      ${!notDiscussed&&autoReason?`<div class="auto-result-reasoning">${esc(autoReason)}</div>`:''}
+      <div class="auto-edit-row">
+        ${notDiscussed
+          ? `<button class="auto-edit-btn" onclick="setNotDiscussed('${q.id}',false)">↩ Restore score</button>`
+          : `<select class="auto-score-select" onchange="editAutoScore('${q.id}',this.value)" title="Edit AI score">
+               <option value="${autoScore}" selected>Edit: ${scoreLabel[autoScore]}</option>
+               <option value="0">0 — No pain</option>
+               <option value="1">1 — Mild pain</option>
+               <option value="2">2 — Moderate pain</option>
+               <option value="3">3 — Critical pain</option>
+             </select>
+             <button class="auto-edit-btn not-discussed" onclick="setNotDiscussed('${q.id}',true)" title="Mark as not discussed — excluded from total score">✕ Not discussed</button>`
+        }
+      </div>
     </div>`:'';
 
   // Comparison view (both track only)
@@ -1928,6 +1956,12 @@ function buildCard(q){
         ${sb(1,'s1','1','Mild','Aware but not urgent')}
         ${sb(2,'s2','2','Moderate','Real friction, affects work')}
         ${sb(3,'s3','3','Critical','Active pain, must solve')}
+      </div>
+      <div style="margin-top:10px;text-align:right;">
+        ${notDiscussedCard
+          ? `<button class="auto-edit-btn" style="font-size:11px;" onclick="setNotDiscussed('${q.id}',false)">↩ Restore to scored</button>`
+          : `<button class="auto-edit-btn not-discussed" style="font-size:11px;" onclick="setNotDiscussed('${q.id}',true)">✕ Topic not discussed — exclude from score</button>`
+        }
       </div>
     </div>`:'';
 
@@ -5448,6 +5482,46 @@ async function setAIProvider(provider){
   }
   renderAIProviderSetting();
   showToast('AI provider set to '+(provider==='claude'?'Claude':'Gemini')+' ✓');
+}
+
+
+// ── SCORE EDITING ──
+function isNotDiscussed(qid){
+  const s = getCurrentSession();
+  return s && s.notDiscussed && s.notDiscussed[qid] === true;
+}
+
+function setNotDiscussed(qid, val){
+  const s = getCurrentSession();
+  if(!s) return;
+  if(!s.notDiscussed) s.notDiscussed = {};
+  if(val){
+    s.notDiscussed[qid] = true;
+    // Clear any scores for this question
+    if(s.scores) delete s.scores[qid];
+    if(s.autoScores) delete s.autoScores[qid];
+    if(s.autoQuotes) delete s.autoQuotes[qid];
+    if(s.autoReasons) delete s.autoReasons[qid];
+    if(s.scoreSources) delete s.scoreSources[qid];
+  } else {
+    delete s.notDiscussed[qid];
+  }
+  saveSessions();
+  renderPhase(activePhase);
+  updateStats();
+}
+
+function editAutoScore(qid, newScore){
+  const s = getCurrentSession();
+  if(!s) return;
+  if(!s.autoScores) s.autoScores = {};
+  if(!s.autoReasons) s.autoReasons = {};
+  s.autoScores[qid] = parseInt(newScore);
+  if(!s.notDiscussed) s.notDiscussed = {};
+  delete s.notDiscussed[qid];
+  saveSessions();
+  renderPhase(activePhase);
+  updateStats();
 }
 
 async function _init(){
