@@ -343,9 +343,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .admin-hero{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--surface-3);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .admin-hero-text h2{font-family:'DM Serif Display',serif;font-size:28px;letter-spacing:-0.6px;margin-bottom:6px}
 .admin-hero-text p{font-size:13px;color:var(--ink-mid);line-height:1.6;max-width:500px}
-.api-required-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;background:#fff8e6;color:#b85c00;border:1px solid #f5d080;cursor:help;vertical-align:middle;margin-left:6px;position:relative;}
-.api-required-badge:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;font-size:11px;font-weight:400;padding:6px 10px;border-radius:6px;white-space:nowrap;max-width:260px;white-space:normal;text-align:center;z-index:9999;pointer-events:none;line-height:1.4;}
-.api-required-badge:hover::before{content:'';position:absolute;bottom:calc(100% + 1px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1a1a2e;z-index:9999;}
+
 .theme-q-tab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;font-size:12px;font-weight:500;color:var(--ink-soft);cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s;}
 .theme-q-tab:hover{color:var(--ink);}
 .theme-q-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
@@ -868,7 +866,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
             <div class="ai-panel-title">AI insights</div>
             <div class="ai-panel-sub">Patterns, priorities, and recommendations across all sessions</div>
           </div>
-          <button class="ai-run-btn" id="ai-run-btn" onclick="runAIAnalysis()">Run analysis</button> <span class="api-required-badge" data-tip="AI feature — not available in this beta version.">🔑 API key required</span>
+          <button class="ai-run-btn" id="ai-run-btn" onclick="runAIAnalysis()">Run analysis</button> <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#f0f5ff;color:#1a4fff;border:1px solid #c8d8ff;font-weight:500;">✨ AI</span>
         </div>
         <div id="ai-output" class="ai-output empty">Run the analysis to generate strategic insights from your interview data.</div>
       </div>
@@ -946,7 +944,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
             <div class="prompt-hint"><strong>Examples:</strong> "Add a question about broker portal adoption in Phase 1" · "Create a question exploring how MGAs handle reinsurance arrangements"</div>
             <textarea class="admin-textarea" id="admin-prompt" placeholder="Describe the question or phase idea you want to add..."></textarea>
             <div class="prompt-actions">
-              <button class="prompt-generate-btn" id="admin-gen-btn" onclick="generateQuestion()">Generate with AI</button> <span class="api-required-badge" data-tip="AI feature — not available in this beta version.">🔑 API key required</span>
+              <button class="prompt-generate-btn" id="admin-gen-btn" onclick="generateQuestion()">Generate with AI</button> <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#f0f5ff;color:#1a4fff;border:1px solid #c8d8ff;font-weight:500;">✨ AI</span>
               <button class="prompt-clear-btn" onclick="clearAdminPrompt()">Clear</button>
               <div class="ai-gen-status" id="admin-gen-status" style="display:none"><div class="ai-gen-spinner"></div>Generating...</div>
             </div>
@@ -1170,8 +1168,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
         <button class="tm-analyse-btn" id="tm-analyse-btn" onclick="analyseTranscript()">
           <svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Analyse with AI
-        </button>
-        <span class="api-required-badge" data-tip="AI feature — not available in this beta version.">🔑 API key required</span>
+        </button> <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#f0f5ff;color:#1a4fff;border:1px solid #c8d8ff;font-weight:500;">✨ AI</span>
+       
         <span class="tm-status" id="tm-status"></span>
       </div>
     </div>
@@ -5602,8 +5600,8 @@ if(document.readyState==='loading'){
               <div class="modal-field" style="flex:1;margin-bottom:8px;"><label class="modal-label">Phases</label><input class="modal-input" id="pg-phases" type="number" value="4" min="2" max="8"></div>
             </div>
             <div class="modal-field" style="margin-bottom:12px;"><label class="modal-label">Additional context</label><textarea class="modal-input" id="pg-context" rows="2" style="resize:vertical;"></textarea></div>
-            <button class="btn-primary" onclick="downloadGeneratedPrompt()" style="font-size:13px;">⬇ Download prompt for Claude</button>
-            <span class="api-required-badge" data-tip="Requires Claude access — not available in this beta version.">🔑 Requires Claude access</span>
+            <button class="btn-primary" onclick="downloadGeneratedPrompt()" style="font-size:13px;">⬇ Download prompt for Claude</button> <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#f0f5ff;color:#1a4fff;border:1px solid #c8d8ff;font-weight:500;">✨ AI</span>
+           
           </div>
         </div>
         <div style="border:1px solid var(--surface-3);border-radius:8px;overflow:hidden;">
