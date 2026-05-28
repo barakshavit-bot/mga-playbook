@@ -1024,6 +1024,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
       <div id="users-list"></div>
     </div>
     <!-- Recent temp credentials — rendered inside Team Members section via loadUsersList -->
+
+    <!-- AI Provider Setting -->
+    <div class="admin-section">
+      <div class="admin-section-header" style="margin-bottom:16px;">
+        <div>
+          <div class="admin-section-title">AI provider</div>
+          <div class="admin-section-sub">Choose which AI model powers transcript analysis, question generation, and insights. Applied for all users.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;" id="ai-provider-cards"></div>
+      <div id="ai-provider-status" style="margin-top:12px;font-size:12px;color:var(--ink-soft);"></div>
+    </div>
   </div>
 </div>
 
@@ -1440,7 +1452,7 @@ function _showPage(name){
     renderSummary();
   }
   if(name==='playbook-mgmt'){ switchAdminTab('themes'); }
-  if(name==='admin'){ loadUsersList(); loadInvitesList(); loadAccessRequests(); }
+  if(name==='admin'){ loadUsersList(); loadInvitesList(); loadAccessRequests(); renderAIProviderSetting(); }
   if(name==='deleted')renderDeletedList();
   if(name==='admin'&&typeof renderCustomQuestions==='function')renderCustomQuestions();
   window.scrollTo(0,0);
@@ -3365,12 +3377,69 @@ function hasAnyScore(session){
 //    then paste your worker URL here (e.g. https://novidea-proxy.yourname.workers.dev)
 const CLAUDE_PROXY_URL = localStorage.getItem('novidea_proxy_url') || '';
 
+// ── AI PROVIDER SETTING ──
+function getAIProvider(){
+  return localStorage.getItem('ai_provider') || 'claude'; // 'claude' | 'gemini'
+}
+
+// Normalize a Gemini response to match Anthropic response shape
+function normalizeGeminiResponse(data){
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return { content:[{ type:'text', text }] };
+}
+
+// Translate Anthropic payload to Gemini format
+function toGeminiPayload(anthropicPayload){
+  const messages = anthropicPayload.messages || [];
+  const systemText = anthropicPayload.system || '';
+  const contents = [];
+  if(systemText){
+    contents.push({ role:'user', parts:[{ text: systemText }] });
+    contents.push({ role:'model', parts:[{ text: 'Understood.' }] });
+  }
+  messages.forEach(function(m){
+    contents.push({ role: m.role==='assistant'?'model':'user', parts:[{ text: m.content }] });
+  });
+  return {
+    contents,
+    generationConfig:{ maxOutputTokens: anthropicPayload.max_tokens || 2000 }
+  };
+}
+
 async function callClaude(payload){
+  const provider = getAIProvider();
+
+  // ── GEMINI path ──
+  if(provider === 'gemini'){
+    let proxyUrl = CLAUDE_PROXY_URL || localStorage.getItem('novidea_proxy_url') || '';
+    if(!proxyUrl){
+      proxyUrl = prompt('AI features require your Cloudflare Worker URL.\n\nPaste your Worker URL (e.g. https://novidea-proxy.yourname.workers.dev):');
+      if(!proxyUrl||!proxyUrl.trim()) throw new Error('Proxy URL required');
+      proxyUrl = proxyUrl.trim().replace(/\/+$/,'');
+      localStorage.setItem('novidea_proxy_url', proxyUrl);
+    }
+    const geminiPayload = toGeminiPayload(payload);
+    let resp;
+    try{
+      resp = await fetch(proxyUrl+'/gemini',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(geminiPayload)
+      });
+    }catch(e){
+      localStorage.removeItem('novidea_proxy_url');
+      throw new Error('Could not reach proxy — check the Worker URL');
+    }
+    const data = await resp.json();
+    if(!resp.ok || data.error) throw new Error((data.error&&data.error.message)||'Gemini proxy error '+resp.status);
+    return normalizeGeminiResponse(data);
+  }
+
+  // ── CLAUDE path ──
   const isArtifact=window.location.hostname.includes('claude.ai')||
     window.location.hostname.includes('anthropic.com')||
     (function(){try{return window.parent!==window;}catch(e){return true;}})();
 
-  // ── Path A: inside claude.ai artifact — direct call with special header
   if(isArtifact){
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
@@ -3386,14 +3455,13 @@ async function callClaude(payload){
     return data;
   }
 
-  // ── Path B: standalone page — route through Cloudflare Worker proxy
   let proxyUrl=CLAUDE_PROXY_URL||localStorage.getItem('novidea_proxy_url')||'';
   if(!proxyUrl){
     proxyUrl=prompt(
       'AI features require a one-time proxy setup.\n\n' +
       'Step 1: Go to https://dash.cloudflare.com → Workers & Pages → Create Worker\n' +
-      'Step 2: Replace the worker code with the code from novidea-worker.js (included in your files)\n' +
-      'Step 3: Set an Environment Variable: ANTHROPIC_KEY = your Anthropic API key\n' +
+      'Step 2: Replace the worker code with the code from novidea-worker.js\n' +
+      'Step 3: Set Environment Variables: ANTHROPIC_KEY and GEMINI_KEY\n' +
       'Step 4: Deploy and paste your worker URL below\n\n' +
       'Paste your Worker URL (e.g. https://novidea-proxy.yourname.workers.dev):'
     );
@@ -3410,7 +3478,6 @@ async function callClaude(payload){
       body:JSON.stringify(payload)
     });
   }catch(netErr){
-    // Clear stored proxy URL so user can re-enter if it was wrong
     localStorage.removeItem('novidea_proxy_url');
     throw new Error('Could not reach proxy — check the Worker URL is correct and re-try');
   }
@@ -3504,6 +3571,9 @@ async function loadFromSupabase(){
           }
           if(key==='ai_insight'){
             localStorage.setItem('mga_ai_insight',value);
+          }
+          if(key==='ai_provider'){
+            localStorage.setItem('ai_provider',value);
           }
           if(key==='ai_insight_at'){
             localStorage.setItem('mga_ai_insight_at',value);
@@ -5285,6 +5355,77 @@ async function clearResolvedRequests(){
   }
   showToast('Resolved requests cleared');
   loadAccessRequests();
+}
+
+
+// ══════════════════════════════════════════════
+// AI PROVIDER SETTING
+// ══════════════════════════════════════════════
+
+function renderAIProviderSetting(){
+  const el = document.getElementById('ai-provider-cards');
+  const statusEl = document.getElementById('ai-provider-status');
+  if(!el) return;
+
+  const current = getAIProvider();
+  const providers = [
+    {
+      id: 'claude',
+      name: 'Claude (Anthropic)',
+      desc: 'Default. Powers transcript scoring, question generation, and AI insights. Requires ANTHROPIC_KEY in your Cloudflare Worker.',
+      badge: '⚡ Recommended',
+      badgeColor: '#1a4fff',
+      badgeBg: '#f0f5ff'
+    },
+    {
+      id: 'gemini',
+      name: 'Gemini (Google)',
+      desc: 'Google Gemini Pro model. Same features, alternative provider. Requires GEMINI_KEY in your Cloudflare Worker.',
+      badge: '🧪 Alternative',
+      badgeColor: '#2d6a2d',
+      badgeBg: '#f0fff4'
+    }
+  ];
+
+  el.innerHTML = '';
+  providers.forEach(function(p){
+    const isActive = current === p.id;
+    const card = document.createElement('div');
+    card.style.cssText = 'flex:1;min-width:260px;padding:16px;border:2px solid '+(isActive?'var(--accent)':'var(--surface-3)')+';border-radius:10px;background:'+(isActive?'var(--surface-2)':'var(--surface)')+';cursor:pointer;transition:border .15s;';
+    card.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+        +'<div style="font-size:14px;font-weight:600;color:var(--ink);">'+p.name+'</div>'
+        +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:'+p.badgeBg+';color:'+p.badgeColor+';">'+p.badge+'</span>'
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:12px;">'+p.desc+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;">'
+        +'<div style="width:14px;height:14px;border-radius:50%;border:2px solid '+(isActive?'var(--accent)':'var(--surface-3)')+';background:'+(isActive?'var(--accent)':'none')+';flex-shrink:0;"></div>'
+        +'<span style="font-size:12px;font-weight:500;color:'+(isActive?'var(--accent)':'var(--ink-soft)')+';">'+(isActive?'Active':'Set as active')+'</span>'
+      +'</div>';
+
+    card.addEventListener('click', function(){
+      setAIProvider(p.id);
+    });
+    el.appendChild(card);
+  });
+
+  if(statusEl){
+    statusEl.textContent = 'Current provider: '+(current==='claude'?'Claude (Anthropic)':'Gemini (Google)')+'. Changes apply immediately for all users.';
+  }
+}
+
+async function setAIProvider(provider){
+  localStorage.setItem('ai_provider', provider);
+  // Save to Supabase settings for all users
+  if(sb && SUPABASE_URL && SUPABASE_KEY){
+    fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/settings',{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({key:'ai_provider',value:provider,updated_at:new Date().toISOString()})
+    }).catch(e=>console.warn('AI provider sync error:',e.message));
+  }
+  renderAIProviderSetting();
+  showToast('AI provider set to '+(provider==='claude'?'Claude':'Gemini')+' ✓');
 }
 
 async function _init(){
