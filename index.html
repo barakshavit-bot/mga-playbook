@@ -2738,7 +2738,9 @@ When given a brief, generate a fully structured question in this EXACT JSON form
 
   try{
     const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:1000,system:systemPrompt,messages:[{role:'user',content:prompt}]});
+    // Support both Claude format (content[].text) and normalized Gemini format
     const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    if(!raw) throw new Error('Empty response from AI — provider: '+getAIProvider());
     const jsonMatch=raw.match(/\{[\s\S]*\}/);
     if(!jsonMatch)throw new Error('No JSON found');
     const parsed=JSON.parse(jsonMatch[0]);
@@ -3059,7 +3061,9 @@ async function runEqAI(){
 
   try{
     const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:900,system:sys,messages:[{role:'user',content:userMsg}]});
+    // Support both Claude format (content[].text) and normalized Gemini format
     const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    if(!raw) throw new Error('Empty response from AI — provider: '+getAIProvider());
     const match=raw.match(/\{[\s\S]*\}/);
     if(!match)throw new Error('No JSON');
     const updated=JSON.parse(match[0]);
@@ -3288,7 +3292,9 @@ Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and v
 
   try{
     const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:2000,system:sys,messages:[{role:'user',content:userMsg}]});
+    // Support both Claude format (content[].text) and normalized Gemini format
     const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    if(!raw) throw new Error('Empty response from AI — provider: '+getAIProvider());
     const match=raw.match(/\{[\s\S]*\}/);
     if(!match)throw new Error('No JSON');
     const results=JSON.parse(match[0]);
@@ -3318,7 +3324,8 @@ Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and v
     const count=Object.keys(s.autoScores).length;
     statusEl.className='tm-status';
     statusEl.textContent=count+' questions scored from transcript';
-    spinner.style.display='none';
+    const spinnerEl2 = document.getElementById('tm-spinner');
+    if(spinnerEl2) spinnerEl2.style.display='none';
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Re-analyse';
 
@@ -3328,11 +3335,13 @@ Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and v
 
     showToast('Transcript analysed — '+count+' questions scored');
   }catch(err){
+    console.error('Transcript analysis error:', err.message, err);
     statusEl.className='tm-status';
-    statusEl.textContent='Analysis failed — check connection and try again';
-    spinner.style.display='none';
+    statusEl.textContent='Analysis failed: '+err.message;
+    const spinnerEl = document.getElementById('tm-spinner');
+    if(spinnerEl) spinnerEl.style.display='none';
     btn.disabled=false;
-    btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><div class="tm-spinner" id="tm-spinner" style="display:none"></div> Analyse with AI';
+    btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Analyse with AI';
   }
 }
 
