@@ -3375,7 +3375,7 @@ function hasAnyScore(session){
 // ══════════════════════════════════════════════
 // ── Proxy URL: deploy the Cloudflare Worker from the setup guide,
 //    then paste your worker URL here (e.g. https://novidea-proxy.yourname.workers.dev)
-const CLAUDE_PROXY_URL = localStorage.getItem('novidea_proxy_url') || '';
+const CLAUDE_PROXY_URL = localStorage.getItem('novidea_proxy_url') || 'https://novidea-proxy.barak-shavit.workers.dev';
 
 // ── AI PROVIDER SETTING ──
 function getAIProvider(){
@@ -3412,16 +3412,12 @@ async function callClaude(payload){
   // ── GEMINI path ──
   if(provider === 'gemini'){
     let proxyUrl = CLAUDE_PROXY_URL || localStorage.getItem('novidea_proxy_url') || '';
-    if(!proxyUrl){
-      proxyUrl = prompt('AI features require your Cloudflare Worker URL.\n\nPaste your Worker URL (e.g. https://novidea-proxy.yourname.workers.dev):');
-      if(!proxyUrl||!proxyUrl.trim()) throw new Error('Proxy URL required');
-      proxyUrl = proxyUrl.trim().replace(/\/+$/,'');
-      localStorage.setItem('novidea_proxy_url', proxyUrl);
-    }
+    if(!proxyUrl) throw new Error('Worker URL not configured');
+    proxyUrl = proxyUrl.trim().replace(/\/+$/,'');
     const geminiPayload = toGeminiPayload(payload);
     let resp;
     try{
-      resp = await fetch(proxyUrl+'/gemini',{
+      resp = await fetch(proxyUrl.replace(/\/+$/,'')+'/gemini',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(geminiPayload)
@@ -3456,23 +3452,12 @@ async function callClaude(payload){
   }
 
   let proxyUrl=CLAUDE_PROXY_URL||localStorage.getItem('novidea_proxy_url')||'';
-  if(!proxyUrl){
-    proxyUrl=prompt(
-      'AI features require a one-time proxy setup.\n\n' +
-      'Step 1: Go to https://dash.cloudflare.com → Workers & Pages → Create Worker\n' +
-      'Step 2: Replace the worker code with the code from novidea-worker.js\n' +
-      'Step 3: Set Environment Variables: ANTHROPIC_KEY and GEMINI_KEY\n' +
-      'Step 4: Deploy and paste your worker URL below\n\n' +
-      'Paste your Worker URL (e.g. https://novidea-proxy.yourname.workers.dev):'
-    );
-    if(!proxyUrl||!proxyUrl.trim())throw new Error('Proxy URL required for AI features on standalone page');
-    proxyUrl=proxyUrl.trim().replace(/\/+$/,'');
-    localStorage.setItem('novidea_proxy_url',proxyUrl);
-  }
+  if(!proxyUrl) throw new Error('Worker URL not configured');
+  proxyUrl=proxyUrl.trim().replace(/\/+$/,'');
 
   let resp;
   try{
-    resp=await fetch(proxyUrl+'/v1/messages',{
+    resp=await fetch(proxyUrl.replace(/\/+$/,'')+'/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
@@ -5429,6 +5414,10 @@ async function setAIProvider(provider){
 }
 
 async function _init(){
+  // Ensure Worker URL is always set
+  if(!localStorage.getItem('novidea_proxy_url')){
+    localStorage.setItem('novidea_proxy_url', 'https://novidea-proxy.barak-shavit.workers.dev');
+  }
   const savedThemes = JSON.parse(localStorage.getItem('mga_custom_themes')||'[]');
   initThemes(savedThemes);
   applyOverrides();
