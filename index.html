@@ -3311,9 +3311,14 @@ async function analyseTranscript(){
   // Save transcript immediately
   s.transcript=text;saveSessions();
 
-  const qList=ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).map(q=>
-    `Q${q.n} "${q.title}": existing_ask="${q.existing}" prospect_ask="${q.prospect}" pain_signals=${JSON.stringify(q.pain)} nopain_signals=${JSON.stringify(q.nopain)}`
-  ).join('\n');
+  const qList=ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).map(q=>{
+    const painStr = q.pain.join(' | ');
+    const nopainStr = q.nopain.join(' | ');
+    return `ID:${q.id} | Topic:"${q.title}"
+  Detect if discussed: look for "${q.existing}" OR "${q.prospect}" OR any related concept
+  Pain signals (score higher if mentioned): ${painStr}
+  No-pain signals (score 0 if mentioned): ${nopainStr}`;
+  }).join('\n\n');
 
   const sessionThemeForTranscript = getThemeById((getCurrentSession()||{}).themeId||'theme-mga')||{};
   const transcriptLang = sessionThemeForTranscript.lang || 'en';
@@ -3337,9 +3342,10 @@ SCORING SCALE:
 2 = Clear pain confirmed — real problem acknowledged, affects their work
 3 = Critical/urgent pain — strong language, repeated mentions, active business impact, or urgent desire to solve
 
-Return ONLY a valid JSON object. Keys are question IDs (q1, q2, etc.). Values are:
-{ "score": 0-3, "quote": "most impactful verbatim excerpt max 150 chars", "reasoning": "1-2 sentences: what was said or implied and why this score" }
+Return ONLY a valid JSON object. Keys must be the exact question IDs as given (e.g. "q1", "q2" — use the ID: field from each question exactly). Values are:
+{ "score": 0-3, "quote": "most impactful verbatim excerpt max 150 chars — exact words from transcript", "reasoning": "1-2 sentences: what was said or implied and why this score" }
 
+IMPORTANT: Use the exact ID string from the "ID:" field for each question as the JSON key.
 Omit question IDs with zero evidence. No markdown, no commentary outside the JSON.`
 
   const userMsg=`TRANSCRIPT:\n${text.slice(0,18000)}\n\nQUESTIONS TO SCORE:\n${qList}\n\nRemember: detect concepts and semantic meaning, not just keywords. Look for indirect evidence, workarounds, and implied frustrations.`;
