@@ -3385,6 +3385,25 @@ function hasAnyScore(session){
 const CLAUDE_PROXY_URL = localStorage.getItem('novidea_proxy_url') || 'https://novidea-proxy.barak-shavit.workers.dev';
 
 // ── AI PROVIDER SETTING ──
+function showAIModelUsed(){
+  const model = window._lastAIModel;
+  if(!model) return;
+  const provider = getAIProvider();
+  const label = provider==='gemini' ? '✨ '+model : '✨ Claude';
+  // Show subtle bottom-right indicator
+  let indicator = document.getElementById('ai-model-indicator');
+  if(!indicator){
+    indicator = document.createElement('div');
+    indicator.id = 'ai-model-indicator';
+    indicator.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(26,47,255,0.9);color:#fff;font-size:11px;font-weight:500;padding:5px 12px;border-radius:20px;z-index:9999;pointer-events:none;transition:opacity .4s;white-space:nowrap;';
+    document.body.appendChild(indicator);
+  }
+  indicator.textContent = 'Powered by ' + label;
+  indicator.style.opacity = '1';
+  clearTimeout(window._aiModelTimer);
+  window._aiModelTimer = setTimeout(function(){ indicator.style.opacity='0'; }, 3000);
+}
+
 function getAIProvider(){
   return localStorage.getItem('ai_provider') || 'claude'; // 'claude' | 'gemini'
 }
@@ -3392,7 +3411,7 @@ function getAIProvider(){
 // Normalize a Gemini response to match Anthropic response shape
 function normalizeGeminiResponse(data){
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return { content:[{ type:'text', text }] };
+  return { content:[{ type:'text', text }], _modelUsed: data._modelUsed || 'gemini' };
 }
 
 // Translate Anthropic payload to Gemini format
@@ -3435,8 +3454,15 @@ async function callClaude(payload){
     }
     const data = await resp.json();
     if(!resp.ok || data.error) throw new Error((data.error&&data.error.message)||'Gemini proxy error '+resp.status);
-    return normalizeGeminiResponse(data);
+    const result = normalizeGeminiResponse(data);
+    // Store which model was used globally for any caller to reference
+    window._lastAIModel = data._modelUsed || 'gemini';
+    showAIModelUsed();
+    return result;
   }
+
+  // Track Claude usage too
+  window._lastAIModel = 'claude-sonnet';
 
   // ── CLAUDE path ──
   const isArtifact=window.location.hostname.includes('claude.ai')||
@@ -3455,6 +3481,8 @@ async function callClaude(payload){
     });
     const data=await resp.json();
     if(!resp.ok||data.error)throw new Error((data.error&&data.error.message)||'API error '+resp.status);
+    window._lastAIModel = 'claude-sonnet';
+    showAIModelUsed();
     return data;
   }
 
@@ -3481,6 +3509,8 @@ async function callClaude(payload){
     }
     throw new Error((data.error&&data.error.message)||'Proxy error '+resp.status);
   }
+  window._lastAIModel = 'claude-sonnet';
+  showAIModelUsed();
   return data;
 }
 
