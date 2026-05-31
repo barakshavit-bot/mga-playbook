@@ -3650,11 +3650,13 @@ async function initSupabase(){
   }
 }
 
-async function loadFromSupabase(){
-  const loader = document.getElementById('sessions-loading');
-  const grid = document.getElementById('sessions-grid');
-  if(loader){ loader.style.display='flex'; }
-  if(grid){ grid.style.display='none'; }
+async function loadFromSupabase(showLoader=false){
+  if(showLoader){
+    const loader = document.getElementById('sessions-loading');
+    const grid = document.getElementById('sessions-grid');
+    if(loader) loader.style.display='flex';
+    if(grid) grid.style.display='none';
+  }
   if(!sb)return;
   try{
     // Load active sessions
@@ -3705,29 +3707,26 @@ async function loadFromSupabase(){
   }catch(e){
     console.warn('Failed to load from Supabase:',e.message);
   }
-  // Always hide loader and render grid when done — whether success or error
+  // Hide loader if it was shown
   const loaderEl = document.getElementById('sessions-loading');
   const gridEl = document.getElementById('sessions-grid');
   if(loaderEl) loaderEl.style.display='none';
   if(gridEl) gridEl.style.display='';
-  renderSessionsGrid();
-  renderDeletedList();
-  updateStats();
 }
 
 function subscribeRealtime(){
   if(!sb)return;
-  // Sessions table — any insert/update/delete triggers a full reload + re-render
   sb.channel('sessions-changes')
-    .on('postgres_changes',{event:'*',schema:'public',table:'sessions'},async(payload)=>{
+    .on('postgres_changes',{event:'*',schema:'public',table:'sessions'},async()=>{
       await loadFromSupabase();
       renderSessionsGrid();
+      updateStats();
       if(document.getElementById('page-summary').classList.contains('active'))renderSummary();
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'deleted_sessions'},async()=>{
       await loadFromSupabase();
+      renderDeletedList();
       updateDeletedBadge();
-      if(document.getElementById('page-deleted').classList.contains('active'))renderDeletedList();
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'settings'},async()=>{
       await loadFromSupabase();
@@ -5658,16 +5657,20 @@ async function _init(){
 
   if(sb){
     try{
-      await loadFromSupabase();
+      await loadFromSupabase(true); // show loader on first load only
       subscribeRealtime();
     }catch(e){
       console.warn('loadFromSupabase error:', e.message);
+      // Fall through — render from localStorage
     }
   }
 
+  // Always render once after all data is ready — whether from Supabase or localStorage
   purgeExpired();
-  updateDeletedBadge();
   renderSessionsGrid();
+  renderDeletedList();
+  updateDeletedBadge();
+  updateStats();
   renderConnectionStatus();
 }
 if(document.readyState==='loading'){
