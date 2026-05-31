@@ -57,6 +57,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .home-theme-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--surface-3);color:var(--ink-soft);background:var(--surface);}
 .home-theme-pill-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .session-theme-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-faint);background:var(--surface-2);border:1px solid var(--surface-3);border-radius:10px;padding:2px 7px;margin-top:4px;}
+.notif-log-entry{padding:10px 12px;border-radius:8px;border:1px solid var(--surface-3);margin-bottom:6px;background:var(--surface);}
+.notif-log-entry.log-success{border-left:3px solid #2d6a2d;}
+.notif-log-entry.log-error{border-left:3px solid var(--red,#c93535);}
+.notif-log-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.notif-log-detail{font-size:11px;color:var(--ink-soft);line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+.notif-log-meta{font-size:10px;color:var(--ink-faint);margin-top:4px;display:flex;gap:8px;align-items:center;}
 .notif-center{position:fixed;bottom:20px;right:20px;width:340px;max-height:400px;overflow-y:auto;z-index:9990;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
 .notif-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:10px;padding:12px 14px;box-shadow:0 4px 20px rgba(0,0,0,.1);pointer-events:all;animation:notif-in .25s ease;position:relative;}
 .notif-card.notif-success{border-left:3px solid #2d6a2d;}
@@ -672,6 +678,9 @@ background:var(--purple-bg);border:1px solid var(--purple-border);border-radius:
     <button class="btn-icon import" onclick="openImportModal()" title="Import sessions">
       <svg viewBox="0 0 14 14" fill="none"><path d="M7 10V3M4 6l3-3 3 3M2 10v1.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Import
+    </button>
+    <button id="notif-log-btn" onclick="toggleNotifLog()" title="Activity log" style="position:relative;background:none;border:1px solid var(--surface-3);border-radius:6px;padding:5px 9px;cursor:pointer;color:var(--ink-soft);font-size:15px;line-height:1;">
+      🔔<span id="notif-log-badge" style="display:none;position:absolute;top:-3px;right:-3px;width:8px;height:8px;background:var(--red);border-radius:50%;"></span>
     </button>
     <button class="btn-primary" onclick="openNewSessionModal()">+ New session</button>
   </div>
@@ -3395,15 +3404,17 @@ async function analyseTranscript(){
       if(s.autoScores[q.id]!==undefined) s.scoreSources[q.id]='auto';
     });
 
-    saveSessions();
+    // Render immediately from in-memory data BEFORE saving
+    // This avoids waiting for Supabase round-trip / realtime suppress window
     renderTrackBar();
-    // Re-render all phases so scores appear across all questions
     if(typeof PHASES !== 'undefined' && PHASES.length){
       PHASES.forEach(function(p, i){ renderPhase(i); });
     } else {
       renderPhase(activePhase);
     }
     updateStats();
+    // Save after rendering so UI is never blocked
+    saveSessions();
 
     const count = Object.keys(s.autoScores).length;
     const scoredSummary = Object.keys(s.autoScores).map(function(qid){
@@ -3419,11 +3430,20 @@ async function analyseTranscript(){
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Re-analyse';
 
-    // Always switch to auto track after AI analysis so results are visible
+    // Close the transcript modal after 1.2s so user sees the scored questions
+    setTimeout(function(){
+      const modal = document.getElementById('transcript-modal-overlay');
+      if(modal) modal.classList.add('hidden');
+      // Scroll to the first scored question card
+      setTimeout(function(){
+        const firstScored = document.querySelector('.q-card.scored-1,.q-card.scored-2,.q-card.scored-3');
+        if(firstScored) firstScored.scrollIntoView({behavior:'smooth', block:'center'});
+      }, 300);
+    }, 1200);
+
+    // Switch to auto track BEFORE rendering so autoBlock shows
     if(s.track !== 'both'){
       s.track = 'auto';
-      saveSessions();
-      renderTrackBar();
     }
     showToast('Transcript analysed \u2014 '+count+' questions scored');
     showAIModelUsed();
@@ -5675,29 +5695,71 @@ function addNotification(title, details, type, source){
   const log = {title, details, source, type, time: new Date()};
   _notifLog.unshift(log);
 
+  // ── Floating toast (auto-dismisses) ──
   const center = document.getElementById('notif-center');
-  if(!center) return;
+  if(center){
+    const card = document.createElement('div');
+    card.className = 'notif-card notif-'+(type||'success');
+    const timeStr = log.time.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    card.innerHTML =
+      '<button class="notif-close" onclick="this.parentElement.remove()">✕</button>'
+      +'<div class="notif-title">'+title+'</div>'
+      +'<div class="notif-detail">'+details+'</div>'
+      +(source ? '<span class="notif-source">✨ '+source+'</span>' : '')
+      +'<div style="font-size:10px;color:var(--ink-faint);margin-top:4px;">'+timeStr+'</div>';
+    center.prepend(card);
+    setTimeout(function(){
+      card.style.transition='opacity .4s';
+      card.style.opacity='0';
+      setTimeout(function(){ if(card.parentElement) card.remove(); }, 400);
+    }, 8000);
+  }
 
-  const card = document.createElement('div');
-  card.className = 'notif-card notif-'+(type||'success');
+  // ── Persistent audit log entry ──
+  renderNotifLog();
 
-  const timeStr = log.time.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  // Show badge on bell button
+  const badge = document.getElementById('notif-log-badge');
+  if(badge) badge.style.display='block';
+}
 
-  card.innerHTML =
-    '<button class="notif-close" onclick="this.parentElement.remove()">✕</button>'
-    +'<div class="notif-title">'+title+'</div>'
-    +'<div class="notif-detail">'+details+'</div>'
-    +(source ? '<span class="notif-source">✨ '+source+'</span>' : '')
-    +'<div style="font-size:10px;color:var(--ink-faint);margin-top:4px;">'+timeStr+'</div>';
+function renderNotifLog(){
+  const list = document.getElementById('notif-log-list');
+  if(!list) return;
+  if(!_notifLog.length){
+    list.innerHTML='<div style="text-align:center;padding:24px;font-size:13px;color:var(--ink-soft);">No activity yet.</div>';
+    return;
+  }
+  list.innerHTML = _notifLog.map(function(log, i){
+    const timeStr = log.time.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
+      + ' ' + log.time.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    return '<div class="notif-log-entry log-'+(log.type||'success')+'">'
+      +'<div class="notif-log-title">'+log.title+'</div>'
+      +'<div class="notif-log-detail">'+log.details+'</div>'
+      +'<div class="notif-log-meta">'
+      +(log.source ? '<span class="notif-source" style="font-size:10px;">✨ '+log.source+'</span>' : '')
+      +'<span>'+timeStr+'</span>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
 
-  center.prepend(card);
+function toggleNotifLog(){
+  const panel = document.getElementById('notif-log-panel');
+  if(!panel) return;
+  const isOpen = panel.style.display === 'flex';
+  panel.style.display = isOpen ? 'none' : 'flex';
+  if(!isOpen){
+    renderNotifLog();
+    // Clear badge when opened
+    const badge = document.getElementById('notif-log-badge');
+    if(badge) badge.style.display='none';
+  }
+}
 
-  // Auto-dismiss after 8 seconds
-  setTimeout(function(){
-    card.style.transition='opacity .4s';
-    card.style.opacity='0';
-    setTimeout(function(){ if(card.parentElement) card.remove(); }, 400);
-  }, 8000);
+function clearNotifLog(){
+  _notifLog.length = 0;
+  renderNotifLog();
 }
 
 async function _init(){
@@ -5920,5 +5982,18 @@ if(document.readyState==='loading'){
 </div>
 </div><!-- /app-shell -->
 <div id="notif-center" class="notif-center"></div>
+
+<!-- AUDIT LOG PANEL -->
+<div id="notif-log-panel" style="display:none;position:fixed;top:56px;right:16px;width:400px;max-height:70vh;background:var(--surface);border:1px solid var(--surface-3);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.12);z-index:9985;overflow:hidden;flex-direction:column;">
+  <div style="padding:14px 16px;border-bottom:1px solid var(--surface-3);display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-size:14px;font-weight:600;color:var(--ink);">Activity log</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="clearNotifLog()" style="font-size:11px;color:var(--ink-soft);background:none;border:1px solid var(--surface-3);border-radius:4px;padding:3px 8px;cursor:pointer;">Clear all</button>
+      <button onclick="toggleNotifLog()" style="font-size:16px;background:none;border:none;cursor:pointer;color:var(--ink-soft);line-height:1;">✕</button>
+    </div>
+  </div>
+  <div id="notif-log-list" style="overflow-y:auto;max-height:calc(70vh - 54px);padding:8px;"></div>
+</div>
+
 </body>
 </html>
