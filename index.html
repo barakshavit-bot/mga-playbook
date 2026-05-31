@@ -2382,10 +2382,22 @@ async function runAIAnalysis(){
   const summaryLangNote = summaryLang === 'he'
     ? 'NOTE: These interviews were conducted in Hebrew. Some quotes and notes may be in Hebrew — handle them correctly. Write your analysis in English but preserve Hebrew quotes as-is.'
     : '';
-  const prompt='You are a senior B2B sales strategist. You have been given structured discovery interview data from multiple sessions with insurance MGA prospects and partners. Each session used a consistent question playbook so scores are directly comparable.\n'+summaryLangNote+'\n\nSCORING SCALE: 0 = no pain, 1 = mild pain, 2 = confirmed pain, 3 = critical/urgent pain\n\nSESSION DATA:\n'+sessionSummaries+'\n\nAVERAGE SCORES PER QUESTION ACROSS ALL SESSIONS:\n'+avgByQ+'\n\nProvide a sharp, direct analysis under exactly these sections. Be specific — reference actual names, scores, and quotes from the data. No padding.\n\n1. TOP PAIN POINTS\nThe 3-5 most acute and consistent pain areas. For each: what the pain is, which sessions showed it, average score, and a supporting quote if available.\n\n2. CROSS-SESSION PATTERNS\nWhat themes repeat across multiple interviews? Differences between existing partners vs new prospects? What does this reveal?\n\n3. SESSION PRIORITY RANKING\nRank each session by deal priority. For each: name, company, total score, and a 1-line reason.\n\n4. STRATEGIC RECOMMENDATIONS\n3-4 specific actions based on this data — what to lead with, what to demo first, what objections to prepare for.\n\n5. GAPS & WATCH POINTS\nQuestions consistently skipped. Sessions where picture is incomplete. Scores that seem inconsistent or worth probing.\n\nGround everything in actual data. Use names and numbers.'
+  const insightSys = 'You are a senior B2B sales strategist analysing discovery interview data from MGA (Managing General Agent) insurance prospects and partners. The interviews used a structured question playbook across operational phases. Scores are 0=no pain, 1=mild, 2=moderate, 3=critical. Be specific, direct, and grounded in the data. Do not pad. Use the interviewee names and company names from the data.'
+    + (summaryLangNote ? '\n\n' + summaryLangNote : '');
+
+  const prompt = 'Here is the raw interview data:\n\n'
+    + sessionSummaries
+    + '\n\nAverage scores per question across all sessions:\n'
+    + avgByQ
+    + '\n\nPlease provide a structured analysis with these sections:\n\n'
+    + '1. TOP PAIN POINTS (3-5 most acute issues across all sessions, with supporting evidence)\n'
+    + '2. PATTERN RECOGNITION (what themes or clusters emerge - e.g. back-office vs. underwriting pain, existing partners vs. prospects, etc.)\n'
+    + '3. QUALIFICATION SUMMARY (rank sessions by opportunity priority and explain why)\n'
+    + '4. STRATEGIC RECOMMENDATIONS (3-4 specific actions - what to demo first, which objections to prepare for, which segments to prioritise)\n'
+    + '5. GAPS & RISKS (any questions that were not answered or sessions where the picture is incomplete)'
 
   try{
-    const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:prompt}]});
+    const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:4000,system:insightSys,messages:[{role:'user',content:prompt}]});
     if(data.error){out.className='ai-output empty';out.textContent='API error: '+data.error.message;btn.disabled=false;btn.textContent='Re-run analysis';return;}
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
     if(text){
