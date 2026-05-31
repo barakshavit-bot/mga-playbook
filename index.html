@@ -3293,120 +3293,88 @@ async function analyseTranscript(){
   const btn=document.getElementById('tm-analyse-btn');
   const statusEl=document.getElementById('tm-status');
   btn.disabled=true;
-  btn.innerHTML='<div class="tm-spinner" style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></div> Analysing…';
+  btn.innerHTML='<div class="tm-spinner" style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></div> Analysing\u2026';
   statusEl.className='tm-status running';
-  statusEl.textContent='Reading transcript and scoring questions…';
+  statusEl.textContent='Reading transcript and scoring questions\u2026';
 
-  // Save transcript immediately
-  s.transcript=text;saveSessions();
+  s.transcript=text; saveSessions();
 
   const qList=ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).map(q=>{
     const painStr = q.pain.join(', ');
     const nopainStr = q.nopain.join(', ');
-    return q.id+': '+q.title+' — related concepts: '+q.existing.slice(0,80)+' / '+q.prospect.slice(0,80)+' — pain signals: '+painStr+' — no pain: '+nopainStr;
+    return q.id+': '+q.title+' \u2014 related concepts: '+q.existing.slice(0,80)+' / '+q.prospect.slice(0,80)+' \u2014 pain signals: '+painStr+' \u2014 no pain: '+nopainStr;
   }).join('\n');
 
-  const sessionThemeForTranscript = getThemeById((getCurrentSession()||{}).themeId||'theme-mga')||{};
-  const transcriptLang = sessionThemeForTranscript.lang || 'en';
-  const langInstruction = transcriptLang === 'he'
-    ? 'IMPORTANT: The transcript is in Hebrew. Analyse it in Hebrew context. Quotes should be in Hebrew as they appear in the transcript. Reasoning can be in English.'
+  const sessionTheme = getThemeById((s||{}).themeId||'theme-mga')||{};
+  const transcriptLang = sessionTheme.lang || 'en';
+  const langInstruction = transcriptLang==='he'
+    ? 'IMPORTANT: The transcript is in Hebrew. Analyse it in Hebrew context. Quotes should be in Hebrew as they appear. Reasoning can be in English.'
     : '';
-  const sys=`You are an expert sales analyst. Your task is to read a discovery call transcript and determine whether each listed pain area was discussed — and if so, how strongly the prospect expressed pain.
 
-HOW TO READ THE TRANSCRIPT:
-- Read the entire transcript before scoring anything
-- A topic is "discussed" if the prospect responded to it, mentioned it spontaneously, or if it came up in any form — even indirectly
-- Do NOT require the exact question wording to appear — look for the underlying concept
-- A question about "manual workflows" is answered if the prospect says things like "we do everything in Excel", "it takes us hours", "someone has to manually check" — the concept matches even if the words differ
-- A denial is also an answer — "we don't have that problem" = discussed, score 0
+  const sys = 'You are an expert sales analyst. Read the discovery call transcript and score each pain area.\n\n'
+    + 'HOW TO READ THE TRANSCRIPT:\n'
+    + '- Read the entire transcript before scoring\n'
+    + '- A topic is discussed if the prospect responded, mentioned it, or it came up indirectly\n'
+    + '- Do NOT require exact question wording — match the underlying concept\n'
+    + '- A denial is also an answer: "we don\'t have that problem" = discussed, score 0\n'
+    + '- Indirect signals count: frustration, workarounds, "takes forever", "we do it manually"\n\n'
+    + 'SCORING: 0=no pain, 1=mild friction, 2=clear confirmed pain, 3=critical urgent pain\n\n'
+    + langInstruction + '\n\n'
+    + 'OUTPUT: Return ONLY valid JSON. Keys are question IDs (e.g. q1, q2). Values: {"score":0-3,"quote":"verbatim max 120 chars","reasoning":"1 sentence"}\n'
+    + 'Rules: escape inner double quotes with backslash, no newlines in values, no trailing commas, omit unmentioned questions.';
 
-SCORING:
-0 = Topic was discussed but prospect expressed no pain or is satisfied
-1 = Topic came up, mild friction or passing concern mentioned
-2 = Clear pain acknowledged — real problem, affects their work or team
-3 = Strong pain — repeated mentions, urgency, frustration, or active impact on business
-
-FOR EACH QUESTION, identify the single best quote from the transcript that supports your score. It should be verbatim, max 120 characters, and be the most compelling evidence.
-
-${langInstruction}
-
-OUTPUT FORMAT — return only this JSON, nothing else:
-{
-  "q1": { "score": 0-3, "quote": "exact words from transcript", "reasoning": "why this score in one sentence" },
-  "q2": { "score": 0-3, "quote": "exact words from transcript", "reasoning": "why this score in one sentence" }
-}
-
-Rules for valid JSON output:
-- Use only the question ID (like q1, q2) as keys — no brackets, no extra text
-- Escape any double quotes inside string values with backslash
-- No newlines inside string values — keep each value on one line
-- No trailing commas
-- Omit questions that were genuinely not discussed at all`
-
-  const userMsg = 'TRANSCRIPT:\n' + text.slice(0,18000) + '\n\nQUESTIONS TO SCORE (use the ID before each colon as the JSON key):\n' + qList + '\n\nAnalyse the full conversation. Match concepts, not just keywords. Output only valid JSON — no markdown, no explanation.';
+  const userMsg = 'TRANSCRIPT:\n' + text.slice(0,18000)
+    + '\n\nQUESTIONS (use the ID before the colon as JSON key):\n' + qList
+    + '\n\nOutput only valid JSON — no markdown, no explanation.';
 
   try{
-    const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:3000,system:sys,messages:[{role:'user',content:userMsg}]});
-    // Support both Claude format (content[].text) and normalized Gemini format
-    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    if(!raw) throw new Error('Empty response from AI — provider: '+getAIProvider());
+    const data = await callClaude({model:'claude-sonnet-4-5', max_tokens:3000, system:sys, messages:[{role:'user', content:userMsg}]});
+    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    if(!raw) throw new Error('Empty response from AI (provider: '+getAIProvider()+')');
+
     // Robust JSON extraction
-    let jsonStr = raw;
-    jsonStr = jsonStr.replace(/```json\s*/gi,'').replace(/```\s*/g,'');
+    let jsonStr = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'');
     const match = jsonStr.match(/\{[\s\S]*\}/);
-    if(!match) throw new Error('No JSON in response');
+    if(!match) throw new Error('No JSON found in response');
     jsonStr = match[0];
 
     let results;
-    // Attempt 1: direct parse after basic cleanup
     try{
-      const clean = jsonStr.replace(/,\s*([}\]])/g,'$1').replace(/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F]/g,'');
-      results = JSON.parse(clean);
+      // Attempt 1: clean and parse
+      results = JSON.parse(jsonStr.replace(/,\s*([}\]])/g,'$1').replace(/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F]/g,''));
     }catch(e1){
-      // Attempt 2: extract each qX block individually using regex
       try{
+        // Attempt 2: regex extract each q block
         results = {};
-        const qPattern = /"(q\d+)"\s*:\s*\{([^}]+)\}/g;
-        let m2;
-        while((m2 = qPattern.exec(jsonStr)) !== null){
-          try{
-            const qid = m2[1];
-            const inner = '{'+m2[2]+'}';
-            // Extract score, quote, reasoning individually
-            const scoreM = inner.match(/"score"\s*:\s*(\d)/);
-            const quoteM = inner.match(/"quote"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-            const reasonM = inner.match(/"reasoning"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-            if(scoreM){
-              results[qid] = {
-                score: parseInt(scoreM[1]),
-                quote: quoteM ? quoteM[1] : '',
-                reasoning: reasonM ? reasonM[1] : ''
-              };
-            }
-          }catch(e){}
+        const qPat = /"(q\d+)"\s*:\s*\{([^}]+)\}/g;
+        let qm;
+        while((qm=qPat.exec(jsonStr))!==null){
+          const scoreM = qm[2].match(/"score"\s*:\s*(\d)/);
+          const quoteM = qm[2].match(/"quote"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+          const reasonM = qm[2].match(/"reasoning"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+          if(scoreM) results[qm[1]] = {score:parseInt(scoreM[1]), quote:quoteM?quoteM[1]:'', reasoning:reasonM?reasonM[1]:''};
         }
         if(!Object.keys(results).length) throw new Error('No results extracted');
       }catch(e2){
-        console.warn('All JSON parse attempts failed. Raw:', jsonStr.slice(0,400));
-        throw new Error('AI returned unreadable response — please try again');
+        console.warn('JSON parse failed. Raw:', jsonStr.slice(0,400));
+        throw new Error('AI returned unreadable response \u2014 please try again');
       }
     }
 
-    // Store auto scores and notes
-    s.autoScores={};s.autoNotes={};s.autoReasons={};s.autoQuotes={};
-    Object.keys(results).forEach(qid=>{
+    // Store results
+    s.autoScores={}; s.autoNotes={}; s.autoReasons={}; s.autoQuotes={};
+    Object.keys(results).forEach(function(qid){
       const r=results[qid];
-      if(r&&typeof r.score==='number'){
+      if(r && typeof r.score==='number'){
         s.autoScores[qid]=r.score;
         s.autoQuotes[qid]=r.quote||'';
         s.autoReasons[qid]=r.reasoning||'';
       }
     });
 
-    // If track is 'auto', auto-set scoreSources
-    if(!s.scoreSources)s.scoreSources={};
+    if(!s.scoreSources) s.scoreSources={};
     if(s.track==='auto'){
-      ALL_QUESTIONS.forEach(q=>{if(s.autoScores[q.id]!==undefined)s.scoreSources[q.id]='auto';});
+      ALL_QUESTIONS.forEach(function(q){ if(s.autoScores[q.id]!==undefined) s.scoreSources[q.id]='auto'; });
     }
 
     saveSessions();
@@ -3414,29 +3382,29 @@ Rules for valid JSON output:
     renderPhase(activePhase);
     updateStats();
 
-    const count=Object.keys(s.autoScores).length;
+    const count = Object.keys(s.autoScores).length;
     statusEl.className='tm-status';
-    statusEl.textContent=count+' questions scored from transcript';
-    const spinnerEl2 = document.getElementById('tm-spinner');
-    if(spinnerEl2) spinnerEl2.style.display='none';
+    statusEl.textContent = count+' question'+(count===1?'':'s')+' scored from transcript';
+    const sp2 = document.getElementById('tm-spinner');
+    if(sp2) sp2.style.display='none';
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Re-analyse';
 
-    // Auto-switch to auto track if user was on manual with no scores yet
-    const manualScored=Object.keys(s.scores||{}).length;
-    if(s.track==='manual'&&manualScored===0){setTrack('auto');}
+    if(s.track==='manual' && Object.keys(s.scores||{}).length===0) setTrack('auto');
+    showToast('Transcript analysed \u2014 '+count+' questions scored');
+    showAIModelUsed();
 
-    showToast('Transcript analysed — '+count+' questions scored');
   }catch(err){
     console.error('Transcript analysis error:', err.message, err);
     statusEl.className='tm-status';
     statusEl.textContent='Analysis failed: '+err.message;
-    const spinnerEl = document.getElementById('tm-spinner');
-    if(spinnerEl) spinnerEl.style.display='none';
+    const sp = document.getElementById('tm-spinner');
+    if(sp) sp.style.display='none';
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M7 2a5 5 0 100 10A5 5 0 007 2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 5v3l2 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Analyse with AI';
   }
 }
+
 
 // ── Score resolution: returns the score that counts for summary ──
 function getActiveScore(qid){
