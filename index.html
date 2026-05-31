@@ -2366,25 +2366,7 @@ async function runAIAnalysis(){
   const summaryLangNote = summaryLang === 'he'
     ? 'NOTE: These interviews were conducted in Hebrew. Some quotes and notes may be in Hebrew — handle them correctly. Write your analysis in English but preserve Hebrew quotes as-is.'
     : '';
-  const prompt=`You are a senior B2B sales strategist analysing discovery interview data from MGA (Managing General Agent) insurance prospects and partners. The interviews used a structured 14-question playbook across 4 operational phases.
-${summaryLangNote}
-
-Here is the raw interview data (scores are 0=no pain, 1=mild, 2=moderate, 3=critical):
-
-${sessionSummaries}
-
-Average scores per question across all sessions:
-${avgByQ}
-
-Please provide a structured analysis with these sections:
-
-1. TOP PAIN POINTS (3–5 most acute issues across all sessions, with supporting evidence)
-2. PATTERN RECOGNITION (what themes or clusters emerge — e.g. back-office vs. underwriting pain, existing partners vs. prospects, etc.)
-3. QUALIFICATION SUMMARY (rank sessions by opportunity priority and explain why)
-4. STRATEGIC RECOMMENDATIONS (3–4 specific actions — what to demo first, which objections to prepare for, which segments to prioritise)
-5. GAPS & RISKS (any questions that weren't answered or sessions where the picture is incomplete)
-
-Be specific, direct, and grounded in the data. Do not pad. Use the interviewee names and company names from the data.`;
+  const prompt='You are a senior B2B sales strategist. You have been given structured discovery interview data from multiple sessions with insurance MGA prospects and partners. Each session used a consistent question playbook so scores are directly comparable.\n'+summaryLangNote+'\n\nSCORING SCALE: 0 = no pain, 1 = mild pain, 2 = confirmed pain, 3 = critical/urgent pain\n\nSESSION DATA:\n'+sessionSummaries+'\n\nAVERAGE SCORES PER QUESTION ACROSS ALL SESSIONS:\n'+avgByQ+'\n\nProvide a sharp, direct analysis under exactly these sections. Be specific — reference actual names, scores, and quotes from the data. No padding.\n\n1. TOP PAIN POINTS\nThe 3-5 most acute and consistent pain areas. For each: what the pain is, which sessions showed it, average score, and a supporting quote if available.\n\n2. CROSS-SESSION PATTERNS\nWhat themes repeat across multiple interviews? Differences between existing partners vs new prospects? What does this reveal?\n\n3. SESSION PRIORITY RANKING\nRank each session by deal priority. For each: name, company, total score, and a 1-line reason.\n\n4. STRATEGIC RECOMMENDATIONS\n3-4 specific actions based on this data — what to lead with, what to demo first, what objections to prepare for.\n\n5. GAPS & WATCH POINTS\nQuestions consistently skipped. Sessions where picture is incomplete. Scores that seem inconsistent or worth probing.\n\nGround everything in actual data. Use names and numbers.'
 
   try{
     const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:prompt}]});
@@ -3312,52 +3294,96 @@ async function analyseTranscript(){
   s.transcript=text;saveSessions();
 
   const qList=ALL_QUESTIONS.filter(q=>!disabledQuestions.has(q.id)).map(q=>{
-    const painStr = q.pain.join(' | ');
-    const nopainStr = q.nopain.join(' | ');
-    return `ID:${q.id} | Topic:"${q.title}"
-  Detect if discussed: look for "${q.existing}" OR "${q.prospect}" OR any related concept
-  Pain signals (score higher if mentioned): ${painStr}
-  No-pain signals (score 0 if mentioned): ${nopainStr}`;
-  }).join('\n\n');
+    const painStr = q.pain.join(', ');
+    const nopainStr = q.nopain.join(', ');
+    return q.id+': '+q.title+' — related concepts: '+q.existing.slice(0,80)+' / '+q.prospect.slice(0,80)+' — pain signals: '+painStr+' — no pain: '+nopainStr;
+  }).join('\n');
 
   const sessionThemeForTranscript = getThemeById((getCurrentSession()||{}).themeId||'theme-mga')||{};
   const transcriptLang = sessionThemeForTranscript.lang || 'en';
   const langInstruction = transcriptLang === 'he'
     ? 'IMPORTANT: The transcript is in Hebrew. Analyse it in Hebrew context. Quotes should be in Hebrew as they appear in the transcript. Reasoning can be in English.'
     : '';
-  const sys=`You are an expert sales analyst reviewing a discovery call transcript for Novidea, an insurance technology company. Your job is to detect evidence of each pain area across the entire transcript — even when the prospect uses different words, raises the topic indirectly, or only implies it through context.
+  const sys=`You are an expert sales analyst. Your task is to read a discovery call transcript and determine whether each listed pain area was discussed — and if so, how strongly the prospect expressed pain.
+
+HOW TO READ THE TRANSCRIPT:
+- Read the entire transcript before scoring anything
+- A topic is "discussed" if the prospect responded to it, mentioned it spontaneously, or if it came up in any form — even indirectly
+- Do NOT require the exact question wording to appear — look for the underlying concept
+- A question about "manual workflows" is answered if the prospect says things like "we do everything in Excel", "it takes us hours", "someone has to manually check" — the concept matches even if the words differ
+- A denial is also an answer — "we don't have that problem" = discussed, score 0
+
+SCORING:
+0 = Topic was discussed but prospect expressed no pain or is satisfied
+1 = Topic came up, mild friction or passing concern mentioned
+2 = Clear pain acknowledged — real problem, affects their work or team
+3 = Strong pain — repeated mentions, urgency, frustration, or active impact on business
+
+FOR EACH QUESTION, identify the single best quote from the transcript that supports your score. It should be verbatim, max 120 characters, and be the most compelling evidence.
 
 ${langInstruction}
 
-DETECTION RULES — be a detective, not a keyword matcher:
-1. Search for the CONCEPT behind each question, not the exact words. A question about "manual data entry" should trigger if the prospect mentions spreadsheets, copy-paste work, rekeying data, human errors, or "we do it manually" — even if they never say "data entry".
-2. Consider the full conversation arc. A pain mentioned once early and then built upon later counts strongly.
-3. Treat denial as signal too. If a prospect says "we don't have that problem" about a pain area — that is score 0, not omitted.
-4. If a topic was never touched on — not even indirectly — OMIT that question ID entirely.
-5. Indirect signals count. Frustration, workarounds, complaints about time/effort, mentions of "too much work", "we had issues with", "it's painful" all count as pain signals.
+OUTPUT FORMAT — return only this JSON, nothing else:
+{
+  "q1": { "score": 0-3, "quote": "exact words from transcript", "reasoning": "why this score in one sentence" },
+  "q2": { "score": 0-3, "quote": "exact words from transcript", "reasoning": "why this score in one sentence" }
+}
 
-SCORING SCALE:
-0 = Topic came up but NO pain expressed — satisfied or unaffected
-1 = Mild signal — awareness of friction but low urgency, or a passing mention
-2 = Clear pain confirmed — real problem acknowledged, affects their work
-3 = Critical/urgent pain — strong language, repeated mentions, active business impact, or urgent desire to solve
+Rules for valid JSON output:
+- Use only the question ID (like q1, q2) as keys — no brackets, no extra text
+- Escape any double quotes inside string values with backslash
+- No newlines inside string values — keep each value on one line
+- No trailing commas
+- Omit questions that were genuinely not discussed at all`
 
-Return ONLY a valid JSON object. Keys must be the exact question IDs as given (e.g. "q1", "q2" — use the ID: field from each question exactly). Values are:
-{ "score": 0-3, "quote": "most impactful verbatim excerpt max 150 chars — exact words from transcript", "reasoning": "1-2 sentences: what was said or implied and why this score" }
-
-IMPORTANT: Use the exact ID string from the "ID:" field for each question as the JSON key.
-Omit question IDs with zero evidence. No markdown, no commentary outside the JSON.`
-
-  const userMsg=`TRANSCRIPT:\n${text.slice(0,18000)}\n\nQUESTIONS TO SCORE:\n${qList}\n\nRemember: detect concepts and semantic meaning, not just keywords. Look for indirect evidence, workarounds, and implied frustrations.`;
+  const userMsg = 'TRANSCRIPT:\n' + text.slice(0,18000) + '\n\nQUESTIONS TO SCORE (use the ID before each colon as the JSON key):\n' + qList + '\n\nAnalyse the full conversation. Match concepts, not just keywords. Output only valid JSON — no markdown, no explanation.';
 
   try{
     const data=await callClaude({model:'claude-sonnet-4-5',max_tokens:3000,system:sys,messages:[{role:'user',content:userMsg}]});
     // Support both Claude format (content[].text) and normalized Gemini format
     const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     if(!raw) throw new Error('Empty response from AI — provider: '+getAIProvider());
-    const match=raw.match(/\{[\s\S]*\}/);
-    if(!match)throw new Error('No JSON');
-    const results=JSON.parse(match[0]);
+    // Robust JSON extraction
+    let jsonStr = raw;
+    jsonStr = jsonStr.replace(/```json\s*/gi,'').replace(/```\s*/g,'');
+    const match = jsonStr.match(/\{[\s\S]*\}/);
+    if(!match) throw new Error('No JSON in response');
+    jsonStr = match[0];
+
+    let results;
+    // Attempt 1: direct parse after basic cleanup
+    try{
+      const clean = jsonStr.replace(/,\s*([}\]])/g,'$1').replace(/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F]/g,'');
+      results = JSON.parse(clean);
+    }catch(e1){
+      // Attempt 2: extract each qX block individually using regex
+      try{
+        results = {};
+        const qPattern = /"(q\d+)"\s*:\s*\{([^}]+)\}/g;
+        let m2;
+        while((m2 = qPattern.exec(jsonStr)) !== null){
+          try{
+            const qid = m2[1];
+            const inner = '{'+m2[2]+'}';
+            // Extract score, quote, reasoning individually
+            const scoreM = inner.match(/"score"\s*:\s*(\d)/);
+            const quoteM = inner.match(/"quote"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+            const reasonM = inner.match(/"reasoning"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+            if(scoreM){
+              results[qid] = {
+                score: parseInt(scoreM[1]),
+                quote: quoteM ? quoteM[1] : '',
+                reasoning: reasonM ? reasonM[1] : ''
+              };
+            }
+          }catch(e){}
+        }
+        if(!Object.keys(results).length) throw new Error('No results extracted');
+      }catch(e2){
+        console.warn('All JSON parse attempts failed. Raw:', jsonStr.slice(0,400));
+        throw new Error('AI returned unreadable response — please try again');
+      }
+    }
 
     // Store auto scores and notes
     s.autoScores={};s.autoNotes={};s.autoReasons={};s.autoQuotes={};
