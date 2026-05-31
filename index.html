@@ -3329,13 +3329,13 @@ async function analyseTranscript(){
     + '- score: 0, 1, 2, or 3\n'
     + '- quote: most relevant verbatim excerpt from the transcript (max 120 chars, or "" if none)\n'
     + '- reasoning: 1 sentence explaining the score and how it relates to the question topic\n\n'
-    + 'Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and values are {score, quote, reasoning}. Omit IDs not discussed at all. No markdown, no commentary.';
+    + 'Return ONLY a valid JSON object where keys are question IDs (q1, q2, etc.) and values are {score, quote, reasoning}. Omit IDs not discussed at all. No markdown, no commentary. IMPORTANT: keep each quote under 80 chars and reasoning under 12 words to avoid hitting token limits.';
 
   const userMsg = 'TRANSCRIPT:\n' + text.slice(0,18000) + '\n\nQUESTIONS TO SCORE:\n' + qList;
 
   try{
     console.log('[Transcript] Provider:', getAIProvider(), '| sys length:', sys.length, '| questions:', qList.split('\n').length);
-    const data = await callClaude({model:'claude-sonnet-4-5', max_tokens:3000, system:sys, messages:[{role:'user', content:userMsg}]});
+    const data = await callClaude({model:'claude-sonnet-4-5', max_tokens:8000, system:sys, messages:[{role:'user', content:userMsg}]});
     console.log('[Transcript] Raw data:', JSON.stringify(data).slice(0,300));
     const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     console.log('[Transcript] Raw text (500):', raw.slice(0,500));
@@ -3545,7 +3545,7 @@ function toGeminiPayload(anthropicPayload){
   const payload = {
     contents,
     generationConfig:{
-      maxOutputTokens: anthropicPayload.max_tokens || 2000,
+      maxOutputTokens: Math.min(anthropicPayload.max_tokens || 2000, 8192),
       temperature: 0.1  // low temperature for consistent JSON output
     }
   };
