@@ -3705,6 +3705,14 @@ async function loadFromSupabase(){
   }catch(e){
     console.warn('Failed to load from Supabase:',e.message);
   }
+  // Always hide loader and render grid when done — whether success or error
+  const loaderEl = document.getElementById('sessions-loading');
+  const gridEl = document.getElementById('sessions-grid');
+  if(loaderEl) loaderEl.style.display='none';
+  if(gridEl) gridEl.style.display='';
+  renderSessionsGrid();
+  renderDeletedList();
+  updateStats();
 }
 
 function subscribeRealtime(){
