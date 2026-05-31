@@ -3398,8 +3398,8 @@ async function analyseTranscript(){
     saveSessions();
     renderTrackBar();
     // Re-render all phases so scores appear across all questions
-    if(typeof PHASES !== 'undefined'){
-      PHASES.forEach(function(p){ renderPhase(p.num); });
+    if(typeof PHASES !== 'undefined' && PHASES.length){
+      PHASES.forEach(function(p, i){ renderPhase(i); });
     } else {
       renderPhase(activePhase);
     }
