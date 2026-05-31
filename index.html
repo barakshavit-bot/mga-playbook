@@ -3334,11 +3334,8 @@ async function analyseTranscript(){
   const userMsg = 'TRANSCRIPT:\n' + text.slice(0,18000) + '\n\nQUESTIONS TO SCORE:\n' + qList;
 
   try{
-    console.log('[Transcript] Provider:', getAIProvider(), '| sys length:', sys.length, '| questions:', qList.split('\n').length);
     const data = await callClaude({model:'claude-sonnet-4-5', max_tokens:8000, system:sys, messages:[{role:'user', content:userMsg}]});
-    console.log('[Transcript] Raw data:', JSON.stringify(data).slice(0,300));
     const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    console.log('[Transcript] Raw text (500):', raw.slice(0,500));
     if(!raw){
       const fr = data?._finishReason || '';
       throw new Error('Empty response from AI (provider: '+getAIProvider()+(fr?' finishReason:'+fr:'')+') — check console for details');
@@ -3348,14 +3345,11 @@ async function analyseTranscript(){
     const match = jsonStr.match(/\{[\s\S]*\}/);
     if(!match) throw new Error('No JSON found. Raw: '+raw.slice(0,300));
     jsonStr = match[0];
-    console.log('[Transcript] JSON (200):', jsonStr.slice(0,200));
 
     let results;
     try{
       results = JSON.parse(jsonStr.replace(/,\s*([}\]])/g,'$1').replace(/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F]/g,''));
-      console.log('[Transcript] Parsed OK, keys:', Object.keys(results));
     }catch(e1){
-      console.warn('[Transcript] Parse1 failed:', e1.message, jsonStr.slice(0,200));
       try{
         results = {};
         const qPat = /"(q\d+)"\s*:\s*\{([^}]+)\}/g;
@@ -3366,16 +3360,13 @@ async function analyseTranscript(){
           const reasonM = qm[2].match(/"reasoning"\s*:\s*"((?:[^"\\]|\\.)*)"/);
           if(scoreM) results[qm[1]] = {score:parseInt(scoreM[1]), quote:quoteM?quoteM[1]:'', reasoning:reasonM?reasonM[1]:''};
         }
-        console.log('[Transcript] Regex parse keys:', Object.keys(results));
         if(!Object.keys(results).length) throw new Error('No results extracted');
       }catch(e2){
-        console.error('[Transcript] Both parses failed:', jsonStr.slice(0,400));
         throw new Error('AI returned unreadable response — please try again');
       }
     }
 
     // Store results
-    console.log('[Transcript] Storing results for keys:', Object.keys(results));
     s.autoScores={}; s.autoNotes={}; s.autoReasons={}; s.autoQuotes={};
     Object.keys(results).forEach(function(qid){
       const r=results[qid];
@@ -3387,25 +3378,41 @@ async function analyseTranscript(){
     });
 
     if(!s.scoreSources) s.scoreSources={};
-    if(s.track==='auto'){
-      ALL_QUESTIONS.forEach(function(q){ if(s.autoScores[q.id]!==undefined) s.scoreSources[q.id]='auto'; });
-    }
+    // Always mark auto-scored questions with source 'auto'
+    ALL_QUESTIONS.forEach(function(q){
+      if(s.autoScores[q.id]!==undefined) s.scoreSources[q.id]='auto';
+    });
 
     saveSessions();
     renderTrackBar();
-    renderPhase(activePhase);
+    // Re-render all phases so scores appear across all questions
+    if(typeof PHASES !== 'undefined'){
+      PHASES.forEach(function(p){ renderPhase(p.num); });
+    } else {
+      renderPhase(activePhase);
+    }
     updateStats();
 
     const count = Object.keys(s.autoScores).length;
-    console.log('[Transcript] Final autoScores count:', count, 'keys:', Object.keys(s.autoScores));
+    const scoredSummary = Object.keys(s.autoScores).map(function(qid){
+      const q2 = ALL_QUESTIONS.find(function(x){ return x.id===qid; });
+      const labels2 = ['0-No pain','1-Mild','2-Moderate','3-Critical'];
+      return (q2?q2.title:qid)+' ('+labels2[s.autoScores[qid]]+')';
+    }).join(', ');
     statusEl.className='tm-status';
-    statusEl.textContent = count+' question'+(count===1?'':'s')+' scored from transcript';
+    statusEl.textContent = count+' question'+(count===1?'':'s')+' scored — scroll up to see results';
+    statusEl.title = scoredSummary;
     const sp2 = document.getElementById('tm-spinner');
     if(sp2) sp2.style.display='none';
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Re-analyse';
 
-    if(s.track==='manual' && Object.keys(s.scores||{}).length===0) setTrack('auto');
+    // Always switch to auto track after AI analysis so results are visible
+    if(s.track !== 'both'){
+      s.track = 'auto';
+      saveSessions();
+      renderTrackBar();
+    }
     showToast('Transcript analysed \u2014 '+count+' questions scored');
     showAIModelUsed();
     const scoredList = Object.keys(s.autoScores).map(function(qid){
@@ -3504,10 +3511,6 @@ function getAIProvider(){
 
 // Normalize a Gemini response to match Anthropic response shape
 function normalizeGeminiResponse(data){
-  console.log('[Gemini] Raw response keys:', Object.keys(data||{}));
-  console.log('[Gemini] candidates:', JSON.stringify((data?.candidates||[]).slice(0,1)).slice(0,300));
-  console.log('[Gemini] finishReason:', data?.candidates?.[0]?.finishReason);
-  console.log('[Gemini] promptFeedback:', JSON.stringify(data?.promptFeedback||{}));
 
   // Try standard path first
   let text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -3515,21 +3518,17 @@ function normalizeGeminiResponse(data){
   // If empty, try alternative paths
   if(!text && data?.candidates?.[0]?.parts?.[0]?.text){
     text = data.candidates[0].parts[0].text;
-    console.log('[Gemini] Used alternative parts path');
   }
   if(!text && data?.candidates?.[0]?.content?.parts){
     text = data.candidates[0].content.parts.map(function(p){ return p.text||''; }).join('');
-    console.log('[Gemini] Used joined parts path');
   }
 
   // Check for blocked/safety filter
   const finishReason = data?.candidates?.[0]?.finishReason;
   if(!text && finishReason && finishReason !== 'STOP'){
-    console.warn('[Gemini] Non-STOP finish reason:', finishReason);
     text = ''; // will trigger "empty response" error with better context
   }
 
-  console.log('[Gemini] Extracted text length:', text.length, 'preview:', text.slice(0,200));
   return { content:[{ type:'text', text }], _modelUsed: data._modelUsed || 'gemini' };
 }
 
@@ -3580,7 +3579,6 @@ async function callClaude(payload){
     if(!resp.ok || data.error) throw new Error((data.error&&data.error.message)||'Gemini proxy error '+resp.status);
     const result = normalizeGeminiResponse(data);
     // Store which model was used globally for any caller to reference
-    console.log('[callClaude/Gemini] Response before normalize:', JSON.stringify(data).slice(0,400));
     window._lastAIModel = data._modelUsed || 'gemini';
     showAIModelUsed();
     return result;
