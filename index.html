@@ -57,6 +57,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .home-theme-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--surface-3);color:var(--ink-soft);background:var(--surface);}
 .home-theme-pill-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .session-theme-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-faint);background:var(--surface-2);border:1px solid var(--surface-3);border-radius:10px;padding:2px 7px;margin-top:4px;}
+.notif-center{position:fixed;bottom:20px;right:20px;width:340px;max-height:400px;overflow-y:auto;z-index:9990;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.notif-card{background:var(--surface);border:1px solid var(--surface-3);border-radius:10px;padding:12px 14px;box-shadow:0 4px 20px rgba(0,0,0,.1);pointer-events:all;animation:notif-in .25s ease;position:relative;}
+.notif-card.notif-success{border-left:3px solid #2d6a2d;}
+.notif-card.notif-error{border-left:3px solid var(--red,#c93535);}
+.notif-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px;padding-right:20px;}
+.notif-detail{font-size:11px;color:var(--ink-soft);line-height:1.5;}
+.notif-source{font-size:10px;font-weight:500;padding:1px 6px;border-radius:8px;background:#f0f5ff;color:#1a4fff;display:inline-block;margin-top:4px;}
+.notif-close{position:absolute;top:8px;right:10px;font-size:13px;cursor:pointer;color:var(--ink-faint);background:none;border:none;line-height:1;padding:0;}
+@keyframes notif-in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 .sessions-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px;}
 .sessions-loader-spinner{width:36px;height:36px;border:3px solid var(--surface-3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
 .sessions-loader-text{font-size:13px;color:var(--ink-soft);}
@@ -3325,23 +3334,26 @@ async function analyseTranscript(){
   const userMsg = 'TRANSCRIPT:\n' + text.slice(0,18000) + '\n\nQUESTIONS TO SCORE:\n' + qList;
 
   try{
+    console.log('[Transcript] Provider:', getAIProvider(), '| sys length:', sys.length, '| questions:', qList.split('\n').length);
     const data = await callClaude({model:'claude-sonnet-4-5', max_tokens:3000, system:sys, messages:[{role:'user', content:userMsg}]});
+    console.log('[Transcript] Raw data:', JSON.stringify(data).slice(0,300));
     const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    console.log('[Transcript] Raw text (500):', raw.slice(0,500));
     if(!raw) throw new Error('Empty response from AI (provider: '+getAIProvider()+')');
 
-    // Robust JSON extraction
     let jsonStr = raw.replace(/```json/gi,'').replace(/```/g,'');
     const match = jsonStr.match(/\{[\s\S]*\}/);
-    if(!match) throw new Error('No JSON found in response');
+    if(!match) throw new Error('No JSON found. Raw: '+raw.slice(0,300));
     jsonStr = match[0];
+    console.log('[Transcript] JSON (200):', jsonStr.slice(0,200));
 
     let results;
     try{
-      // Attempt 1: clean and parse
       results = JSON.parse(jsonStr.replace(/,\s*([}\]])/g,'$1').replace(/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F]/g,''));
+      console.log('[Transcript] Parsed OK, keys:', Object.keys(results));
     }catch(e1){
+      console.warn('[Transcript] Parse1 failed:', e1.message, jsonStr.slice(0,200));
       try{
-        // Attempt 2: regex extract each q block
         results = {};
         const qPat = /"(q\d+)"\s*:\s*\{([^}]+)\}/g;
         let qm;
@@ -3351,14 +3363,16 @@ async function analyseTranscript(){
           const reasonM = qm[2].match(/"reasoning"\s*:\s*"((?:[^"\\]|\\.)*)"/);
           if(scoreM) results[qm[1]] = {score:parseInt(scoreM[1]), quote:quoteM?quoteM[1]:'', reasoning:reasonM?reasonM[1]:''};
         }
+        console.log('[Transcript] Regex parse keys:', Object.keys(results));
         if(!Object.keys(results).length) throw new Error('No results extracted');
       }catch(e2){
-        console.warn('JSON parse failed. Raw:', jsonStr.slice(0,400));
-        throw new Error('AI returned unreadable response \u2014 please try again');
+        console.error('[Transcript] Both parses failed:', jsonStr.slice(0,400));
+        throw new Error('AI returned unreadable response — please try again');
       }
     }
 
     // Store results
+    console.log('[Transcript] Storing results for keys:', Object.keys(results));
     s.autoScores={}; s.autoNotes={}; s.autoReasons={}; s.autoQuotes={};
     Object.keys(results).forEach(function(qid){
       const r=results[qid];
@@ -3380,6 +3394,7 @@ async function analyseTranscript(){
     updateStats();
 
     const count = Object.keys(s.autoScores).length;
+    console.log('[Transcript] Final autoScores count:', count, 'keys:', Object.keys(s.autoScores));
     statusEl.className='tm-status';
     statusEl.textContent = count+' question'+(count===1?'':'s')+' scored from transcript';
     const sp2 = document.getElementById('tm-spinner');
@@ -3390,11 +3405,24 @@ async function analyseTranscript(){
     if(s.track==='manual' && Object.keys(s.scores||{}).length===0) setTrack('auto');
     showToast('Transcript analysed \u2014 '+count+' questions scored');
     showAIModelUsed();
+    const scoredList = Object.keys(s.autoScores).map(function(qid){
+      const q2 = ALL_QUESTIONS.find(function(x){ return x.id===qid; });
+      const labels2 = ['No pain','Mild','Moderate','Critical'];
+      return (q2?q2.title:qid)+' → '+labels2[s.autoScores[qid]];
+    }).join(', ');
+    const providerLabel = getAIProvider()==='gemini'?(window._lastAIModel||'Gemini'):'Claude';
+    addNotification(
+      'Transcript analysed — '+(s.name||'session'),
+      count+' question'+(count===1?'':'s')+' scored.\n'+scoredList,
+      'success',
+      providerLabel
+    );
 
   }catch(err){
     console.error('Transcript analysis error:', err.message, err);
     statusEl.className='tm-status';
     statusEl.textContent='Analysis failed: '+err.message;
+    addNotification('Analysis failed — '+(getCurrentSession()||{}).name||'session', err.message, 'error', getAIProvider());
     const sp = document.getElementById('tm-spinner');
     if(sp) sp.style.display='none';
     btn.disabled=false;
@@ -5598,6 +5626,41 @@ function setManualOverrideQuote(qid, quote){
   saveSessions();
 }
 
+
+// ══════════════════════════════════════════════
+// NOTIFICATION CENTER
+// ══════════════════════════════════════════════
+const _notifLog = [];
+
+function addNotification(title, details, type, source){
+  const log = {title, details, source, type, time: new Date()};
+  _notifLog.unshift(log);
+
+  const center = document.getElementById('notif-center');
+  if(!center) return;
+
+  const card = document.createElement('div');
+  card.className = 'notif-card notif-'+(type||'success');
+
+  const timeStr = log.time.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+
+  card.innerHTML =
+    '<button class="notif-close" onclick="this.parentElement.remove()">✕</button>'
+    +'<div class="notif-title">'+title+'</div>'
+    +'<div class="notif-detail">'+details+'</div>'
+    +(source ? '<span class="notif-source">✨ '+source+'</span>' : '')
+    +'<div style="font-size:10px;color:var(--ink-faint);margin-top:4px;">'+timeStr+'</div>';
+
+  center.prepend(card);
+
+  // Auto-dismiss after 8 seconds
+  setTimeout(function(){
+    card.style.transition='opacity .4s';
+    card.style.opacity='0';
+    setTimeout(function(){ if(card.parentElement) card.remove(); }, 400);
+  }, 8000);
+}
+
 async function _init(){
   // Ensure Worker URL is always set
   if(!localStorage.getItem('novidea_proxy_url')){
@@ -5817,5 +5880,6 @@ if(document.readyState==='loading'){
   </div>
 </div>
 </div><!-- /app-shell -->
+<div id="notif-center" class="notif-center"></div>
 </body>
 </html>
