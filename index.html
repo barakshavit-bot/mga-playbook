@@ -318,6 +318,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink)
 .ai-run-btn{margin-left:auto;font-size:12px;font-weight:500;padding:7px 16px;border-radius:var(--r-md);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
 .ai-run-btn:hover{background:#1340dd}
 .ai-run-btn:disabled{opacity:.5;cursor:not-allowed}
+.qa-bubble{border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6;}
+.qa-bubble.qa-user{background:var(--accent);color:#fff;margin-left:40px;border-bottom-right-radius:3px;}
+.qa-bubble.qa-ai{background:var(--surface-2);border:1px solid var(--surface-3);color:var(--ink);margin-right:40px;border-bottom-left-radius:3px;white-space:pre-wrap;}
+.qa-bubble.qa-thinking{background:var(--surface-2);border:1px solid var(--surface-3);color:var(--ink-soft);font-style:italic;margin-right:40px;}
+.qa-pair{display:flex;flex-direction:column;gap:6px;}
+.qa-meta{font-size:10px;color:var(--ink-faint);margin-top:4px;padding:0 4px;}
 .ai-output{font-size:13px;color:rgba(255,255,255,0.75);line-height:1.75;white-space:pre-wrap}
 .ai-output.empty{color:rgba(255,255,255,0.3);font-style:italic}
 .ai-loading{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.5);font-size:13px}
@@ -897,6 +903,18 @@ background:var(--purple-bg);border:1px solid var(--purple-border);border-radius:
           <button class="ai-run-btn" id="ai-run-btn" onclick="runAIAnalysis()">Run analysis</button> <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#f0f5ff;color:#1a4fff;border:1px solid #c8d8ff;font-weight:500;">✨ AI</span>
         </div>
         <div id="ai-output" class="ai-output empty">Run the analysis to generate strategic insights from your interview data.</div>
+
+        <!-- Follow-up Q&A -->
+        <div id="ai-followup-wrap" style="display:none;margin-top:24px;border-top:1px solid var(--surface-3);padding-top:20px;">
+          <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;">Ask a follow-up question</div>
+          <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">Ask anything about the interview data — scores, quotes, patterns, specific accounts, or comparisons. The AI answers based on your actual session data only.</div>
+          <div id="ai-qa-history" style="display:none;margin-bottom:16px;max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;"></div>
+          <div style="display:flex;gap:8px;align-items:flex-end;">
+            <textarea id="ai-followup-input" class="modal-input" rows="2" style="flex:1;resize:vertical;font-size:13px;" placeholder="e.g. Which account showed the most pain around reporting? What did Jason say about integrations?" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();askFollowUp();}"></textarea>
+            <button id="ai-followup-btn" onclick="askFollowUp()" style="padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0;white-space:nowrap;">Ask ✨</button>
+          </div>
+          <div style="font-size:11px;color:var(--ink-faint);margin-top:6px;">Ctrl+Enter to send</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2420,6 +2438,15 @@ async function runAIAnalysis(){
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
     if(text){
       out.className='ai-output';out.textContent=text;
+      // Show follow-up Q&A section now that analysis is done
+      const fuw = document.getElementById('ai-followup-wrap');
+      if(fuw){ fuw.style.display='block'; }
+      // Store context for follow-up questions
+      window._lastInsightContext = {sessionSummaries:sessionSummaries, avgByQ:avgByQ, initialAnalysis:text};
+      window._qaHistory = [];
+      // Clear previous Q&A
+      const qaHist = document.getElementById('ai-qa-history');
+      if(qaHist){ qaHist.innerHTML=''; qaHist.style.display='none'; }
       // Persist the insight text
       const insightKey = 'mga_ai_insight'+(summaryThemeFilter ? '_'+summaryThemeFilter : '');
       const insightAtKey = 'mga_ai_insight_at'+(summaryThemeFilter ? '_'+summaryThemeFilter : '');
@@ -5775,6 +5802,113 @@ function toggleNotifLog(){
 function clearNotifLog(){
   _notifLog.length = 0;
   renderNotifLog();
+}
+
+
+// ══════════════════════════════════════════════
+// AI FOLLOW-UP Q&A
+// ══════════════════════════════════════════════
+window._qaHistory = [];
+
+async function askFollowUp(){
+  const input = document.getElementById('ai-followup-input');
+  const btn = document.getElementById('ai-followup-btn');
+  const histEl = document.getElementById('ai-qa-history');
+  const question = (input.value||'').trim();
+  if(!question) return;
+  if(!window._lastInsightContext){
+    showToast('Run the analysis first before asking follow-up questions');
+    return;
+  }
+
+  // Add question bubble
+  input.value='';
+  btn.disabled=true;
+  btn.textContent='Thinking...';
+  histEl.style.display='flex';
+
+  const pair = document.createElement('div');
+  pair.className='qa-pair';
+  pair.innerHTML='<div class="qa-bubble qa-user">'+escHtml(question)+'</div>'
+    +'<div class="qa-bubble qa-thinking" id="qa-thinking-'+Date.now()+'">✨ Analysing your data...</div>';
+  histEl.appendChild(pair);
+  histEl.scrollTop = histEl.scrollHeight;
+
+  const thinkingId = pair.querySelector('.qa-thinking').id;
+
+  try{
+    const ctx = window._lastInsightContext;
+
+    // Build conversation history for multi-turn context
+    const messages = [];
+
+    // Include previous Q&A turns for context
+    if(window._qaHistory.length){
+      window._qaHistory.forEach(function(turn){
+        messages.push({role:'user', content: turn.q});
+        messages.push({role:'assistant', content: turn.a});
+      });
+    }
+
+    // Add the new question with full data context
+    messages.push({role:'user', content:
+      'Here is the discovery interview data you previously analysed:\n\n'
+      + 'SESSION DATA:\n' + ctx.sessionSummaries
+      + '\n\nAVERAGE SCORES PER QUESTION:\n' + ctx.avgByQ
+      + '\n\nINITIAL ANALYSIS SUMMARY:\n' + ctx.initialAnalysis
+      + '\n\n---\n\nNow please answer this specific question based only on the data above:\n\n'
+      + question
+      + '\n\nBe specific — reference actual names, scores, and quotes from the data. If the data doesn\'t contain enough information to answer confidently, say so.'
+    });
+
+    const sys = 'You are a sales intelligence analyst. You have access to structured discovery interview data including session scores, verbatim quotes, and a prior analysis. Answer questions based strictly on this data — do not invent or assume information not present in the data. Be concise, specific, and grounded.';
+
+    const data = await callClaude({
+      model:'claude-sonnet-4-5',
+      max_tokens:2000,
+      system:sys,
+      messages:messages
+    });
+
+    const raw = (data.content||[]).filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
+    if(!raw) throw new Error('Empty response');
+
+    // Store in history for multi-turn
+    window._qaHistory.push({q:question, a:raw});
+
+    // Replace thinking bubble with answer
+    const thinking = document.getElementById(thinkingId);
+    if(thinking){
+      thinking.className='qa-bubble qa-ai';
+      thinking.textContent=raw;
+    }
+
+    // Add meta line
+    const meta = document.createElement('div');
+    meta.className='qa-meta';
+    meta.textContent='Based on '+Object.keys(JSON.parse('{}') || {}).length+' sessions · '+(getAIProvider()==='gemini'?(window._lastAIModel||'Gemini'):'Claude');
+    pair.appendChild(meta);
+    showAIModelUsed();
+
+    const providerLabel = getAIProvider()==='gemini'?(window._lastAIModel||'Gemini'):'Claude';
+    addNotification('Follow-up answered', question.slice(0,80)+(question.length>80?'...':''), 'success', providerLabel);
+
+  }catch(e){
+    const thinking = document.getElementById(thinkingId);
+    if(thinking){
+      thinking.className='qa-bubble qa-ai';
+      thinking.style.color='var(--red)';
+      thinking.textContent='Failed to get answer: '+e.message;
+    }
+  }
+
+  btn.disabled=false;
+  btn.textContent='Ask ✨';
+  histEl.scrollTop=histEl.scrollHeight;
+}
+
+function escHtml(str){
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 async function _init(){
