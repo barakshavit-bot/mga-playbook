@@ -2371,8 +2371,17 @@ async function runAIAnalysis(){
       const note=(s.notes||{})[q.id]||'';
       const autoQ=(s.autoQuotes||{})[q.id]||'';
       if(v===undefined)return null;
-      const noteStr=note?` — Notes: "${note.slice(0,100)}"`:autoQ?` — AI quote: "${autoQ.slice(0,100)}"` :'';
-      return `  Q${q.n} ${q.title}: ${v}/3${noteStr}`;
+      const overrideQ=(s.manualOverrideQuotes||{})[q.id]||'';
+      // Priority: manual override quote > manual note > AI quote
+      const evidenceStr = overrideQ
+        ? ` — Evidence: "${overrideQ.slice(0,120)}"`
+        : note
+          ? ` — Notes: "${note.slice(0,100)}"`
+          : autoQ
+            ? ` — AI quote: "${autoQ.slice(0,100)}"`
+            : '';
+      const overrideFlag = (s.manualOverrides&&s.manualOverrides[q.id]!==undefined) ? ' [manually edited]' : '';
+      return `  Q${q.n} ${q.title}: ${v}/3${overrideFlag}${evidenceStr}`;
     }).filter(Boolean).join('\n');
     const scored=ALL_QUESTIONS.map(q=>resolveScore(s,q.id)).filter(v=>v!==undefined);
     const total=scored.reduce((a,b)=>a+b,0);
@@ -3493,8 +3502,12 @@ function getActiveScore(qid){
 // Resolve effective score for any session (used in summary/heatmap)
 function resolveScore(session, qid){
   if(!session)return undefined;
+  // Not discussed = excluded from all scoring
+  if(session.notDiscussed&&session.notDiscussed[qid]) return undefined;
   const track=session.track||'manual';
   const src=(session.scoreSources&&session.scoreSources[qid])||'manual';
+  // Manual override always wins regardless of track
+  if(session.manualOverrides&&session.manualOverrides[qid]!==undefined) return session.manualOverrides[qid];
   if(track==='manual') return session.scores&&session.scores[qid]!==undefined?session.scores[qid]:undefined;
   if(track==='auto') return session.autoScores&&session.autoScores[qid]!==undefined?session.autoScores[qid]:undefined;
   // both
@@ -3504,6 +3517,8 @@ function resolveScore(session, qid){
 
 function hasAnyScore(session){
   if(!session)return false;
+  // Manual overrides count as scores regardless of track
+  if(Object.keys(session.manualOverrides||{}).length>0) return true;
   const track=session.track||'manual';
   if(track==='manual'||track==='both') return Object.keys(session.scores||{}).length>0;
   if(track==='auto') return Object.keys(session.autoScores||{}).length>0;
