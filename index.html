@@ -2201,9 +2201,7 @@ function permanentlyDelete(id){
             method:'DELETE',
             headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
           });
-          if(!res.ok) console.warn('[Delete] Supabase DELETE failed:', res.status);
         }catch(e){
-          console.warn('[Delete] Fetch error:', e.message);
         }
       }
     }
