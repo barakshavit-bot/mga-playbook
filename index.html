@@ -3775,14 +3775,30 @@ async function loadFromSupabase(showLoader=false){
     const {data:sData}=await sb.from('sessions').select('data').order('updated_at',{ascending:false});
     // Always replace from Supabase — Supabase is the single source of truth
     if(sData){
-      sessions=sData.map(r=>r.data);
+      const seenS = new Set();
+      sessions = sData.map(r=>r.data).filter(function(s){
+        if(!s || !s.id || seenS.has(s.id)) return false;
+        seenS.add(s.id); return true;
+      });
       localStorage.setItem('mga_sessions',JSON.stringify(sessions));
     }
     // Load deleted sessions
     const {data:dData}=await sb.from('deleted_sessions').select('data');
     if(dData){
-      deletedSessions=dData.map(r=>r.data);
+      // Deduplicate by id — Supabase may have accumulated duplicates
+      const seen = new Set();
+      const allDeleted = dData.map(r=>r.data).filter(Boolean);
+      const hadDuplicates = allDeleted.length !== new Set(allDeleted.map(s=>s&&s.id)).size;
+      deletedSessions = allDeleted.filter(function(s){
+        if(!s || !s.id || seen.has(s.id)) return false;
+        seen.add(s.id); return true;
+      });
       localStorage.setItem('mga_deleted',JSON.stringify(deletedSessions));
+      // If we found duplicates, clean up Supabase immediately
+      if(hadDuplicates){
+        console.log('Cleaning up duplicate deleted sessions in Supabase...');
+        setTimeout(function(){ saveDeleted(); }, 500);
+      }
     }
     // Load settings (custom questions, overrides, disabled)
     const {data:settings}=await sb.from('settings').select('key,value');
