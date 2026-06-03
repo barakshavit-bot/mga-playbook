@@ -2213,19 +2213,10 @@ function permanentlyDelete(id){
       renderDeletedList();
       showToast('Permanently deleted');
 
-      // Verify: reload from Supabase and check if id is gone
-      setTimeout(async function(){
-        console.log('[Delete] Verifying — reloading from Supabase...');
-        await loadFromSupabase();
-        const stillThere = deletedSessions.find(function(x){return x.id===id;});
-        if(stillThere){
-          console.error('[Delete] PROBLEM: Session still in Supabase after delete!', id);
-          addNotification('Delete verification failed', 'Session '+id+' still exists in Supabase after delete. Check console.', 'error', 'system');
-        } else {
-          console.log('[Delete] Verified — session gone from Supabase ✓');
-        }
-        renderDeletedList();
-      }, 2000);
+      // Suppress realtime for 5s after delete to prevent bounce-back
+      _suppressRealtime = true;
+      clearTimeout(_suppressTimer);
+      _suppressTimer = setTimeout(function(){ _suppressRealtime = false; }, 5000);
     }
   );
 }
@@ -3860,6 +3851,8 @@ async function loadFromSupabase(showLoader=false){
     }
   }catch(e){
     console.warn('Failed to load from Supabase:',e.message);
+    // Do NOT clear arrays on failed fetch — keep existing data intact
+    return;
   }
   const loaderEl = document.getElementById('sessions-loading');
   const gridEl = document.getElementById('sessions-grid');
@@ -3867,28 +3860,41 @@ async function loadFromSupabase(showLoader=false){
   if(gridEl) gridEl.style.display='';
 }
 
+let _realtimeThrottleTimer = null;
+let _realtimePendingRender = {sessions:false, deleted:false, settings:false};
+
 function subscribeRealtime(){
   if(!sb)return;
   sb.channel('sessions-changes')
-    .on('postgres_changes',{event:'*',schema:'public',table:'sessions'},async()=>{
-      if(_suppressRealtime) return; // ignore our own saves
-      await loadFromSupabase();
-      renderSessionsGrid();
-      updateStats();
-      if(document.getElementById('page-summary').classList.contains('active'))renderSummary();
-    })
-    .on('postgres_changes',{event:'*',schema:'public',table:'deleted_sessions'},async()=>{
+    .on('postgres_changes',{event:'*',schema:'public',table:'sessions'},function(){
       if(_suppressRealtime) return;
-      await loadFromSupabase();
-      renderDeletedList();
-      updateDeletedBadge();
+      _realtimePendingRender.sessions = true;
+      scheduleRealtimeLoad();
     })
-    .on('postgres_changes',{event:'*',schema:'public',table:'settings'},async()=>{
-      await loadFromSupabase();
-      applyOverrides();
-      applyCustomQuestions();
+    .on('postgres_changes',{event:'*',schema:'public',table:'deleted_sessions'},function(){
+      if(_suppressRealtime) return;
+      _realtimePendingRender.deleted = true;
+      scheduleRealtimeLoad();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'settings'},function(){
+      if(_suppressRealtime) return;
+      _realtimePendingRender.settings = true;
+      scheduleRealtimeLoad();
     })
     .subscribe();
+}
+
+function scheduleRealtimeLoad(){
+  clearTimeout(_realtimeThrottleTimer);
+  _realtimeThrottleTimer = setTimeout(async function(){
+    const pending = {sessions:_realtimePendingRender.sessions, deleted:_realtimePendingRender.deleted, settings:_realtimePendingRender.settings};
+    _realtimePendingRender = {sessions:false, deleted:false, settings:false};
+    await loadFromSupabase();
+    if(pending.sessions){ renderSessionsGrid(); updateStats(); }
+    if(pending.deleted){ renderDeletedList(); updateDeletedBadge(); }
+    if(pending.settings){ applyOverrides(); applyCustomQuestions(); }
+    if(pending.sessions && document.getElementById('page-summary').classList.contains('active')) renderSummary();
+  }, 2000);
 }
 
 // Supabase setup modal
