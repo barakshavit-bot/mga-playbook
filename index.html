@@ -3803,41 +3803,40 @@ async function loadFromSupabase(showLoader=false){
     if(loader) loader.style.display='flex';
     if(grid) grid.style.display='none';
   }
-  if(!sb)return;
+  if(!SUPABASE_URL || !SUPABASE_KEY) return;
+  const headers = {'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};
   try{
-    // Load active sessions
-    const {data:sData}=await sb.from('sessions').select('data').order('updated_at',{ascending:false});
-    // Always replace from Supabase — Supabase is the single source of truth
-    if(sData){
+    // Load active sessions via plain REST
+    const sRes = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/sessions?select=data&order=updated_at.desc',{headers});
+    if(sRes.ok){
+      const sData = await sRes.json();
       const seenS = new Set();
-      sessions = sData.map(r=>r.data).filter(function(s){
-        if(!s || !s.id || seenS.has(s.id)) return false;
-        seenS.add(s.id); return true;
+      sessions = (sData||[]).map(function(r){return r.data;}).filter(function(s){
+        if(!s||!s.id||seenS.has(s.id))return false;
+        seenS.add(s.id);return true;
       });
       localStorage.setItem('mga_sessions',JSON.stringify(sessions));
     }
-    // Load deleted sessions
-    const {data:dData}=await sb.from('deleted_sessions').select('data');
-    if(dData){
-      // Deduplicate by id — Supabase may have accumulated duplicates
+
+    // Load deleted sessions via plain REST
+    const dRes = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/deleted_sessions?select=data',{headers});
+    if(dRes.ok){
+      const dData = await dRes.json();
       const seen = new Set();
-      const allDeleted = dData.map(r=>r.data).filter(Boolean);
-      const hadDuplicates = allDeleted.length !== new Set(allDeleted.map(s=>s&&s.id)).size;
+      const allDeleted = (dData||[]).map(function(r){return r.data;}).filter(Boolean);
       deletedSessions = allDeleted.filter(function(s){
-        if(!s || !s.id || seen.has(s.id)) return false;
-        seen.add(s.id); return true;
+        if(!s||!s.id||seen.has(s.id))return false;
+        seen.add(s.id);return true;
       });
       localStorage.setItem('mga_deleted',JSON.stringify(deletedSessions));
-      // If we found duplicates, clean up Supabase immediately
-      if(hadDuplicates){
-        console.log('Cleaning up duplicate deleted sessions in Supabase...');
-        setTimeout(function(){ saveDeleted(); }, 500);
-      }
     }
-    // Load settings (custom questions, overrides, disabled)
-    const {data:settings}=await sb.from('settings').select('key,value');
-    if(settings){
-      settings.forEach(({key,value})=>{
+
+    // Load settings via plain REST
+    const stRes = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/settings?select=key,value',{headers});
+    if(stRes.ok){
+      const settings = await stRes.json();
+      (settings||[]).forEach(function(row){
+        const key=row.key, value=row.value;
         try{
           if(key==='custom_questions'){customQuestions=JSON.parse(value);localStorage.setItem('mga_custom_questions',value);}
           if(key==='q_overrides'){questionOverrides=JSON.parse(value);localStorage.setItem('mga_q_overrides',value);}
@@ -3846,21 +3845,14 @@ async function loadFromSupabase(showLoader=false){
             disabledQuestions=new Set([...DEFAULT_DISABLED,...extra]);
             localStorage.setItem('mga_q_disabled',value);
           }
-          if(key==='ai_insight'){
-            localStorage.setItem('mga_ai_insight',value);
-          }
-          if(key==='ai_provider'){
-            localStorage.setItem('ai_provider',value);
-          }
-          if(key==='ai_insight_at'){
-            localStorage.setItem('mga_ai_insight_at',value);
-          }
+          if(key==='ai_insight'){localStorage.setItem('mga_ai_insight',value);}
+          if(key==='ai_provider'){localStorage.setItem('ai_provider',value);}
+          if(key==='ai_insight_at'){localStorage.setItem('mga_ai_insight_at',value);}
           if(key==='custom_themes'){
             try{
               const themes=JSON.parse(value);
               localStorage.setItem('mga_custom_themes',value);
-              // Merge into runtime THEMES (keep built-in, replace custom)
-              THEMES = THEMES.filter(t=>t.builtIn).concat(themes);
+              THEMES = THEMES.filter(function(t){return t.builtIn;}).concat(themes);
             }catch(e){}
           }
         }catch(e){}
@@ -3869,7 +3861,6 @@ async function loadFromSupabase(showLoader=false){
   }catch(e){
     console.warn('Failed to load from Supabase:',e.message);
   }
-  // Hide loader if it was shown
   const loaderEl = document.getElementById('sessions-loading');
   const gridEl = document.getElementById('sessions-grid');
   if(loaderEl) loaderEl.style.display='none';
