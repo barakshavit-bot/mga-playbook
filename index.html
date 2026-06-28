@@ -3799,8 +3799,6 @@ async function loadFromSupabase(showLoader=false){
     const sRes = await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/sessions?select=data&order=updated_at.desc',{headers});
     if(sRes.status===402){ recordSupabase402(); return; }
     if(sRes.ok){
-      const cl = sRes.headers.get('content-length');
-      if(cl) trackEgressBytes(parseInt(cl));
       const sData = await sRes.json();
       const seenS = new Set();
       sessions = (sData||[]).map(function(r){return r.data;}).filter(function(s){
@@ -4739,6 +4737,7 @@ async function doRegister(){
 }
 
 function completeLogin(user){
+  clearSupabase402(); // successful login means Supabase is back — clear block
   currentUser = user;
   sessionStorage.setItem('playbook_user', JSON.stringify(user));
   hideLoginScreen();
@@ -5975,101 +5974,38 @@ function escHtml(str){
 
 
 // ══════════════════════════════════════════════
-// EGRESS MONITOR
+// EGRESS MONITOR — triggers only on real 402 from Supabase
 // ══════════════════════════════════════════════
-const EGRESS_FREE_LIMIT_GB = 5;
-const EGRESS_WARN_PCT = 0.70;    // 70% — show warning banner
-const EGRESS_CRITICAL_PCT = 0.86; // 86% — block all Supabase calls
-
 let _egressBlocked = false;
-let _egressUsedGB = 0;
-
-async function checkEgressUsage(){
-  // Supabase usage API requires the service role key — not accessible from anon key.
-  // Instead we track egress proxy via localStorage by estimating payload sizes.
-  // We also check if Supabase returns 402 as a hard signal.
-  try{
-    const stored = localStorage.getItem('mga_egress_estimate');
-    if(stored){
-      const data = JSON.parse(stored);
-      const now = Date.now();
-      // Reset estimate at start of each month (approximate billing cycle)
-      const dayOfMonth = new Date().getDate();
-      if(data.resetDay && dayOfMonth < data.resetDay - 3){
-        // New month — reset
-        localStorage.removeItem('mga_egress_estimate');
-        _egressUsedGB = 0;
-        hideEgressBanner();
-        return;
-      }
-      _egressUsedGB = data.usedGB || 0;
-      updateEgressBanner();
-    }
-  }catch(e){}
-}
-
-function trackEgressBytes(bytes){
-  try{
-    const gb = bytes / (1024 * 1024 * 1024);
-    _egressUsedGB += gb;
-    const dayOfMonth = new Date().getDate();
-    localStorage.setItem('mga_egress_estimate', JSON.stringify({
-      usedGB: _egressUsedGB,
-      resetDay: dayOfMonth,
-      updatedAt: Date.now()
-    }));
-    updateEgressBanner();
-  }catch(e){}
-}
 
 function recordSupabase402(){
-  // Called when Supabase returns 402 — we know we're at 100%
-  _egressUsedGB = EGRESS_FREE_LIMIT_GB;
   _egressBlocked = true;
-  localStorage.setItem('mga_egress_estimate', JSON.stringify({
-    usedGB: EGRESS_FREE_LIMIT_GB,
-    resetDay: new Date().getDate(),
-    updatedAt: Date.now()
-  }));
-  showEgressBanner('blocked');
+  localStorage.setItem('mga_supabase_blocked','1');
+  showEgressBanner();
 }
 
-function updateEgressBanner(){
-  const pct = _egressUsedGB / EGRESS_FREE_LIMIT_GB;
-  if(pct >= EGRESS_CRITICAL_PCT){
+function clearSupabase402(){
+  _egressBlocked = false;
+  localStorage.removeItem('mga_supabase_blocked');
+  hideEgressBanner();
+}
+
+function checkEgressUsage(){
+  // Restore blocked state across page refreshes
+  if(localStorage.getItem('mga_supabase_blocked')==='1'){
     _egressBlocked = true;
-    showEgressBanner('critical');
-  } else if(pct >= EGRESS_WARN_PCT){
-    _egressBlocked = false;
-    showEgressBanner('warn');
-  } else {
-    _egressBlocked = false;
-    hideEgressBanner();
+    showEgressBanner();
   }
 }
 
-function showEgressBanner(level){
+function showEgressBanner(){
   const banner = document.getElementById('egress-banner');
   const msg = document.getElementById('egress-banner-msg');
-  if(!banner || !msg) return;
-
-  const usedPct = Math.round((_egressUsedGB / EGRESS_FREE_LIMIT_GB) * 100);
-  const usedGB = _egressUsedGB.toFixed(2);
-
-  if(level === 'blocked'){
-    banner.className = 'egress-banner blocked';
-    msg.innerHTML = '⛔ <strong>Supabase free plan quota exceeded.</strong> Live sync, saves and realtime are disabled to protect your account. You can still log in and view locally cached data. Quota resets at the start of your next billing cycle — or <a href="https://supabase.com/dashboard" target="_blank" style="color:#fff;text-decoration:underline;">upgrade your plan</a> to restore immediately.';
-    _egressBlocked = true;
-  } else if(level === 'critical'){
-    banner.className = 'egress-banner critical';
-    msg.innerHTML = '🔴 <strong>' + usedPct + '% of Supabase free egress used</strong> (' + usedGB + ' GB of 5 GB). All sync has been paused to prevent hitting the limit. Login still works. <a href="https://supabase.com/dashboard" target="_blank" style="color:#c93535;text-decoration:underline;">Check your Supabase billing →</a>';
-  } else {
-    banner.className = 'egress-banner warn';
-    msg.innerHTML = '⚠️ <strong>' + usedPct + '% of Supabase free egress used</strong> (' + usedGB + ' GB of 5 GB). Monitor your usage to avoid disruption. <a href="https://supabase.com/dashboard" target="_blank" style="color:#7c4f00;text-decoration:underline;">Supabase dashboard →</a>';
-  }
+  if(!banner||!msg) return;
+  banner.className = 'egress-banner blocked';
+  msg.innerHTML = '⛔ <strong>Service unavailable — Supabase free plan quota exceeded.</strong> Live sync, saves and realtime are paused. You can still log in and view locally cached data. Quota resets at the start of your next billing cycle — or <a href="https://supabase.com/dashboard" target="_blank" style="color:#fff;text-decoration:underline;">upgrade your plan</a> to restore immediately.';
   banner.style.display = 'block';
-  // Push page content down so banner doesn't overlap header
-  document.body.style.paddingTop = banner.offsetHeight + 'px';
+  document.body.style.paddingTop = (banner.offsetHeight||48) + 'px';
 }
 
 function hideEgressBanner(){
@@ -6078,15 +6014,9 @@ function hideEgressBanner(){
   document.body.style.paddingTop = '';
 }
 
-function isEgressBlocked(){
-  return _egressBlocked;
-}
-
-// Only login calls are allowed when blocked — everything else is stopped
 function isSupabaseCallAllowed(callType){
-  // callType: 'login' | 'read' | 'write' | 'delete' | 'realtime'
   if(!_egressBlocked) return true;
-  return callType === 'login'; // only login allowed when blocked
+  return callType === 'login';
 }
 
 async function _init(){
