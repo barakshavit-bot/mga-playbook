@@ -4743,11 +4743,26 @@ function completeLogin(user){
   hideLoginScreen();
   document.getElementById('invite-screen').style.display='none';
   document.getElementById('account-setup-screen').style.display='none';
-  // Apply role BEFORE showing any page
-  applyRoleUI();
-  // Fresh login always starts at sessions — page restore only happens on refresh
+  // Show sessions page first so DOM elements exist before applyRoleUI queries them
   _showPage('sessions');
+  // Apply role AFTER page is shown so all nav/DOM elements are present
+  applyRoleUI();
   showToast('Welcome, '+user.username+' 👋');
+  // Render from localStorage immediately so user sees content right away
+  purgeExpired();
+  renderSessionsGrid();
+  updateStats();
+  // Then sync from Supabase in background
+  if(sb){
+    loadFromSupabase(false).then(()=>{
+      renderSessionsGrid();
+      updateDeletedBadge();
+      updateStats();
+      subscribeRealtime();
+    }).catch(e=>{
+      console.warn('Background Supabase load error:', e.message);
+    });
+  }
 }
 
 function logoutUser(){
@@ -6040,14 +6055,15 @@ async function _init(){
   if(stored){
     try{
       currentUser = JSON.parse(stored);
-      // Reveal app shell and hide login immediately
+      // Reveal app shell immediately
       const shell = document.getElementById('app-shell');
       if(shell) shell.style.visibility='visible';
       document.getElementById('login-screen').style.display='none';
-      applyRoleUI();
-      // Restore last visited page
+      // Restore last visited page BEFORE applying role so nav is visible first
       const lastPage = sessionStorage.getItem('playbook_page');
       if(lastPage) _showPage(lastPage);
+      // Apply role AFTER shell is visible so querySelectorAll finds all elements
+      applyRoleUI();
     }catch(e){ currentUser=null; }
   }
   if(!currentUser){
@@ -6057,23 +6073,26 @@ async function _init(){
 
   await checkEgressUsage();
 
-  if(sb){
-    try{
-      await loadFromSupabase(true); // show loader on first load only
-      subscribeRealtime();
-    }catch(e){
-      console.warn('loadFromSupabase error:', e.message);
-      // Fall through — render from localStorage
-    }
-  }
-
-  // Always render once after all data is ready — whether from Supabase or localStorage
+  // Render immediately from localStorage so user sees content right away
   purgeExpired();
   renderSessionsGrid();
   renderDeletedList();
   updateDeletedBadge();
   updateStats();
   renderConnectionStatus();
+
+  // Then load from Supabase in background — no blocking wait
+  if(sb){
+    loadFromSupabase(false).then(()=>{
+      renderSessionsGrid();
+      renderDeletedList();
+      updateDeletedBadge();
+      updateStats();
+      subscribeRealtime();
+    }).catch(e=>{
+      console.warn('loadFromSupabase error:', e.message);
+    });
+  }
 }
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded',_init);
